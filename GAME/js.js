@@ -1,8 +1,8 @@
  window.addEventListener("load",function() {
       
       //constants
-      var GAME_WIDTH = 640;
-      var GAME_HEIGHT = 360;
+      var GAME_WIDTH = 1920;
+      var GAME_HEIGHT = 1080;
 
       //keep the game going
       var gameLive = true;
