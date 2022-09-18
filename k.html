@@ -14,6 +14,20 @@ body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 
 </style>
 
+<script type="text/javascript">
+$(document).ready(function() {
+	$('.star').click(function() {
+		if ($(this).hasClass('on')) {
+			// удаление
+			$(this).removeClass('on');
+		} else {
+			// добавление
+			$(this).addClass('on');
+		};
+	});
+});
+</script>
+
 	
 <body class="w3-light-grey">
 <div class="w3-content" style="max-width:1400px">
@@ -63,7 +77,12 @@ body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 	<li class="w3-padding-16">
         <img src="" alt="" class="w3-left w3-margin-right" style="width:50px">
         <span><a href="tt"> <h5>Время занятий</h5></a></span>
-      </li>        
+      </li> 
+	</li>     
+	<li class="w3-padding-16">
+        <img src="" alt="" class="w3-left w3-margin-right" style="width:50px">
+        <span class='star'><h5>Добавить эту страницу в избранное</h5></a></span>
+      </li>
     </ul>
   </div>
 </body>
