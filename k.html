@@ -77,6 +77,24 @@ body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     </ul>
   </div>
 <p>  </p>
+
+<script>
+  function Color(elem) {
+    this.elem = elem
+    this.colors = ['#f1c40f', '#2ecc71', '#e74c3c', '#9b59b6'];
+    this.run = function (target = 'background') {
+      setInterval(() => {
+        let i = Math.floor(Math.random() * this.colors.length)
+        this.elem.style[target] = this.colors[i];
+      }, 1000)
+    }
+  }
+  new Color(document.body).run();
+  let h1 = new Color(document.querySelector('h1'))
+  h1.run();
+  h1.run('color')
+</script>
+
 <!-- Yandex.Metrika counter -->
 <script type="text/javascript" >
    (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
