@@ -3,7 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <title>Животная Лирика — Сайт</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.9.0/slick.min.css">
+  <link rel="stylesheet" href="/css/simple-adaptive-slider.css">  
+  <script defer src="/css/simple-adaptive-slider.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // инициализация слайдера
+      var slider = new SimpleAdaptiveSlider('.slider', {
+        autoplay: true,
+        interval: 500,
+        swipe: true,
+      });
+    });
+  </script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -47,16 +58,9 @@
     .btn:hover {
       background-color: #555;
     }
-    img  {
-   /* margin-right: 1px; /* Отступ справа */
-  /*  margin-bottom: 1px; /* Отступ снизу */
-    object-fit: contain
-   }
-    .pics  {
-   /* margin-right: 1px; /* Отступ справа */
-  /*  margin-bottom: 1px; /* Отступ снизу */
-  /*    object-fit: contain*/
-   }    
+
+    
+    
   </style>
 <link rel="apple-touch-icon" sizes="180x180" href="/icons/j/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/j/favicon-32x32.png">
@@ -80,6 +84,28 @@
     <a href="https://vk.com/jivlir" class="btn">Слушать в VK</a>
   </div>
   
+  
+  
+    <div class="slider">
+    <div class="slider__wrapper">
+      <div class="slider__items">
+        <div class="slider__item">
+          <div style="height: 250px; background: #3f51b5;"></div>
+        </div>
+        <div class="slider__item">
+          <div style="height: 250px; background: #607d8b;"></div>
+        </div>
+        <div class="slider__item">
+          <div style="height: 250px; background: #f44336;"></div>
+        </div>
+        <div class="slider__item">
+          <div style="height: 250px; background: #4caf50;"></div>
+        </div>
+      </div>
+    </div>
+  
+  
+  
    <div class="slider">
       <div><img src="photo1.jpg" height=25% alt="Нож"><img src="photo2.jpg" height=25% alt="Никита"></div>
       <div><img src="photo2.jpg" width=50% alt="Никита"></div>
@@ -99,19 +125,7 @@
 
   
   
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.9.0/slick.min.js"></script>
-  <script>
-    $(document).ready(function(){
-      $('.slider').slick({
-        dots: false,
-        arrows: false,
-        autoplay: true,
-        autoplaySpeed: 400
-      });
-    });
-  </script>
- 
+
   
   <!--Сделал Нож в 2023 году, всем добра-->
 </body>
