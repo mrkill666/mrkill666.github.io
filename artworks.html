@@ -5,33 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Галерея - Владислав Ножиков</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/all.min.css">
-  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
-  <link rel="manifest" href="/icons/site.webmanifest">
-  <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
-  <link rel="shortcut icon" href="/icons/favicon.ico">
-  <meta name="apple-mobile-web-app-title" content="Nozhikov">
-  <meta name="application-name" content="Nozhikov">
-  <meta name="msapplication-TileColor" content="#da532c">
-  <meta name="msapplication-config" content="/icons/browserconfig.xml">
-  <meta name="theme-color" content="#ffffff">
+    <link rel="stylesheet" href="css/all.min.css">
     <style>
-        /* --- 1. Цветовая палитра: Фиолетовый и Оранжевый --- */
         :root {
-            --bg-dark: #1A1A1A; /* Очень темный фон, почти черный */
-            --bg-medium: #282828; /* Для карточек, футера */
-            --text-light: #E0E0E0; /* Светлый текст для основного контента */
-            --text-muted: #888888; /* Менее заметный текст */
-            --accent-orange: #FF6B00; /* Яркий оранжевый */
-            --accent-violet: #8A2BE2; /* Глубокий фиолетовый */
-            --gradient-main: linear-gradient(145deg, var(--accent-violet), var(--accent-orange)); /* Основной градиент */
+            --bg-dark: #1A1A1A;
+            --bg-medium: #282828;
+            --text-light: #E0E0E0;
+            --text-muted: #888888;
+            --accent-orange: #FF6B00;
+            --accent-violet: #8A2BE2;
+            --gradient-main: linear-gradient(145deg, var(--accent-violet), var(--accent-orange));
             --font-heading: 'Montserrat', sans-serif;
             --font-body: 'Inter', sans-serif;
         }
 
-        /* --- Общие сбросы и стили --- */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -73,7 +60,6 @@
             z-index: -1;
         }
 
-        /* --- Эффекты Glitch --- */
         .glitch-overlay, .glitch-effect {
             pointer-events: none;
             position: fixed;
@@ -106,7 +92,6 @@
             100% { opacity: 0.02; }
         }
 
-        /* --- Новый эффект глитча: появляющиеся квадратики --- */
         .glitch-squares-container {
             pointer-events: none;
             position: fixed;
@@ -148,7 +133,6 @@
             }
         }
 
-        /* --- Preloader --- */
         #preloader {
             position: fixed;
             top: 0;
@@ -189,7 +173,6 @@
             visibility: hidden;
         }
 
-        /* --- Header --- */
         header {
             background: transparent;
             padding: 20px 20px 10px;
@@ -206,7 +189,6 @@
             transform: scale(1.05);
         }
 
-        /* --- Заголовки --- */
         h2 {
             font-family: var(--font-heading);
             font-weight: 800;
@@ -231,7 +213,6 @@
             border-radius: 2px;
         }
 
-        /* --- Секции --- */
         section {
             padding: 40px 40px;
             max-width: 1200px;
@@ -249,10 +230,9 @@
             padding-top: 30px;
         }
 
-        /* --- Галерея картин (новые стили) --- */
         .gallery {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Три изображения в ряд */
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 25px;
             justify-content: center;
             margin-top: 30px;
@@ -269,9 +249,11 @@
             flex-direction: column;
             align-items: center;
             text-align: center;
-            padding-bottom: 15px; /* Отступ для названия */
-            max-width: 400px; /* Ограничение максимальной ширины элемента */
-            margin: 0 auto; /* Центрирование элементов */
+            padding-bottom: 15px;
+            max-width: 400px;
+            margin: 0 auto;
+            /* ИЗМЕНЕНО/ДОБАВЛЕНО: Убедимся, что flex-элементы всегда отображаются */
+            display: flex; /* Убедимся, что не переопределяется на none */
         }
 
         .gallery-item:hover {
@@ -281,8 +263,8 @@
 
         .gallery-item img {
             width: 100%;
-            height: auto; /* Автоматическая высота */
-            object-fit: contain; /* Чтобы изображение полностью помещалось */
+            height: auto;
+            object-fit: contain;
             display: block;
             margin-bottom: 10px;
             border-radius: 8px 8px 0 0;
@@ -295,20 +277,19 @@
             color: var(--text-light);
             padding: 0 10px;
             text-align: center;
-            margin: 0; /* Переопределяем margin от общего h3 */
+            margin: 0;
         }
 
-        /* --- Lightbox стили --- */
         .lightbox {
-            display: none; /* Скрыто по умолчанию */
+            display: none;
             position: fixed;
-            z-index: 10001; /* Поверх всего */
+            z-index: 10001;
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
             overflow: auto;
-            background-color: rgba(0, 0, 0, 0.9); /* Темный полупрозрачный фон */
+            background-color: rgba(0, 0, 0, 0.9);
             justify-content: center;
             align-items: center;
             animation: fadeIn 0.3s forwards;
@@ -318,9 +299,9 @@
             display: block;
             max-width: 90%;
             max-height: 90%;
-            object-fit: contain; /* Сохраняет пропорции изображения */
+            object-fit: contain;
             animation: zoomIn 0.3s forwards;
-            box-shadow: 0 0 20px rgba(255, 107, 0, 0.5); /* Добавим свечение */
+            box-shadow: 0 0 20px rgba(255, 107, 0, 0.5);
         }
         .close-btn {
             position: absolute;
@@ -349,7 +330,6 @@
             to { transform: scale(1); opacity: 1; }
         }
 
-        /* --- Кнопка "На главную" (та же, что и на Releases) --- */
         .back-to-home-btn {
             display: block;
             width: fit-content;
@@ -376,7 +356,6 @@
             border-color: var(--accent-violet);
         }
 
-        /* --- Footer --- */
         footer {
             text-align: center;
             padding: 30px 20px;
@@ -387,19 +366,19 @@
             text-transform: lowercase;
         }
 
-        /* --- Адаптивность --- */
         @media (max-width: 900px) {
             h2 {
                 font-size: 2.2rem;
             }
             .gallery {
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* 2-3 в ряд на планшетах */
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             }
             .gallery-item {
                 max-width: 300px;
             }
         }
 
+        /* ИЗМЕНЕНО: Более точные стили для мобильных устройств, чтобы карточки отображались */
         @media (max-width: 700px) {
             h2 {
                 font-size: 2rem;
@@ -422,7 +401,8 @@
                 gap: 20px;
             }
             .gallery-item {
-                max-width: 80%; /* Увеличим ширину на мобильных */
+                max-width: 90%; /* Сделаем чуть шире для лучшего использования пространства */
+                width: 100%; /* Убедимся, что занимает всю доступную ширину родителя grid */
             }
             .back-to-home-btn {
                 margin: 30px auto 20px;
@@ -444,14 +424,13 @@
     </div>
 
     <header>
-    <div>ㅤㅤ</div>
         <a href="https://nozv.ru/">
             <img src="logo.png" alt="логотип владислав ножиков" />
         </a>
     </header>
 
     <section>
-        <h3 align=center>Галерея работ</h3>
+        <h2>галерея работ</h2>
         <div class="gallery">
             <div class="gallery-item">
                 <img src="artworks/1.jpg" alt="Девять позиций" loading="lazy" data-full="artworks/1.jpg" />
@@ -554,8 +533,8 @@
                 <h3>«Друг»</h3>
             </div>
             <div class="gallery-item">
-                <img src="artworks/26.jpg" alt="Быть хорошим молодым парнем" loading="lazy" data-full="artworks/26.jpg" />
-                <h3>«Быть хорошим молодым парнем»</h3>
+                <img src="artworks/26.jpg" alt="Быть хоршим молодым парнем" loading="lazy" data-full="artworks/26.jpg" />
+                <h3>«Быть хоршим молодым парнем»</h3>
             </div>
         </div>
 
@@ -568,11 +547,10 @@
     </div>
 
     <footer>
-        © владислав ножиков · 2025
+        © владислав ножиков · гештальт-версия сайта
     </footer>
 
     <script>
-        // Анимация прелоадера
         window.addEventListener('load', () => {
             document.body.classList.add('loaded');
         });
@@ -599,7 +577,6 @@
                 sectionObserver.observe(section);
             });
 
-            // --- JavaScript для глитч-квадратиков ---
             const glitchSquaresContainer = document.querySelector('.glitch-squares-container');
             const numSquares = 20;
             const maxDelay = 2.5;
@@ -626,7 +603,7 @@
                 glitchSquaresContainer.appendChild(square);
             }
 
-            // --- Lightbox JavaScript ---
+            // Lightbox JavaScript
             const lightbox = document.getElementById('myLightbox');
             const lightboxImg = document.getElementById('img01');
             const closeBtn = document.getElementsByClassName('close-btn')[0];
@@ -635,7 +612,7 @@
             galleryItems.forEach(item => {
                 item.addEventListener('click', function() {
                     lightbox.style.display = 'flex';
-                    lightboxImg.src = this.dataset.full || this.src; // Используем data-full если есть, иначе src
+                    lightboxImg.src = this.dataset.full || this.src;
                 });
             });
 
@@ -643,14 +620,12 @@
                 lightbox.style.display = 'none';
             });
 
-            // Закрытие при клике вне картинки
             lightbox.addEventListener('click', function(e) {
                 if (e.target === lightbox) {
                     lightbox.style.display = 'none';
                 }
             });
 
-            // Закрытие по ESC
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && lightbox.style.display === 'flex') {
                     lightbox.style.display = 'none';
