@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Владислав Ножиков - Официальный Сайт</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* --- 1. Цветовая палитра: Фиолетовый и Оранжевый --- */
+        :root {
+            --bg-dark: #1A1A1A; /* Очень темный фон, почти черный */
+            --bg-medium: #282828; /* Для карточек, футера */
+            --text-light: #E0E0E0; /* Светлый текст для основного контента */
+            --text-muted: #888888; /* Менее заметный текст */
+            --accent-orange: #FF6B00; /* Яркий оранжевый */
+            --accent-violet: #8A2BE2; /* Глубокий фиолетовый */
+            --gradient-main: linear-gradient(145deg, var(--accent-violet), var(--accent-orange)); /* Основной градиент */
+            --font-heading: 'Montserrat', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+
+        /* --- Общие сбросы и стили --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: var(--font-body);
+            font-weight: 300;
+            overflow-x: hidden;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            filter: brightness(0.2) grayscale(0.5);
+            z-index: -2;
+            opacity: 0.7;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 26, 0.9);
+            z-index: -1;
+        }
+
+        /* --- Эффекты Glitch --- */
+        .glitch-overlay, .glitch-effect {
+            pointer-events: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            mix-blend-mode: overlay;
+            opacity: 0.03;
+        }
+        .glitch-overlay {
+            animation: glitchMove 6s infinite alternate ease-in-out;
+        }
+        @keyframes glitchMove {
+            0% { transform: translate(0, 0); opacity: 0.03; }
+            33% { transform: translate(3px, -2px); opacity: 0.05; }
+            66% { transform: translate(-2px, 3px); opacity: 0.04; }
+            100% { transform: translate(0, 0); opacity: 0.03; }
+        }
+        .glitch-effect {
+            background: repeating-linear-gradient(90deg, transparent, var(--accent-violet) 1px, transparent 2px),
+                        repeating-linear-gradient(0deg, transparent, var(--accent-orange) 1px, transparent 2px);
+            opacity: 0.02;
+            animation: glitchFlash 5s infinite alternate;
+        }
+        @keyframes glitchFlash {
+            0% { opacity: 0.02; }
+            50% { opacity: 0.06; transform: scale(1.005); }
+            100% { opacity: 0.02; }
+        }
+
+        /* --- Новый эффект глитча: появляющиеся квадратики --- */
+        .glitch-squares-container {
+            pointer-events: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            z-index: 9998;
+            opacity: 0.05;
+        }
+        .glitch-square {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: var(--accent-orange);
+            opacity: 0;
+            animation: glitchSquareAnim 3s infinite;
+            mix-blend-mode: screen;
+        }
+        .glitch-square:nth-child(2n) { background: var(--accent-violet); }
+        .glitch-square:nth-child(3n) { background: rgba(255, 255, 255, 0.2); }
+
+        @keyframes glitchSquareAnim {
+            0% {
+                transform: translate(var(--x-start, 0), var(--y-start, 0)) scale(0);
+                opacity: 0;
+            }
+            10% {
+                transform: translate(var(--x-start, 0), var(--y-start, 0)) scale(1);
+                opacity: 0.8;
+            }
+            20% {
+                transform: translate(var(--x-end, 0), var(--y-end, 0)) scale(0.5);
+                opacity: 0;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* --- Preloader --- */
+        #preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-dark);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            color: var(--text-light);
+            font-family: var(--font-heading);
+            transition: opacity 0.6s ease, visibility 0.6s;
+            text-transform: uppercase;
+        }
+        #preloader img {
+            width: 150px;
+            margin-bottom: 25px;
+            filter: invert(1) drop-shadow(0 0 10px var(--accent-orange));
+        }
+        .knife {
+            font-size: 60px;
+            animation: spinShake 1.8s infinite ease-in-out;
+            color: var(--accent-orange);
+        }
+        @keyframes spinShake {
+            0% { transform: rotate(0deg) translateX(0px); }
+            20% { transform: rotate(90deg) translateX(3px); }
+            40% { transform: rotate(180deg) translateX(-3px); }
+            60% { transform: rotate(270deg) translateX(4px); }
+            80% { transform: rotate(360deg) translateX(-2px); }
+            100% { transform: rotate(0deg) translateX(0px); }
+        }
+        body.loaded #preloader {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        /* --- Header --- */
+        header {
+            background: transparent;
+            padding: 20px 20px 10px; /* Уменьшаем padding-bottom */
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+        header img {
+            height: 50px; /* Немного уменьшим высоту логотипа */
+            filter: invert(1);
+            transition: transform 0.3s ease;
+        }
+        header img:hover {
+            transform: scale(1.05);
+        }
+
+        /* --- Заголовки --- */
+        h2 {
+            font-family: var(--font-heading);
+            font-weight: 800;
+            font-size: 2.7rem; /* Немного уменьшим размер заголовка */
+            color: var(--text-light);
+            text-align: center;
+            margin-bottom: 25px; /* Уменьшаем отступ снизу */
+            position: relative;
+            padding-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        h2::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--gradient-main);
+            border-radius: 2px;
+        }
+
+        h3 {
+            font-family: var(--font-heading);
+            font-size: 1.3rem; /* Немного уменьшим */
+            color: var(--text-light);
+            font-weight: 600;
+            text-transform: capitalize;
+            margin-bottom: 5px;
+        }
+
+        /* --- Секции (Уменьшаем отступы) --- */
+        section {
+            padding: 40px 40px; /* Уменьшаем отступы сверху/снизу */
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        section.animated {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Дополнительно уменьшаем отступ для первой секции, если она идет сразу за хедером */
+        section:first-of-type {
+            padding-top: 30px; /* Меньше отступа сверху для первой секции */
+        }
+
+
+        /* --- Секция "Музыкант" (Bio) --- */
+        .bio p {
+            font-size: 1.1rem; /* Немного уменьшим размер текста */
+            margin-bottom: 12px; /* Уменьшаем отступ */
+            color: var(--text-light);
+            text-align: center;
+            max-width: 800px; /* Уменьшим max-width для более плотного текста */
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.7;
+            text-shadow: 0 0 5px rgba(255, 107, 0, 0.3);
+        }
+
+        .bio-photos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Немного уменьшим minmax */
+            gap: 20px; /* Уменьшим расстояние между фото */
+            margin-top: 30px; /* Уменьшим отступ */
+            justify-items: center;
+            align-items: center;
+        }
+
+        .bio-photos img {
+            width: 100%;
+            max-width: 280px; /* Немного уменьшим max-width */
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .bio-photos img:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), 0 0 25px var(--accent-orange);
+        }
+
+        /* --- Карточки Релизов (уменьшаем размер) --- */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* Уменьшаем min-width для релизов */
+            gap: 25px; /* Уменьшаем расстояние между карточками */
+            justify-content: center;
+            margin-top: 15px; /* Уменьшаем отступ */
+        }
+
+        .card-link {
+            text-decoration: none;
+            color: var(--text-light);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            background: var(--bg-medium);
+            padding-bottom: 15px; /* Немного уменьшим отступ */
+            max-width: 280px; /* Ограничиваем максимальную ширину карточки */
+            margin: 0 auto; /* Центрируем, если меньше 100% */
+        }
+
+        .card-link:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5), 0 0 20px var(--accent-violet);
+        }
+
+        .card-link img {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            margin-bottom: 10px; /* Уменьшим отступ */
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-link h3 {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 1.2rem; /* Немного уменьшим размер заголовка альбома */
+            margin-bottom: 3px;
+            color: var(--text-light);
+            padding: 0 10px; /* Уменьшим отступы */
+            text-align: center;
+        }
+        .card-link p {
+            font-family: var(--font-body);
+            font-weight: 400;
+            font-size: 0.9rem; /* Немного уменьшим размер текста "слушать" */
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* --- Кнопка "Другие релизы" --- */
+        .more-releases-btn {
+            display: block;
+            width: fit-content;
+            margin: 40px auto 0; /* Отступ сверху и центрирование */
+            padding: 15px 30px;
+            background: var(--gradient-main);
+            color: var(--text-light);
+            text-decoration: none;
+            border-radius: 50px; /* Округлая форма */
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        .more-releases-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), 0 0 15px var(--accent-orange);
+            filter: brightness(1.1);
+        }
+
+
+        /* --- Кнопки для соцсетей (Соцсети) --- */
+        .social-icons-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px; /* Уменьшаем расстояние между соцсетями */
+            justify-content: center;
+            margin-top: 20px; /* Уменьшаем отступ */
+        }
+        .social-icon-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: var(--text-light);
+            background: var(--bg-medium);
+            padding: 18px 25px; /* Немного уменьшаем отступы */
+            border-radius: 8px;
+            transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+            min-width: 120px; /* Немного уменьшим min-width */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        .social-icon-link:hover {
+            transform: translateY(-5px);
+            background: var(--gradient-main);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), 0 0 15px var(--accent-orange);
+        }
+        .social-icon-link i {
+            font-size: 2.2rem; /* Немного уменьшим размер иконки */
+            margin-bottom: 8px;
+            color: var(--accent-violet);
+            transition: color 0.3s ease;
+        }
+        .social-icon-link:hover i {
+            color: var(--text-light);
+        }
+        .social-icon-link h3 {
+            font-size: 1rem; /* Немного уменьшим размер текста */
+            font-weight: 600;
+            color: var(--text-light);
+        }
+        section.cards-social-media .cards { display: none; }
+
+
+        /* --- Контакты --- */
+        .contact {
+            text-align: center;
+        }
+        .contact a {
+            color: var(--accent-orange);
+            font-weight: 600;
+            font-size: 1.2rem; /* Немного уменьшим размер */
+            text-decoration: none;
+            transition: color 0.3s, text-shadow 0.3s;
+            text-transform: lowercase;
+        }
+        .contact a:hover {
+            color: var(--accent-violet);
+            text-shadow: 0 0 10px rgba(138, 43, 226, 0.5);
+        }
+
+        /* --- Footer --- */
+        footer {
+            text-align: center;
+            padding: 30px 20px; /* Уменьшим padding */
+            background: var(--bg-medium);
+            font-size: 0.9rem; /* Немного уменьшим размер текста */
+            color: var(--text-muted);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            text-transform: lowercase;
+        }
+
+        /* --- Адаптивность --- */
+        @media (max-width: 900px) {
+            h2 {
+                font-size: 2.2rem;
+            }
+            .bio p {
+                font-size: 1rem;
+            }
+            .bio-photos {
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            }
+            .bio-photos img {
+                max-width: 250px;
+            }
+            .cards {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Ещё уменьшим на планшетах */
+            }
+            .card-link {
+                max-width: 250px; /* Уменьшим максимальную ширину карточек релизов */
+            }
+        }
+
+        @media (max-width: 700px) {
+            h2 {
+                font-size: 2rem;
+                margin-bottom: 20px;
+            }
+            section {
+                padding: 30px 20px;
+            }
+            section:first-of-type {
+                padding-top: 20px;
+            }
+            header {
+                padding: 15px 20px 5px;
+            }
+            header img {
+                height: 50px;
+            }
+            .bio-photos {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                margin-top: 20px;
+            }
+            .bio-photos img {
+                max-width: 70%;
+            }
+            .cards {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .social-icon-link {
+                min-width: unset;
+                width: 100%;
+                padding: 15px 20px;
+            }
+            .social-icon-link i {
+                font-size: 2rem;
+            }
+            .more-releases-btn {
+                margin-top: 30px;
+                padding: 12px 25px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="glitch-effect"></div>
+    <div class="glitch-overlay"></div>
+    <div class="glitch-squares-container"></div>
+
+    <div id="preloader">
+        <img src="logo.png" alt="Логотип" />
+        <div class="knife">🔪</div>
+        <p>загрузка...</p>
+    </div>
+
+    <header>
+	<div>ㅤㅤ</div>
+        <img src="logo.png" alt="логотип владислав ножиков" />
+    </header>
+    <section class="bio">
+        <p>музыкант. тиктокер. художник-абстракционист. прямиком из красноярска.</p>
+        <p>музыка: смесь альтернативного рока и edm.</p>
+        <div class="bio-photos">
+            <img src="photo1.jpg" alt="фото 1" loading="lazy" />
+            <img src="photo2.jpg" alt="фото 2" loading="lazy" />
+            <img src="photo3.jpg" alt="фото 3" loading="lazy" />
+        </div>
+    </section>
+
+    <section>
+        <h2>мои работы</h2>
+        <div class="cards">
+            <a class="card-link" href="https://band.link/gstlt" target="_blank" rel="noopener noreferrer">
+                <img src="geshtalt-cover.jpg" alt="альбом гештальт" loading="lazy" />
+                <h3>«гештальт»</h3>
+                <p>альбом</p>
+            </a>
+            <a class="card-link" href="https://band.link/CvetnyeSni" target="_blank" rel="noopener noreferrer">
+                <img src="cvetnye-sny-cover.jpg" alt="альбом цветные сны" loading="lazy" />
+                <h3>«цветные сны»</h3>
+                <p>альбом</p>
+            </a>
+    <div class="cards">
+        <a class="card-link" href="artworks.html">
+            <img src="artworks/2.jpg" alt="обложка галереи" loading="lazy" />
+            <h3>«инструкция по сборке молчания»</h3>
+            <p>онлайн-выставка</p>
+        </a>
+        </div>
+            </div>
+        <a href="releases.html" class="more-releases-btn">другие релизы</a>
+    </section>
+
+    <h2>мои работы</h2>
+
+    </section>
+
+    <section class="cards-social-media">
+        <h2>соцсети</h2>
+        <div class="social-icons-container">
+            <a class="social-icon-link" href="https://tiktok.com/@nozhikov" target="_blank" rel="noopener noreferrer">
+                <i class="fab fa-tiktok"></i>
+                <h3>tiktok</h3>
+                <p>@nozhikov</p>
+            </a>
+            <a class="social-icon-link" href="https://t.me/nozvru" target="_blank" rel="noopener noreferrer">
+                <i class="fab fa-telegram-plane"></i>
+                <h3>telegram</h3>
+                <p>@nozvru</p>
+            </a>
+            <a class="social-icon-link" href="https://vk.com/mrkill_666" target="_blank" rel="noopener noreferrer">
+                <i class="fab fa-vk"></i>
+                <h3>vk</h3>
+                <p>@mrkill_666</p>
+            </a>
+            <a class="social-icon-link" href="http://googleusercontent.com/youtube.com/3" target="_blank" rel="noopener noreferrer">
+                <i class="fab fa-youtube"></i>
+                <h3>youtube</h3>
+                <p>@nozhikovvlad</p>
+            </a>
+        </div>
+    </section>
+<section>
+
+    <section class="contact">
+        <h2>контакты</h2>
+        <p><a href="mailto:business.mrkill666@gmail.com">business.mrkill666@gmail.com</a></p>
+    </section>
+
+    <footer>
+        © владислав ножиков · 2025
+    </footer>
+
+    <script>
+        window.addEventListener('load', () => {
+            document.body.classList.add('loaded');
+        });
+
+        const sections = document.querySelectorAll('section');
+
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        const sectionObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animated');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        sections.forEach(section => {
+            sectionObserver.observe(section);
+        });
+
+        const glitchSquaresContainer = document.querySelector('.glitch-squares-container');
+        const numSquares = 20;
+        const maxDelay = 2.5;
+
+        for (let i = 0; i < numSquares; i++) {
+            const square = document.createElement('div');
+            square.classList.add('glitch-square');
+
+            const xStart = Math.random() * 100 + 'vw';
+            const yStart = Math.random() * 100 + 'vh';
+            const xEnd = (Math.random() * 100 - 50) + 'px';
+            const yEnd = (Math.random() * 100 - 50) + 'px';
+
+            const delay = Math.random() * maxDelay;
+            const duration = 2 + Math.random() * 2;
+
+            square.style.setProperty('--x-start', xStart);
+            square.style.setProperty('--y-start', yStart);
+            square.style.setProperty('--x-end', xEnd);
+            square.style.setProperty('--y-end', yEnd);
+            square.style.animationDelay = `${delay}s`;
+            square.style.animationDuration = `${duration}s`;
+
+            glitchSquaresContainer.appendChild(square);
+        }
+    </script>
+</body>
+</html>
