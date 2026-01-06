@@ -1,648 +1,349 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Галерея - Владислав Ножиков</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/all.min.css">
-    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
-    <link rel="manifest" href="/icons/site.webmanifest">
-    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
-    <link rel="shortcut icon" href="/icons/favicon.ico">
-    <meta name="apple-mobile-web-app-title" content="Nozhikov">
-    <meta name="application-name" content="Nozhikov">
-    <meta name="msapplication-TileColor" content="#da532c">
-    <meta name="msapplication-config" content="/icons/browserconfig.xml">
-    <meta name="theme-color" content="#ffffff">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Инструкция по сборке молчания | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #1A1A1A;
-            --bg-medium: #282828;
-            --text-light: #E0E0E0;
-            --text-muted: #888888;
-            --accent-orange: #FF6B00;
-            --accent-violet: #8A2BE2;
-            --gradient-main: linear-gradient(145deg, var(--accent-violet), var(--accent-orange));
-            --font-heading: 'Montserrat', sans-serif;
-            --font-body: 'Inter', sans-serif;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+            --bg-color: #050505;
+            --accent-color: #ffffff;
+            --card-bg: #111111;
         }
 
         body {
-            background-color: var(--bg-dark);
-            color: var(--text-light);
-            font-family: var(--font-body);
-            font-weight: 300;
+            background-color: var(--bg-color);
+            color: var(--accent-color);
+            font-family: 'Inter', sans-serif;
             overflow-x: hidden;
-            position: relative;
-            line-height: 1.6;
+            cursor: none; 
         }
 
-        body::before {
-            content: '';
+        /* Film Grain Effect */
+        .noise::before {
+            content: "";
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: url('background.jpg') no-repeat center center fixed;
-            background-size: cover;
-            filter: brightness(0.2) grayscale(0.5);
-            z-index: -2;
-            opacity: 0.7;
-        }
-
-        body::after {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(26, 26, 26, 0.9);
-            z-index: -1;
-        }
-
-        .glitch-overlay, .glitch-effect {
-            pointer-events: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 9999;
-            mix-blend-mode: overlay;
-            opacity: 0.03;
-        }
-        .glitch-overlay {
-            animation: glitchMove 6s infinite alternate ease-in-out;
-        }
-        @keyframes glitchMove {
-            0% { transform: translate(0, 0); opacity: 0.03; }
-            33% { transform: translate(3px, -2px); opacity: 0.05; }
-            66% { transform: translate(-2px, 3px); opacity: 0.04; }
-            100% { transform: translate(0, 0); opacity: 0.03; }
-        }
-        .glitch-effect {
-            background: repeating-linear-gradient(90deg, transparent, var(--accent-violet) 1px, transparent 2px),
-                        repeating-linear-gradient(0deg, transparent, var(--accent-orange) 1px, transparent 2px);
-            opacity: 0.02;
-            animation: glitchFlash 5s infinite alternate;
-        }
-        @keyframes glitchFlash {
-            0% { opacity: 0.02; }
-            50% { opacity: 0.06; transform: scale(1.005); }
-            100% { opacity: 0.02; }
-        }
-
-        .glitch-squares-container {
-            pointer-events: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-            z-index: 9998;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
             opacity: 0.05;
-        }
-        .glitch-square {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background: var(--accent-orange);
-            opacity: 0;
-            animation: glitchSquareAnim 3s infinite;
-            mix-blend-mode: screen;
-        }
-        .glitch-square:nth-child(2n) { background: var(--accent-violet); }
-        .glitch-square:nth-child(3n) { background: rgba(255, 255, 255, 0.2); }
-
-        @keyframes glitchSquareAnim {
-            0% {
-                transform: translate(var(--x-start, 0), var(--y-start, 0)) scale(0);
-                opacity: 0;
-            }
-            10% {
-                transform: translate(var(--x-start, 0), var(--y-start, 0)) scale(1);
-                opacity: 0.8;
-            }
-            20% {
-                transform: translate(var(--x-end, 0), var(--y-end, 0)) scale(0.5);
-                opacity: 0;
-            }
-            100% {
-                opacity: 0;
-            }
+            pointer-events: none;
+            z-index: 9999;
         }
 
-        #preloader {
+        /* Custom Knife Cursor */
+        #cursor {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--bg-dark);
+            width: 6px;
+            height: 6px;
+            background: #fff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+        }
+        #cursor-follower {
+            position: fixed;
+            width: 50px;
+            height: 50px;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.15s ease-out;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .cursor-knife-svg {
+            width: 35px;
+            height: 35px;
+            fill: none;
+            stroke: white;
+            stroke-width: 1.5;
+            transform: rotate(-45deg);
+        }
+
+        /* Preloader */
+        #loader {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #000;
+            display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 10000;
-            color: var(--text-light);
-            font-family: var(--font-heading);
-            transition: opacity 0.6s ease, visibility 0.6s;
-            text-transform: uppercase;
-        }
-        #preloader img {
-            width: 150px;
-            margin-bottom: 25px;
-            filter: invert(1) drop-shadow(0 0 10px var(--accent-orange));
-        }
-        .knife {
-            font-size: 60px;
-            animation: spinShake 1.8s infinite ease-in-out;
-            color: var(--accent-orange);
-        }
-        @keyframes spinShake {
-            0% { transform: rotate(0deg) translateX(0px); }
-            20% { transform: rotate(90deg) translateX(3px); }
-            40% { transform: rotate(180deg) translateX(-3px); }
-            60% { transform: rotate(270deg) translateX(4px); }
-            80% { transform: rotate(360deg) translateX(-2px); }
-            100% { transform: rotate(0deg) translateX(0px); }
-        }
-        body.loaded #preloader {
-            opacity: 0;
-            visibility: hidden;
+            z-index: 10001;
+            transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
         }
 
-        header {
-            background: transparent;
-            padding: 20px 20px 10px;
-            text-align: center;
+        /* Sharp Knife Animation */
+        .knife-svg-main {
+            width: 120px;
+            height: 120px;
+            fill: none;
+            stroke: white;
+            stroke-width: 1.2;
+            animation: rotate-knife 1.5s linear infinite;
+        }
+
+        @keyframes rotate-knife {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .loaded #loader {
+            transform: translateY(-100%);
+        }
+
+        /* Uniform Gallery Grid */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .gallery-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .gallery-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .art-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
             position: relative;
-            z-index: 10;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.4s ease;
+            aspect-ratio: 1 / 1;
         }
-        header img {
-            height: 55px;
-            filter: invert(1);
-            transition: transform 0.3s ease;
+
+        .art-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(255,255,255,0.2);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
         }
-        header img:hover {
+
+        .art-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(0.2);
+            transition: filter 0.5s, transform 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .art-card:hover img {
+            filter: grayscale(0);
             transform: scale(1.05);
         }
 
-        h2 {
-            font-family: var(--font-heading);
-            font-weight: 800;
-            font-size: 2.7rem;
-            color: var(--text-light);
-            text-align: center;
-            margin-bottom: 25px;
-            position: relative;
-            padding-bottom: 10px;
-            /* text-transform: uppercase; */
-            letter-spacing: 2px;
-        }
-        h2::after {
-            content: '';
+        .art-info {
             position: absolute;
-            left: 50%;
             bottom: 0;
-            transform: translateX(-50%);
-            width: 80px;
-            height: 4px;
-            background: var(--gradient-main);
-            border-radius: 2px;
+            left: 0;
+            width: 100%;
+            padding: 1.5rem;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            transform: translateY(10px);
+            opacity: 0;
+            transition: all 0.3s ease;
         }
 
-        section {
-            padding: 20px 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-            position: relative;
+        .art-card:hover .art-info {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Modal Viewer */
+        #modal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.98);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10002;
+            padding: 20px;
+            backdrop-filter: blur(15px);
+        }
+
+        #modal img {
+            max-width: 100%;
+            max-height: 90vh;
+            border-radius: 4px;
+            object-fit: contain;
+        }
+
+        /* Reveal animations */
+        .reveal {
             opacity: 0;
             transform: translateY(20px);
-            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+            transition: all 0.6s ease-out;
         }
-        section.animated {
+        .reveal.active {
             opacity: 1;
             transform: translateY(0);
         }
-        section:first-of-type {
-            padding-top: 30px;
-        }
-
-        .gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            justify-content: center;
-            margin-top: 30px;
-        }
-
-        .gallery-item {
-            background: var(--bg-medium);
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            padding-bottom: 15px;
-            max-width: 400px;
-            margin: 0 auto;
-            /* ИЗМЕНЕНО/ДОБАВЛЕНО: Убедимся, что flex-элементы всегда отображаются */
-            display: flex; /* Убедимся, что не переопределяется на none */
-        }
-
-        .gallery-item:hover {
-            transform: translateY(-5px) scale(1.01);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5), 0 0 20px var(--accent-orange);
-        }
-
-        .gallery-item img {
-            width: 100%;
-            height: auto;
-            object-fit: contain;
-            display: block;
-            margin-bottom: 10px;
-            border-radius: 8px 8px 0 0;
-        }
-
-        .gallery-item h3 {
-            font-family: var(--font-heading);
-            font-weight: 700;
-            font-size: 1.2rem;
-            color: var(--text-light);
-            padding: 0 10px;
-            text-align: center;
-            margin: 0;
-        }
-
-        .lightbox {
-            display: none;
-            position: fixed;
-            z-index: 10001;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.9);
-            justify-content: center;
-            align-items: center;
-            animation: fadeIn 0.3s forwards;
-        }
-        .lightbox-content {
-            margin: auto;
-            display: block;
-            max-width: 90%;
-            max-height: 90%;
-            object-fit: contain;
-            animation: zoomIn 0.3s forwards;
-            box-shadow: 0 0 20px rgba(255, 107, 0, 0.5);
-        }
-        .close-btn {
-            position: absolute;
-            top: 20px;
-            right: 35px;
-            color: var(--text-light);
-            font-size: 40px;
-            font-weight: bold;
-            transition: 0.3s;
-            cursor: pointer;
-            z-index: 10002;
-        }
-        .close-btn:hover,
-        .close-btn:focus {
-            color: var(--accent-orange);
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes zoomIn {
-            from { transform: scale(0.8); opacity: 0.8; }
-            to { transform: scale(1); opacity: 1; }
-        }
-
-        .back-to-home-btn {
-            display: block;
-            width: fit-content;
-            margin: 50px auto 30px;
-            padding: 15px 30px;
-            background: var(--bg-medium);
-            color: var(--accent-orange);
-            text-decoration: none;
-            border-radius: 50px;
-            font-family: var(--font-heading);
-            font-weight: 700;
-            font-size: 1.1rem;
-            /* text-transform: uppercase; */
-            letter-spacing: 1px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
-            border: 2px solid var(--accent-orange);
-        }
-        .back-to-home-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), 0 0 15px var(--accent-violet);
-            background: var(--accent-violet);
-            color: var(--text-light);
-            border-color: var(--accent-violet);
-        }
-
-        footer {
-            text-align: center;
-            padding: 30px 20px;
-            width: 100%
-            background: var(--bg-medium);
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        @media (max-width: 900px) {
-            h2 {
-                font-size: 2.2rem;
-            }
-            .gallery {
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            }
-            .gallery-item {
-                max-width: 300px;
-            }
-        }
-
-        /* ИЗМЕНЕНО: Более точные стили для мобильных устройств, чтобы карточки отображались */
-        @media (max-width: 700px) {
-            h2 {
-                font-size: 2rem;
-                margin-bottom: 20px;
-            }
-            section {
-                padding: 30px 20px;
-            }
-            section:first-of-type {
-                padding-top: 20px;
-            }
-            header {
-                padding: 15px 20px 5px;
-            }
-            header img {
-                height: 50px;
-            }
-            .gallery {
-                grid-template-columns: 1fr; /* Одна картина в ряд на мобильных */
-                gap: 20px;
-            }
-            .gallery-item {
-                max-width: 90%; /* Сделаем чуть шире для лучшего использования пространства */
-                width: 100%; /* Убедимся, что занимает всю доступную ширину родителя grid */
-            }
-            .back-to-home-btn {
-                margin: 30px auto 20px;
-                padding: 12px 25px;
-                font-size: 1rem;
-            }
-        }
     </style>
 </head>
-<body>
-    <div class="glitch-effect"></div>
-    <div class="glitch-overlay"></div>
-    <div class="glitch-squares-container"></div>
+<body class="noise">
 
-    <div id="preloader">
-        <img src="logo.png" alt="Логотип" />
-        <div class="knife">🔪</div>
-        <p>загрузка...</p>
+    <div id="cursor"></div>
+    <div id="cursor-follower">
+        <svg class="cursor-knife-svg" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
     </div>
 
-    <header>
-        <a href="https://nozv.ru/">
-            <img src="logo.png" alt="логотип владислав ножиков" />
-        </a>
-    </header>
+    <div id="loader">
+        <svg class="knife-svg-main" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
+    </div>
 
-    <section>
-        <h2>Галерея работ</h2>
-        <div class="gallery">
-            <div class="gallery-item">
-                <img src="artworks/1.jpg" alt="Девять позиций" loading="lazy" data-full="artworks/1.jpg" />
-                <h3>«Девять позиций»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/2.jpg" alt="Инструкция по сборке молчания" loading="lazy" data-full="artworks/2.jpg" />
-                <h3>«Инструкция по сборке молчания»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/3.jpg" alt="Сборка молчания" loading="lazy" data-full="artworks/3.jpg" />
-                <h3>«Сборка молчания»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/4.jpg" alt="Собранное молчание" loading="lazy" data-full="artworks/4.jpg" />
-                <h3>«Собранное молчание»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/5.jpg" alt="Вашими поцелуями" loading="lazy" data-full="artworks/5.jpg" />
-                <h3>«Вашими поцелуями»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/6.jpg" alt="Не жаль" loading="lazy" data-full="artworks/6.jpg" />
-                <h3>«Не жаль»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/7.jpg" alt="Do not cover" loading="lazy" data-full="artworks/7.jpg" />
-                <h3>«Do not cover»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/8.jpg" alt="Сапог" loading="lazy" data-full="artworks/8.jpg" />
-                <h3>«Сапог»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/9.jpg" alt="Шестёрка" loading="lazy" data-full="artworks/9.jpg" />
-                <h3>«Шестёрка»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/10.jpg" alt="Вижу" loading="lazy" data-full="artworks/10.jpg" />
-                <h3>«Вижу»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/11.jpg" alt="Потеря себя" loading="lazy" data-full="artworks/11.jpg" />
-                <h3>«Потеря себя»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/12.jpg" alt="В ее глазах" loading="lazy" data-full="artworks/12.jpg" />
-                <h3>«В ее глазах»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/13.jpg" alt="Развитие" loading="lazy" data-full="artworks/13.jpg" />
-                <h3>«Развитие»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/14.jpg" alt="Референс" loading="lazy" data-full="artworks/14.jpg" />
-                <h3>«Референс»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/15.jpg" alt="Туман над Янцзы" loading="lazy" data-full="artworks/15.jpg" />
-                <h3>«Туман над Янцзы»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/16.jpg" alt="Ночные часы" loading="lazy" data-full="artworks/16.jpg" />
-                <h3>«Ночные часы»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/17.jpg" alt="Прибой" loading="lazy" data-full="artworks/17.jpg" />
-                <h3>«Прибой»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/18.jpg" alt="Угол" loading="lazy" data-full="artworks/18.jpg" />
-                <h3>«Угол»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/19.jpg" alt="На танцполе" loading="lazy" data-full="artworks/19.jpg" />
-                <h3>«На танцполе»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/20.jpg" alt="Четыре" loading="lazy" data-full="artworks/20.jpg" />
-                <h3>«Четыре»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/21.jpg" alt="Работа бывает и такой" loading="lazy" data-full="artworks/21.jpg" />
-                <h3>«Работа бывает и такой»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/22.jpg" alt="Три кадра" loading="lazy" data-full="artworks/22.jpg" />
-                <h3>«Три кадра»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/23.jpg" alt="Очаровательно" loading="lazy" data-full="artworks/23.jpg" />
-                <h3>«Очаровательно»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/24.jpg" alt="Генезис" loading="lazy" data-full="artworks/24.jpg" />
-                <h3>«Генезис»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/25.jpg" alt="Друг" loading="lazy" data-full="artworks/25.jpg" />
-                <h3>«Друг»</h3>
-            </div>
-            <div class="gallery-item">
-                <img src="artworks/26.jpg" alt="Быть хоршим молодым парнем" loading="lazy" data-full="artworks/26.jpg" />
-                <h3>«Быть хорошим молодым парнем»</h3>
-            </div>
+    <nav class="fixed top-0 left-0 w-full p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="https://nozv.ru" class="text-xs uppercase tracking-[0.3em] hover:opacity-50 transition">← На главную</a>
+        <div class="flex space-x-8 font-medium text-sm uppercase tracking-widest">
+            <a href="/releases" class="hover:opacity-50 transition">Архив</a>
+            <a href="mailto:business.mrkill666@gmail.com" class="hover:opacity-50 transition">Связь</a>
+        </div>
+    </nav>
+
+    <main class="pt-32 px-6 md:px-12 pb-24 max-w-7xl mx-auto">
+        
+        <header class="mb-24 reveal text-center">
+            <span class="text-xs uppercase tracking-[0.5em] text-gray-500 block mb-4">Арт-проект</span>
+            <h1 class="text-5xl md:text-8xl font-black tracking-tighter uppercase leading-none mb-8">
+                Инструкция по <br>
+                <span class="text-transparent" style="-webkit-text-stroke: 1px white;">сборке молчания</span>
+            </h1>
+            <div class="w-20 h-px bg-white/20 mx-auto mb-8"></div>
+            <p class="text-gray-500 max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
+                Исследование визуальной тишины через хаос и структуру. Каждое полотно — попытка зафиксировать форму пустоты.
+            </p>
+        </header>
+
+        <div class="gallery-grid" id="galleryContainer">
+            <!-- Items generated via JS -->
         </div>
 
-        <a href="https://nozv.ru/" class="back-to-home-btn">На главную</a>
-    </section>
+        <footer class="mt-40 pt-12 border-t border-white/10 flex flex-col items-center gap-8 reveal">
+            <p class="text-xs text-gray-500 uppercase tracking-[0.3em]">© 2025 ВЛАДИСЛАВ НОЖИКОВ</p>
+        </footer>
+    </main>
 
-    <div id="myLightbox" class="lightbox">
-        <span class="close-btn">&times;</span>
-        <img class="lightbox-content" id="img01">
+    <div id="modal">
+        <img id="modalImg" src="" alt="Full view">
     </div>
 
-    <footer>
-        © Владислав Ножиков 🔪 2025
-    </footer>
-
     <script>
-        window.addEventListener('load', () => {
-            document.body.classList.add('loaded');
+        // List of specific titles
+        const titles = [
+            "«Девять позиций»",
+            "«Инструкция по сборке молчания»",
+            "«Сборка молчания»",
+            "«Собранное молчание»",
+            "«Вашими поцелуями»",
+            "«Не жаль»",
+            "«Do not cover»",
+            "«Сапог»",
+            "«Шестёрка»",
+            "«Вижу»",
+            "«Потеря себя»",
+            "«В ее глазах»",
+            "«Развитие»",
+            "«Референс»",
+            "«Туман над Янцзы»",
+            "«Ночные часы»",
+            "«Прибой»",
+            "«Угол»",
+            "«На танцполе»",
+            "«Четыре»",
+            "«Работа бывает и такой»",
+            "«Три кадра»",
+            "«Очаровательно»",
+            "«Генезис»",
+            "«Друг»",
+            "«Быть хорошим молодым парнем»"
+        ];
+
+        const container = document.getElementById('galleryContainer');
+
+        // Generate cards using the titles array
+        titles.forEach((title, index) => {
+            const card = document.createElement('div');
+            card.className = 'art-card reveal';
+            
+            // Image numbers are 1-based
+            const imageIndex = index + 1;
+            
+            card.innerHTML = `
+                <img src="artworks/${imageIndex}.jpg" alt="${title}" loading="lazy">
+                <div class="art-info">
+                    <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-white/80">
+                        ${title}
+                    </span>
+                </div>
+            `;
+            
+            card.onclick = () => openModal(`artworks/${imageIndex}.jpg`);
+            container.appendChild(card);
         });
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const sections = document.querySelectorAll('section');
+        const modal = document.getElementById('modal');
+        const modalImg = document.getElementById('modalImg');
 
-            const observerOptions = {
-                root: null,
-                rootMargin: '0px',
-                threshold: 0.1
-            };
+        function openModal(src) {
+            modalImg.src = src;
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
 
-            const sectionObserver = new IntersectionObserver((entries, observer) => {
+        modal.onclick = () => {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        };
+
+        window.onload = () => {
+            setTimeout(() => {
+                document.body.classList.add('loaded');
+                initObserver();
+            }, 1000);
+        };
+
+        // Custom Cursor Logic
+        const cursor = document.getElementById('cursor');
+        const follower = document.getElementById('cursor-follower');
+        
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+            follower.style.left = `${e.clientX - 25}px`;
+            follower.style.top = `${e.clientY - 25}px`;
+        });
+
+        // Scroll Reveal Logic
+        function initObserver() {
+            const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
-                        entry.target.classList.add('animated');
-                        observer.unobserve(entry.target);
+                        entry.target.classList.add('active');
                     }
                 });
-            }, observerOptions);
+            }, { threshold: 0.1 });
 
-            sections.forEach(section => {
-                sectionObserver.observe(section);
-            });
-
-            const glitchSquaresContainer = document.querySelector('.glitch-squares-container');
-            const numSquares = 20;
-            const maxDelay = 2.5;
-
-            for (let i = 0; i < numSquares; i++) {
-                const square = document.createElement('div');
-                square.classList.add('glitch-square');
-
-                const xStart = Math.random() * 100 + 'vw';
-                const yStart = Math.random() * 100 + 'vh';
-                const xEnd = (Math.random() * 100 - 50) + 'px';
-                const yEnd = (Math.random() * 100 - 50) + 'px';
-
-                const delay = Math.random() * maxDelay;
-                const duration = 2 + Math.random() * 2;
-
-                square.style.setProperty('--x-start', xStart);
-                square.style.setProperty('--y-start', yStart);
-                square.style.setProperty('--x-end', xEnd);
-                square.style.setProperty('--y-end', yEnd);
-                square.style.animationDelay = `${delay}s`;
-                square.style.animationDuration = `${duration}s`;
-
-                glitchSquaresContainer.appendChild(square);
-            }
-
-            // Lightbox JavaScript
-            const lightbox = document.getElementById('myLightbox');
-            const lightboxImg = document.getElementById('img01');
-            const closeBtn = document.getElementsByClassName('close-btn')[0];
-            const galleryItems = document.querySelectorAll('.gallery-item img');
-
-            galleryItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    lightbox.style.display = 'flex';
-                    lightboxImg.src = this.dataset.full || this.src;
-                });
-            });
-
-            closeBtn.addEventListener('click', function() {
-                lightbox.style.display = 'none';
-            });
-
-            lightbox.addEventListener('click', function(e) {
-                if (e.target === lightbox) {
-                    lightbox.style.display = 'none';
-                }
-            });
-
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && lightbox.style.display === 'flex') {
-                    lightbox.style.display = 'none';
-                }
-            });
-        });
+            document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+        }
     </script>
 </body>
 </html>
