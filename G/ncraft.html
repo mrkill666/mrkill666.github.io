@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>nblock Multiplayer Ultimate Fix</title>
+    <title>nblock Multiplayer (Final Fix)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -79,7 +79,7 @@
     <div id="menu">
         <div class="panel">
             <h1>nblock</h1>
-            <p>v4.0 (Ultimate Net)</p>
+            <p>v5.0 (Raw Data Fix)</p>
             <div id="setup-controls">
                 <button class="btn-single" id="btn-single" onclick="startSinglePlayer(event)">👤 Одиночная игра</button>
                 <div style="margin: 10px 0; border-top: 1px solid #555;"></div>
@@ -135,7 +135,6 @@
     <script>
         function logNet(msg) {
             const el = document.getElementById('network-log');
-            // Очистка лога для новых сообщений
             if(el.innerHTML.length > 500) el.innerHTML = "";
             el.innerHTML = `> ${msg}<br>` + el.innerHTML;
         }
@@ -249,10 +248,13 @@
             chunks[type] = mesh;
         }
 
+        // --- УЛУЧШЕННАЯ ОТПРАВКА ДАННЫХ (RAW JSON) ---
         function sendData(data) {
             if (conn && conn.open) {
                 try {
-                    conn.send(JSON.stringify(data));
+                    // Явно превращаем в строку, чтобы не зависеть от внутренней сериализации
+                    const str = JSON.stringify(data);
+                    conn.send(str);
                 } catch (e) { console.error("Send error:", e); }
             }
         }
@@ -737,18 +739,18 @@
             initPeer(); 
             
             peer.on('open', () => { 
-                // Улучшенное соединение: reliable: true форсирует TCP
-                conn = peer.connect(id, { reliable: true, serialization: 'json' }); 
+                // Улучшение: отключение бинарной сериализации (чистый текст)
+                // Это решает проблему зависания при отправке handshake
+                conn = peer.connect(id, { serialization: 'none', reliable: true }); 
                 
-                // Таймер
                 const connTimeout = setTimeout(() => {
                     if (!isConnected) {
-                        alert("Таймаут. Попробуйте еще раз. Если проблема сохраняется, значит ваш NAT не пропускает соединение.");
+                        alert("Таймаут. Проверьте NAT/Firewall. Попробуйте с мобильного интернета.");
                         btn.innerText = originalText;
                         btn.disabled = false;
                         if(conn) conn.close();
                     }
-                }, 15000);
+                }, 10000);
 
                 handleConnection(conn, () => {
                     clearTimeout(connTimeout);
@@ -772,19 +774,16 @@
         
         function initPeer() {
             if (peer) peer.destroy();
-            // Расширенный список бесплатных STUN серверов
             peer = new Peer({
                 debug: 1,
-                config: {'iceServers': [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun2.l.google.com:19302' },
-                    { urls: 'stun:stun3.l.google.com:19302' },
-                    { urls: 'stun:stun4.l.google.com:19302' },
-                    { urls: 'stun:global.stun.twilio.com:3478' },
-                    { urls: 'stun:stun.stunprotocol.org:3478' },
-                    { urls: 'stun:stun.framasoft.org:3478' }
-                ]}
+                config: {
+                    'iceServers': [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' }
+                    ],
+                    'iceCandidatePoolSize': 10 // Ускоряет сбор кандидатов
+                }
             });
             peer.on('open', id => document.getElementById('my-id').value = id);
             
@@ -800,15 +799,9 @@
         function handleConnection(connection, onSuccess = null) {
             conn = connection;
             
-            // Мониторинг состояния подключения для дебага
             conn.on('iceStateChanged', (state) => {
-                logNet("ICE State: " + state);
-                if (state === 'connected' || state === 'completed') {
-                    showNotification("Канал стабилен!");
-                }
-                if (state === 'failed' || state === 'disconnected') {
-                    showNotification("Обрыв связи!");
-                }
+                logNet("ICE: " + state);
+                if (state === 'failed' || state === 'disconnected') showNotification("Сбой сети");
             });
 
             const onOpen = () => {
@@ -819,26 +812,30 @@
                 isConnected = true;
                 startNetworkLogic();
                 
-                // Хост сразу же отвечает пингом, чтобы пробить NAT
+                // Важно: начинаем пинговать сразу для пробива NAT
                 if (isHost) {
-                     sendData({ type: 'ping' });
+                    setTimeout(() => sendData({ type: 'ping' }), 100);
                 }
                 if (onSuccess) onSuccess();
             };
 
-            if (conn.open) {
-                onOpen();
-            } else {
-                conn.on('open', onOpen);
-            }
+            if (conn.open) onOpen();
+            else conn.on('open', onOpen);
 
-            conn.on('data', (data) => {
-                // Если пришел объект, значит serialization: 'json' работает
-                if (typeof data === 'string') {
-                    try { data = JSON.parse(data); } catch(e) { return; }
+            conn.on('data', (rawData) => {
+                // При serialization: 'none' данные приходят как строка
+                let data;
+                try {
+                    data = JSON.parse(rawData);
+                } catch(e) { 
+                    console.error("JSON Parse Error", e); 
+                    return; 
                 }
 
-                if (data.type === 'ping') return;
+                if (data.type === 'ping') {
+                    // Ответ на пинг не обязателен, сам факт получения открывает канал
+                    return;
+                }
 
                 if (data.type === 'handshake_req') {
                     logNet("Handshake Requested.");
@@ -875,15 +872,15 @@
         }
 
         function startNetworkLogic() {
-            // Клиент активно запрашивает рукопожатие
             if (!isHost) {
                 logNet("Sending Handshake...");
                 sendData({ type: 'handshake_req' });
+                // Повторяем запрос, пока не получим ответ, но реже, чтобы не забить канал
                 handshakeInterval = setInterval(() => {
                     if (conn && conn.open) {
                         sendData({ type: 'handshake_req' });
                     }
-                }, 1000);
+                }, 2000);
             }
             setInterval(() => {
                 if (!conn || !conn.open) return; 
