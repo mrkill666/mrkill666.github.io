@@ -44,35 +44,6 @@
             z-index: 9999;
         }
 
-        /* Кастомный курсор-нож */
-        #cursor {
-            position: fixed;
-            width: 6px;
-            height: 6px;
-            background: #fff;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 10000;
-        }
-        #cursor-follower {
-            position: fixed;
-            width: 50px;
-            height: 50px;
-            pointer-events: none;
-            z-index: 9999;
-            transition: transform 0.15s ease-out;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .cursor-knife-svg {
-            width: 35px;
-            height: 35px;
-            fill: none;
-            stroke: white;
-            stroke-width: 1.5;
-            transform: rotate(-45deg);
-        }
 
         /* Загрузка */
         #loader {
@@ -159,7 +130,7 @@
 </head>
 <body class="noise">
 
-    <div id="cursor"></div>
+
     <div id="cursor-follower">
         <svg class="cursor-knife-svg" viewBox="0 0 100 100">
             <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
@@ -281,7 +252,7 @@
 
         <!-- Footer -->
         <footer class="mt-40 pt-12 border-t border-white/10 flex flex-col items-center gap-8 reveal">
-            <p class="text-xs text-gray-500 uppercase tracking-[0.3em]">© 2025 ВЛАДИСЛАВ НОЖИКОВ</p>
+            <p class="text-xs text-gray-500 uppercase tracking-[0.3em]">© 2026 ВЛАДИСЛАВ НОЖИКОВ</p>
             <div class="flex space-x-6 text-xs uppercase tracking-widest">
                 <a href="https://t.me/nozvru" target="_blank" class="hover:text-gray-400">Telegram</a>
                 <a href="https://vk.com/mrkill_666" target="_blank" class="hover:text-gray-400">VK</a>
