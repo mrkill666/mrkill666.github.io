@@ -6,7 +6,7 @@
     <title>Инструкция по сборке молчания | Владислав Ножиков</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
-        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+            <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
     <link rel="manifest" href="/icons/site.webmanifest">
@@ -29,10 +29,9 @@
             color: var(--accent-color);
             font-family: 'Inter', sans-serif;
             overflow-x: hidden;
-            cursor: none; 
         }
 
-        /* Film Grain Effect */
+        /* Эффект зернистости */
         .noise::before {
             content: "";
             position: fixed;
@@ -44,8 +43,7 @@
             z-index: 9999;
         }
 
-
-        /* Preloader */
+        /* Загрузчик */
         #loader {
             position: fixed;
             top: 0; left: 0;
@@ -58,10 +56,9 @@
             transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
         }
 
-        /* Sharp Knife Animation */
         .knife-svg-main {
-            width: 120px;
-            height: 120px;
+            width: 80px;
+            height: 80px;
             fill: none;
             stroke: white;
             stroke-width: 1.2;
@@ -77,97 +74,127 @@
             transform: translateY(-100%);
         }
 
-        /* Uniform Gallery Grid */
+        /* Сетка галереи */
         .gallery-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
-        }
-
-        @media (max-width: 1024px) {
-            .gallery-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 640px) {
-            .gallery-grid {
-                grid-template-columns: 1fr;
-            }
+            gap: 1.5rem;
         }
 
         .art-card {
             background: var(--card-bg);
-            border-radius: 12px;
+            border-radius: 16px;
             overflow: hidden;
             position: relative;
             border: 1px solid rgba(255,255,255,0.05);
-            transition: all 0.4s ease;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
             aspect-ratio: 1 / 1;
+            cursor: pointer;
+        }
+
+        /* Горизонтальный блок (Дома) - Соотношение 458 / 153.68 */
+        .art-card.wide-horizontal {
+            grid-column: 1 / -1;
+            aspect-ratio: 458 / 153.68; 
+            max-height: 450px;
+        }
+
+        /* Вертикальный центрированный блок (Инструкция) - Соотношение 458 / 596.71 */
+        .art-card.centered-vertical {
+            grid-column: 1 / -1; 
+            aspect-ratio: unset;
+            display: flex;
+            justify-content: center;
+            background: transparent;
+            border: none;
+        }
+
+        .art-card.centered-vertical .card-inner {
+            width: 100%;
+            max-width: 450px; 
+            aspect-ratio: 458 / 596.71;
+            background: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+        }
+
+        /* Центрирование одиночной картины в сетке из 3-х колонок */
+        .art-card.grid-center {
+            grid-column: 2 / 3;
+        }
+
+        @media (max-width: 768px) {
+            .gallery-grid { grid-template-columns: 1fr; }
+            .art-card.wide-horizontal { aspect-ratio: 458 / 200; max-height: none; }
+            .art-card.centered-vertical .card-inner { 
+                max-width: 100%;
+                aspect-ratio: 458 / 596.71;
+            }
+            .art-card.grid-center {
+                grid-column: 1 / -1;
+            }
         }
 
         .art-card:hover {
-            transform: translateY(-10px);
-            border-color: rgba(255,255,255,0.2);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            transform: translateY(-5px);
+            border-color: rgba(255,255,255,0.15);
+            background: #161616;
         }
 
         .art-card img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            filter: grayscale(0.2);
-            transition: filter 0.5s, transform 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+            filter: grayscale(0.3);
+            transition: all 0.6s ease;
         }
 
         .art-card:hover img {
             filter: grayscale(0);
-            transform: scale(1.05);
+            transform: scale(1.03);
         }
 
         .art-info {
             position: absolute;
-            bottom: 0;
-            left: 0;
+            bottom: 0; left: 0;
             width: 100%;
             padding: 1.5rem;
             background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-            transform: translateY(10px);
             opacity: 0;
-            transition: all 0.3s ease;
+            transition: opacity 0.3s ease;
         }
 
         .art-card:hover .art-info {
-            transform: translateY(0);
             opacity: 1;
         }
 
-        /* Modal Viewer */
+        /* Модальное окно */
         #modal {
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(0,0,0,0.98);
+            background: rgba(0,0,0,0.95);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 10002;
             padding: 20px;
-            backdrop-filter: blur(15px);
+            backdrop-filter: blur(10px);
         }
 
         #modal img {
             max-width: 100%;
             max-height: 90vh;
-            border-radius: 4px;
             object-fit: contain;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
         }
 
-        /* Reveal animations */
         .reveal {
             opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.6s ease-out;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
         }
         .reveal.active {
             opacity: 1;
@@ -177,7 +204,6 @@
 </head>
 <body class="noise">
 
-
     <div id="loader">
         <svg class="knife-svg-main" viewBox="0 0 100 100">
             <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
@@ -186,34 +212,33 @@
         </svg>
     </div>
 
-    <nav class="fixed top-0 left-0 w-full p-8 flex justify-between items-center z-50 mix-blend-difference">
-        <a href="https://nozv.ru" class="text-xs uppercase tracking-[0.3em] hover:opacity-50 transition">← На главную</a>
-        <div class="flex space-x-8 font-medium text-sm uppercase tracking-widest">
-            <a href="/releases" class="hover:opacity-50 transition">Архив</a>
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index.html" class="text-[10px] uppercase tracking-[0.3em] hover:opacity-50 transition">← На главную</a>
+        <div class="flex space-x-6 md:space-x-8 font-medium text-[10px] md:text-xs uppercase tracking-widest">
+            <a href="releases.html" class="hover:opacity-50 transition">Архив</a>
             <a href="mailto:business.mrkill666@gmail.com" class="hover:opacity-50 transition">Связь</a>
         </div>
     </nav>
 
     <main class="pt-32 px-6 md:px-12 pb-24 max-w-7xl mx-auto">
         
-        <header class="mb-24 reveal text-center">
-            <span class="text-xs uppercase tracking-[0.5em] text-gray-500 block mb-4">Арт-проект</span>
-            <h1 class="text-5xl md:text-8xl font-black tracking-tighter uppercase leading-none mb-8">
+        <header class="mb-20 reveal text-center">
+            <span class="text-[10px] uppercase tracking-[0.5em] text-gray-500 block mb-4">Цифровая галерея</span>
+            <h1 class="text-4xl md:text-7xl font-black tracking-tighter uppercase leading-none mb-6">
                 Инструкция по <br>
                 <span class="text-transparent" style="-webkit-text-stroke: 1px white;">сборке молчания</span>
             </h1>
-            <div class="w-20 h-px bg-white/20 mx-auto mb-8"></div>
-            <p class="text-gray-500 max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
-                Исследование визуальной тишины через хаос и структуру. Каждое полотно — попытка зафиксировать форму пустоты.
+            <p class="text-gray-500 max-w-2xl mx-auto text-xs md:text-sm leading-relaxed uppercase tracking-wider">
+                Исследование визуальной тишины через хаос и структуру. <br> Каждое полотно — попытка зафиксировать форму пустоты.
             </p>
         </header>
 
         <div class="gallery-grid" id="galleryContainer">
-            <!-- Items generated via JS -->
+            <!-- Элементы генерируются через JS -->
         </div>
 
-        <footer class="mt-40 pt-12 border-t border-white/10 flex flex-col items-center gap-8 reveal">
-            <p class="text-xs text-gray-500 uppercase tracking-[0.3em]">© 2026 ВЛАДИСЛАВ НОЖИКОВ</p>
+        <footer class="mt-32 pt-12 border-t border-white/5 flex flex-col items-center gap-4 reveal">
+            <p class="text-[10px] text-gray-600 uppercase tracking-[0.3em]">© 2025 ВЛАДИСЛАВ НОЖИКОВ</p>
         </footer>
     </main>
 
@@ -222,78 +247,93 @@
     </div>
 
     <script>
-        // List of specific titles
-        const titles = [
-            "«Девять позиций»",
-            "«Инструкция по сборке молчания»",
-            "«Сборка молчания»",
-            "«Собранное молчание»",
-            "«Вашими поцелуями»",
-            "«Не жаль»",
-            "«Do not cover»",
-            "«Сапог»",
-            "«Шестёрка»",
-            "«Вижу»",
-            "«Потеря себя»",
-            "«В ее глазах»",
-            "«Развитие»",
-            "«Референс»",
-            "«Туман над Янцзы»",
-            "«Ночные часы»",
-            "«Прибой»",
-            "«Угол»",
-            "«На танцполе»",
-            "«Четыре»",
-            "«Работа бывает и такой»",
-            "«Три кадра»",
-            "«Очаровательно»",
-            "«Генезис»",
-            "«Друг»",
-            "«Быть хорошим молодым парнем»",
-            "«Автопортрет»",
-            "«Три богатыря»",
-            "«Мужик на светофоре»",
-            "«Статуя свободы»",
-            "«Появился»",
-            "«Упал»",
-            "«Без названия»",
-            "«Богряно-красная точка»",
-            "«Бровь»",
-            "«Дома»"
+        const titlesMap = {
+            1: "Девять позиций", 2: "Инструкция по сборке молчания", 3: "Сборка молчания",
+            4: "Собранное молчание", 5: "Вашими поцелуями", 6: "Не жаль",
+            7: "Do not cover", 8: "Сапог", 9: "Шестёрка",
+            10: "Вижу", 11: "Потеря себя", 12: "В ее глазах",
+            13: "Развитие", 14: "Референс", 15: "Туман над Янцзы",
+            16: "Ночные часы", 17: "Прибой", 18: "Угол",
+            19: "На танцполе", 20: "Четыре", 21: "Работа бывает и такой",
+            22: "Три кадра", 23: "Очаровательно", 24: "Генезис",
+            25: "Друг", 26: "Быть хорошим молодым парнем", 27: "Автопортрет",
+            28: "Три богатыря", 29: "Мужик на светофоре", 30: "Статуя свободы",
+            31: "Появился", 32: "Упал", 33: "Без названия",
+            34: "Богряно-красная точка", 35: "Бровь", 36: "Дома"
+        };
+
+        const prioritySequence = [
+            { ids: [2], type: 'centered-vertical' }, 
+            { ids: [34, 27, 4], type: 'standard' },
+            { ids: [5, 1, 6], type: 'standard' },
+            { ids: [33, 26, 7], type: 'standard' },
+            { ids: [28, 3, 29], type: 'standard' }
         ];
 
+        const lastId = 36;
         const container = document.getElementById('galleryContainer');
+        const usedIds = new Set();
+        prioritySequence.forEach(row => row.ids.forEach(id => usedIds.add(id)));
+        usedIds.add(lastId);
 
-        // Generate cards using the titles array
-        titles.forEach((title, index) => {
+        function createCard(id, typeClass = '') {
             const card = document.createElement('div');
-            card.className = 'art-card reveal';
+            card.className = `art-card reveal ${typeClass}`;
+            const title = titlesMap[id] || `Работа #${id}`;
             
-            // Image numbers are 1-based
-            const imageIndex = index + 1;
+            if (typeClass === 'centered-vertical') {
+                card.innerHTML = `
+                    <div class="card-inner">
+                        <img src="artworks/${id}.jpg" alt="${title}" loading="lazy" onerror="this.parentElement.style.display='none'">
+                        <div class="art-info">
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-white">${title}</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                card.innerHTML = `
+                    <img src="artworks/${id}.jpg" alt="${title}" loading="lazy" onerror="this.parentElement.style.display='none'">
+                    <div class="art-info">
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-white">${title}</span>
+                    </div>
+                `;
+            }
             
-            card.innerHTML = `
-                <img src="artworks/${imageIndex}.jpg" alt="${title}" loading="lazy">
-                <div class="art-info">
-                    <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-white/80">
-                        ${title}
-                    </span>
-                </div>
-            `;
-            
-            card.onclick = () => openModal(`artworks/${imageIndex}.jpg`);
-            container.appendChild(card);
+            card.onclick = () => openModal(`artworks/${id}.jpg`);
+            return card;
+        }
+
+        // 1. Приоритетные ряды
+        prioritySequence.forEach(row => {
+            row.ids.forEach(id => {
+                container.appendChild(createCard(id, row.type));
+            });
         });
+
+        // 2. Остальные картины
+        const remainingIds = Object.keys(titlesMap)
+            .map(Number)
+            .filter(id => !usedIds.has(id));
+
+        remainingIds.forEach((id, index) => {
+            let extraClass = '';
+            // Центрируем последнюю, если она одна в ряду
+            if (remainingIds.length % 3 === 1 && index === remainingIds.length - 1) {
+                extraClass = 'grid-center';
+            }
+            container.appendChild(createCard(id, extraClass));
+        });
+
+        // 3. Последняя картина (Дома)
+        container.appendChild(createCard(lastId, 'wide-horizontal'));
 
         const modal = document.getElementById('modal');
         const modalImg = document.getElementById('modalImg');
-
         function openModal(src) {
             modalImg.src = src;
             modal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }
-
         modal.onclick = () => {
             modal.style.display = 'none';
             document.body.style.overflow = 'auto';
@@ -302,32 +342,14 @@
         window.onload = () => {
             setTimeout(() => {
                 document.body.classList.add('loaded');
-                initObserver();
-            }, 1000);
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) entry.target.classList.add('active');
+                    });
+                }, { threshold: 0.1 });
+                document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+            }, 500);
         };
-
-        // Custom Cursor Logic
-        const cursor = document.getElementById('cursor');
-        const follower = document.getElementById('cursor-follower');
-        
-        document.addEventListener('mousemove', (e) => {
-            cursor.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
-            follower.style.left = `${e.clientX - 25}px`;
-            follower.style.top = `${e.clientY - 25}px`;
-        });
-
-        // Scroll Reveal Logic
-        function initObserver() {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('active');
-                    }
-                });
-            }, { threshold: 0.1 });
-
-            document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-        }
     </script>
 </body>
 </html>
