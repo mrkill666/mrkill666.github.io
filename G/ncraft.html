@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>nblock Mobile Flight + Secure Net</title>
+    <title>nblock v8.0 (Auto-Config)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
-    <!-- Возвращаем самую стабильную версию 1.4.7 -->
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #87CEEB; color: white; touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -45,7 +44,7 @@
         #webgl-error { display: none !important; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: red; z-index: 999; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
         
         #debug-info { position: absolute; top: 60px; left: 10px; color: yellow; font-family: monospace; font-size: 12px; pointer-events: none; z-index: 4; text-align: left; }
-        #network-log { position: absolute; top: 80px; left: 10px; color: lime; font-family: monospace; font-size: 10px; pointer-events: none; z-index: 4; text-align: left; opacity: 0.8; max-height: 200px; overflow: hidden; text-shadow: 1px 1px 1px black; }
+        #network-log { position: absolute; top: 80px; left: 10px; color: lime; font-family: monospace; font-size: 10px; pointer-events: none; z-index: 4; text-align: left; opacity: 0.8; max-height: 200px; overflow: hidden; text-shadow: 1px 1px 1px black; background: rgba(0,0,0,0.3); padding: 5px; width: 300px; }
         
         #inventory { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 5px; z-index: 15; display: none; }
         .slot { width: 40px; height: 40px; border: 2px solid #555; cursor: pointer; background-size: cover; image-rendering: pixelated; position: relative; }
@@ -59,14 +58,11 @@
         #joystick-stick { width: 50px; height: 50px; background: rgba(255,255,255,0.5); border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
         .action-btn { position: absolute; width: 60px; height: 60px; background: rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; color: white; font-weight: bold; display: flex; align-items: center; justify-content: center; font-size: 12px; pointer-events: auto; user-select: none; }
         .action-btn:active { background: rgba(255,255,255,0.2); }
-        /* Кнопки управления */
-        #btn-jump { bottom: 160px; right: 20px; } /* JUMP / UP */
-        #btn-place { bottom: 90px; right: 20px; background: rgba(76, 175, 80, 0.4); } /* BUILD */
-        #btn-break { bottom: 20px; right: 20px; background: rgba(244, 67, 54, 0.4); } /* BREAK */
-        
-        #btn-fly { bottom: 230px; right: 20px; background: rgba(0, 255, 255, 0.3); font-size: 16px; } /* FLY Toggle */
-        #btn-down { bottom: 230px; right: 90px; display: none; } /* DOWN (Shift) */
-        
+        #btn-jump { bottom: 160px; right: 20px; }
+        #btn-place { bottom: 90px; right: 20px; background: rgba(76, 175, 80, 0.4); }
+        #btn-break { bottom: 20px; right: 20px; background: rgba(244, 67, 54, 0.4); }
+        #btn-fly { bottom: 230px; right: 20px; background: rgba(0, 255, 255, 0.3); font-size: 16px; }
+        #btn-down { bottom: 230px; right: 90px; display: none; }
         #btn-cam { top: 60px; right: 20px; width: 40px; height: 40px; font-size: 10px; }
         #mobile-toggle-btn { top: 10px; left: 10px; width: 40px; height: 40px; font-size: 20px; z-index: 50; background: rgba(0,0,0,0.5); border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white;}
         #look-zone { top: 0; right: 0; width: 60%; height: 80%; }
@@ -86,7 +82,7 @@
     <div id="menu">
         <div class="panel">
             <h1>nblock</h1>
-            <p>v7.0 (Mobile Fly + Secure)</p>
+            <p>v8.0 (Auto-Config & ICE Log)</p>
             <div id="setup-controls">
                 <button class="btn-single" id="btn-single" onclick="startSinglePlayer(event)">👤 Одиночная игра</button>
                 <div style="margin: 10px 0; border-top: 1px solid #555;"></div>
@@ -121,24 +117,16 @@
     <div id="crosshair"></div>
     <div id="hud">
         <div id="net-status">Офлайн</div>
-        <span class="key">LKM</span> Разрушить <br> 
-        <span class="key">PKM</span> Поставить <br> 
-        <span class="key">WASD</span> Ходить <br> 
-        <span class="key">F</span> Полет <br>
-        <span class="key">7</span> Камера
+        <span class="key">LKM</span> Разрушить <br> <span class="key">PKM</span> Поставить <br> <span class="key">WASD</span> Ходить <br> <span class="key">F</span> Полет <br> <span class="key">7</span> Камера
     </div>
     <div id="notification"></div>
     <div id="inventory"></div>
     
     <div class="mobile-controls" id="mobile-ui">
         <div id="look-zone" class="touch-zone"></div>
-        <div id="joystick-zone" class="touch-zone">
-            <div id="joystick-bg"><div id="joystick-stick"></div></div>
-        </div>
-        <!-- Кнопки управления -->
+        <div id="joystick-zone" class="touch-zone"><div id="joystick-bg"><div id="joystick-stick"></div></div></div>
         <div id="btn-fly" class="action-btn">🕊️</div>
         <div id="btn-down" class="action-btn">⬇️</div>
-        
         <div id="btn-jump" class="action-btn">JUMP</div>
         <div id="btn-place" class="action-btn">BUILD</div>
         <div id="btn-break" class="action-btn">BREAK</div>
@@ -149,7 +137,7 @@
         function logNet(msg) {
             console.log(msg);
             const el = document.getElementById('network-log');
-            if(el.innerHTML.length > 500) el.innerHTML = "";
+            if(el.innerHTML.length > 800) el.innerHTML = "";
             el.innerHTML = `> ${msg}<br>` + el.innerHTML;
         }
 
@@ -158,7 +146,6 @@
         const worldActionLog = []; 
         let isGameActive = false;
         let isHost = false;
-
         let otherPlayerTargetPos = new THREE.Vector3(0, -100, 0);
         let otherPlayerTargetRot = 0;
 
@@ -169,15 +156,11 @@
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             document.body.appendChild(renderer.domElement);
-            
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87CEEB);
             scene.fog = new THREE.Fog(0x87CEEB, 30, 90);
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        } catch (e) { 
-            document.getElementById('webgl-error').style.display = 'flex'; 
-            console.error(e);
-        }
+        } catch (e) { document.getElementById('webgl-error').style.display = 'flex'; console.error(e); }
 
         function createBlockTexture(color, noise = 0.1) {
             const size = 32;
@@ -185,10 +168,7 @@
             canvas.width = size; canvas.height = size;
             const ctx = canvas.getContext('2d');
             ctx.fillStyle = color; ctx.fillRect(0,0,size,size);
-            for(let i=0; i<100; i++) {
-                ctx.fillStyle = `rgba(0,0,0,${Math.random()*noise})`;
-                ctx.fillRect(Math.random()*size, Math.random()*size, 2, 2);
-            }
+            for(let i=0; i<100; i++) { ctx.fillStyle = `rgba(0,0,0,${Math.random()*noise})`; ctx.fillRect(Math.random()*size, Math.random()*size, 2, 2); }
             const tex = new THREE.CanvasTexture(canvas);
             tex.magFilter = THREE.NearestFilter;
             tex.minFilter = THREE.NearestFilter;
@@ -206,7 +186,6 @@
         };
         const blockTypes = ['grass', 'dirt', 'stone', 'wood', 'leaves', 'sand'];
         let selectedBlock = 'grass';
-        
         const materials = {
             grass: new THREE.MeshLambertMaterial({ map: textures.grass }),
             dirt: new THREE.MeshLambertMaterial({ map: textures.dirt }),
@@ -240,12 +219,8 @@
             selectedBlock = type;
             const slots = document.querySelectorAll('.slot');
             slots.forEach(s => s.classList.remove('active'));
-            if (slotElement) {
-                slotElement.classList.add('active');
-            } else {
-                const idx = blockTypes.indexOf(type);
-                if(slots[idx]) slots[idx].classList.add('active');
-            }
+            if (slotElement) { slotElement.classList.add('active'); } 
+            else { const idx = blockTypes.indexOf(type); if(slots[idx]) slots[idx].classList.add('active'); }
         }
         document.addEventListener('keydown', (e) => {
             const key = parseInt(e.key);
@@ -254,19 +229,13 @@
 
         for (const type in materials) {
             const mesh = new THREE.InstancedMesh(geometry, materials[type], MAX_INSTANCES);
-            mesh.count = 0;
-            mesh.castShadow = false; 
-            mesh.receiveShadow = true;
-            mesh.frustumCulled = false; 
-            scene.add(mesh);
-            chunks[type] = mesh;
+            mesh.count = 0; mesh.castShadow = false; mesh.receiveShadow = true; mesh.frustumCulled = false;
+            scene.add(mesh); chunks[type] = mesh;
         }
 
         function sendData(data) {
             if (conn && conn.open) {
-                try {
-                    conn.send(data);
-                } catch (e) { console.error("Send error:", e); }
+                try { conn.send(data); } catch (e) { console.error("Send error:", e); }
             }
         }
 
@@ -283,9 +252,7 @@
             mesh.instanceMatrix.needsUpdate = true;
             updateDebug();
             
-            if (isHost && isRemote) {
-                worldActionLog.push({ type: 'add', x, y, z, blockType: type });
-            }
+            if (isHost && isRemote) { worldActionLog.push({ type: 'add', x, y, z, blockType: type }); }
             if (!isRemote) {
                 const action = { type: 'add', x, y, z, blockType: type };
                 if (isHost) worldActionLog.push(action); 
@@ -315,9 +282,7 @@
             mesh.instanceMatrix.needsUpdate = true;
             updateDebug();
             
-            if (isHost && isRemote) {
-                worldActionLog.push({ type: 'remove', x, y, z });
-            }
+            if (isHost && isRemote) { worldActionLog.push({ type: 'remove', x, y, z }); }
             if (!isRemote) {
                 const action = { type: 'remove', x, y, z };
                 if (isHost) worldActionLog.push(action);
@@ -327,32 +292,22 @@
         function updateDebug() { fpsElem.innerText = `Blocks: ${worldData.size}`; }
         
         const hemiLight = new THREE.HemisphereLight(0x87CEEB, 0x444444, 0.6);
-        hemiLight.position.set(0, 50, 0);
-        scene.add(hemiLight);
+        hemiLight.position.set(0, 50, 0); scene.add(hemiLight);
         const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
-        dirLight.position.set(50, 100, 50);
-        dirLight.castShadow = true;
-        dirLight.shadow.mapSize.width = 1024;
-        dirLight.shadow.mapSize.height = 1024;
-        dirLight.shadow.camera.near = 0.5;
-        dirLight.shadow.camera.far = 200;
-        dirLight.shadow.camera.left = -50;
-        dirLight.shadow.camera.right = 50;
-        dirLight.shadow.camera.top = 50;
-        dirLight.shadow.camera.bottom = -50;
+        dirLight.position.set(50, 100, 50); dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 1024; dirLight.shadow.mapSize.height = 1024;
+        dirLight.shadow.camera.near = 0.5; dirLight.shadow.camera.far = 200;
+        dirLight.shadow.camera.left = -50; dirLight.shadow.camera.right = 50;
+        dirLight.shadow.camera.top = 50; dirLight.shadow.camera.bottom = -50;
         scene.add(dirLight);
 
         const waterGeo = new THREE.PlaneGeometry(1000, 1000);
         const waterMat = new THREE.MeshBasicMaterial({ color: 0x1E90FF, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
         const water = new THREE.Mesh(waterGeo, waterMat);
-        water.rotation.x = -Math.PI / 2;
-        water.position.y = 1.2; 
-        scene.add(water);
+        water.rotation.x = -Math.PI / 2; water.position.y = 1.2; scene.add(water);
         const WORLD_RADIUS = 50; 
         
-        function pseudoRandom(x, z) {
-            return Math.abs(Math.sin(x * 12.9898 + z * 78.233) * 43758.5453) % 1;
-        }
+        function pseudoRandom(x, z) { return Math.abs(Math.sin(x * 12.9898 + z * 78.233) * 43758.5453) % 1; }
 
         function createTree(x, y, z) {
             const h = 4 + Math.floor(pseudoRandom(x, z) * 2);
@@ -369,9 +324,7 @@
         }
         function generateWorld() {
             for (let x = -WORLD_RADIUS - 5; x <= WORLD_RADIUS + 5; x++) {
-                for (let z = -WORLD_RADIUS - 5; z <= WORLD_RADIUS + 5; z++) {
-                     addBlock(x, 0, z, 'sand', true);
-                }
+                for (let z = -WORLD_RADIUS - 5; z <= WORLD_RADIUS + 5; z++) { addBlock(x, 0, z, 'sand', true); }
             }
             for (let x = -WORLD_RADIUS; x <= WORLD_RADIUS; x++) {
                 for (let z = -WORLD_RADIUS; z <= WORLD_RADIUS; z++) {
@@ -384,16 +337,13 @@
                         const isSurface = true; 
                         if(isSurface) {
                             for (let y = 1; y <= h; y++) {
-                                if (y === h) {
-                                    if (y <= 2) type = 'sand'; else type = 'grass';
-                                } else if (y > h - 4) { type = 'dirt'; } else { type = 'stone'; }
+                                if (y === h) { if (y <= 2) type = 'sand'; else type = 'grass'; } 
+                                else if (y > h - 4) { type = 'dirt'; } else { type = 'stone'; }
                                 if (type === 'stone' && y < h-3 && x%2!==0 && z%2!==0) continue; 
                                 addBlock(x, y, z, type, true);
                             }
                         }
-                        if (pseudoRandom(x, z) < 0.015 && h > 2) {
-                            createTree(x, h + 1, z);
-                        }
+                        if (pseudoRandom(x, z) < 0.015 && h > 2) { createTree(x, h + 1, z); }
                     }
                 }
             }
@@ -404,8 +354,7 @@
         const player = { velocity: new THREE.Vector3(), direction: new THREE.Vector3() };
         let moveFwd = false, moveBwd = false, moveLeft = false, moveRight = false;
         let moveUp = false, moveDown = false;
-        let canJump = false;
-        let isFlying = false;
+        let canJump = false; let isFlying = false;
         
         function createPlayerModel(isLocal) {
             const group = new THREE.Group();
@@ -439,11 +388,9 @@
         
         let isThirdPerson = false;
         const localPlayerGroup = createPlayerModel(true);
-        scene.add(localPlayerGroup);
-        localPlayerGroup.visible = false;
+        scene.add(localPlayerGroup); localPlayerGroup.visible = false;
         const otherPlayerGroup = createPlayerModel(false);
-        scene.add(otherPlayerGroup);
-        otherPlayerGroup.position.set(0, -100, 0);
+        scene.add(otherPlayerGroup); otherPlayerGroup.position.set(0, -100, 0);
         
         function animateCharacter(group, isMoving, time) {
             const limbs = group.userData.limbs;
@@ -451,10 +398,8 @@
             if (isMoving) {
                 const speed = 10;
                 const angle = Math.sin(time * speed) * 0.8;
-                limbs.legL.rotation.x = angle;
-                limbs.legR.rotation.x = -angle;
-                limbs.armL.rotation.x = -angle;
-                limbs.armR.rotation.x = angle;
+                limbs.legL.rotation.x = angle; limbs.legR.rotation.x = -angle;
+                limbs.armL.rotation.x = -angle; limbs.armR.rotation.x = angle;
             } else {
                 limbs.legL.rotation.x = 0; limbs.legR.rotation.x = 0;
                 limbs.armL.rotation.x = 0; limbs.armR.rotation.x = 0;
@@ -473,9 +418,7 @@
                     break;
                 case 'ShiftLeft': if (isFlying) moveDown = v; break;
                 case 'Digit7': if(v) toggleCameraMode(); break; 
-                case 'KeyF': 
-                    if(v) toggleFlight();
-                    break;
+                case 'KeyF': if(v) toggleFlight(); break;
             }
         };
         document.addEventListener('keydown', e => onKey(e, true));
@@ -488,8 +431,7 @@
         }
 
         function toggleFlight() {
-            isFlying = !isFlying; 
-            player.velocity.y = 0; 
+            isFlying = !isFlying; player.velocity.y = 0; 
             document.getElementById('flight-status').style.display = isFlying ? 'block' : 'none';
             document.getElementById('btn-down').style.display = (isMobile && isFlying) ? 'flex' : 'none';
             showNotification(isFlying ? "Полет ВКЛ" : "Полет ВЫКЛ");
@@ -614,7 +556,6 @@
         function hasBlock(x, y, z) { return worldData.has(`${Math.round(x)},${Math.round(y)},${Math.round(z)}`); }
         function checkPlayerHorizontalCollision(pos) {
             if (isFlying) return false;
-            
             const w = 0.3; const h = 1.9;
             const points = [
                 [pos.x-w, pos.y-h+0.2, pos.z-w], [pos.x+w, pos.y-h+0.2, pos.z-w],
@@ -640,19 +581,14 @@
                 if (isFlying) {
                     const flySpeed = 25 * dt;
                     player.velocity.y = 0; 
-                    
                     if (moveUp) camObj.position.y += flySpeed;
                     if (moveDown) camObj.position.y -= flySpeed;
-
-                    const dir = new THREE.Vector3();
-                    camera.getWorldDirection(dir);
+                    const dir = new THREE.Vector3(); camera.getWorldDirection(dir);
                     const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0,1,0));
-                    
                     if (moveFwd) camObj.position.addScaledVector(dir, flySpeed);
                     if (moveBwd) camObj.position.addScaledVector(dir, -flySpeed);
                     if (moveRight) camObj.position.addScaledVector(right, flySpeed);
                     if (moveLeft) camObj.position.addScaledVector(right, -flySpeed);
-
                 } else {
                     if (!canJump) player.velocity.y -= 35 * dt;
                     player.direction.z = Number(moveFwd) - Number(moveBwd);
@@ -660,8 +596,7 @@
                     player.direction.normalize();
                     if (moveFwd || moveBwd) player.velocity.z += player.direction.z * 60 * dt;
                     if (moveLeft || moveRight) player.velocity.x += player.direction.x * 60 * dt; 
-                    player.velocity.x -= player.velocity.x * 10 * dt;
-                    player.velocity.z -= player.velocity.z * 10 * dt;
+                    player.velocity.x -= player.velocity.x * 10 * dt; player.velocity.z -= player.velocity.z * 10 * dt;
                     
                     const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camObj.quaternion);
                     forward.y = 0; forward.normalize();
@@ -676,27 +611,18 @@
                     else camObj.position.z += vz;
 
                     camObj.position.y += player.velocity.y * dt;
-                    
                     const playerHeight = 1.8; const feetY = camObj.position.y - playerHeight; const blockY = Math.round(feetY - 0.5);
                     if (hasBlock(camObj.position.x, blockY, camObj.position.z)) {
                         const blockTop = blockY + 0.5;
-                        if (player.velocity.y <= 0 && feetY < blockTop + 0.1) {
-                            camObj.position.y = blockTop + playerHeight; player.velocity.y = 0; canJump = true;
-                        }
+                        if (player.velocity.y <= 0 && feetY < blockTop + 0.1) { camObj.position.y = blockTop + playerHeight; player.velocity.y = 0; canJump = true; }
                     } else canJump = false;
-                    
-                    if (player.velocity.y > 0 && hasBlock(camObj.position.x, camObj.position.y + 0.1, camObj.position.z)) {
-                        player.velocity.y = 0; camObj.position.y -= 0.1;
-                    }
+                    if (player.velocity.y > 0 && hasBlock(camObj.position.x, camObj.position.y + 0.1, camObj.position.z)) { player.velocity.y = 0; camObj.position.y -= 0.1; }
                 }
 
                 if(camObj.position.y < -30) { camObj.position.set(0, 15, 0); player.velocity.y = 0; }
                 
-                localPlayerGroup.position.x = camObj.position.x;
-                localPlayerGroup.position.y = camObj.position.y - 1.8; 
-                localPlayerGroup.position.z = camObj.position.z;
-                const euler = new THREE.Euler(0, 0, 0, 'YXZ');
-                euler.setFromQuaternion(camObj.quaternion);
+                localPlayerGroup.position.x = camObj.position.x; localPlayerGroup.position.y = camObj.position.y - 1.8; localPlayerGroup.position.z = camObj.position.z;
+                const euler = new THREE.Euler(0, 0, 0, 'YXZ'); euler.setFromQuaternion(camObj.quaternion);
                 localPlayerGroup.rotation.y = euler.y;
                 const isMoving = Math.abs(player.velocity.x) > 0.1 || Math.abs(player.velocity.z) > 0.1 || (isFlying && (moveFwd||moveBwd));
                 animateCharacter(localPlayerGroup, isMoving, time / 1000);
@@ -704,7 +630,6 @@
 
             otherPlayerGroup.position.lerp(otherPlayerTargetPos, 0.1); 
             otherPlayerGroup.rotation.y += (otherPlayerTargetRot - otherPlayerGroup.rotation.y) * 0.1;
-
             const dist = otherPlayerGroup.position.distanceTo(otherPlayerTargetPos);
             animateCharacter(otherPlayerGroup, dist > 0.05, time / 1000);
             
@@ -772,10 +697,8 @@
             if(peer) peer.destroy();
             if(conn) conn.close();
             peer = null; conn = null;
-            document.getElementById('btn-join').disabled = false;
-            document.getElementById('btn-join').innerText = "Вход";
-            document.getElementById('btn-create').disabled = false;
-            document.getElementById('btn-create').innerText = "🌐 Создать сервер";
+            document.getElementById('btn-join').disabled = false; document.getElementById('btn-join').innerText = "Вход";
+            document.getElementById('btn-create').disabled = false; document.getElementById('btn-create').innerText = "🌐 Создать сервер";
             logNet("Сетевой модуль сброшен");
             alert("Сеть сброшена. Попробуйте создать сервер или подключиться снова.");
         }
@@ -783,69 +706,47 @@
         // --- Улучшенная функция создания сервера ---
         function createGame(e) { 
             e.stopPropagation(); 
-            const btn = e.target;
-            btn.disabled = true;
-            btn.innerText = "Запуск...";
-            
+            const btn = e.target; btn.disabled = true; btn.innerText = "Запуск...";
             isHost = true; 
             
-            // Инициализация хоста с таймером
             initPeer((id) => {
-                // Успех
-                btn.disabled = false;
-                btn.innerText = "🌐 Создать сервер";
+                btn.disabled = false; btn.innerText = "🌐 Создать сервер";
                 document.getElementById('setup-controls').style.display='none'; 
                 document.getElementById('lobby-controls').style.display='block'; 
                 controls.getObject().position.set(0,15,0);
             }, (err) => {
-                // Ошибка
-                btn.disabled = false;
-                btn.innerText = "🌐 Создать сервер";
+                btn.disabled = false; btn.innerText = "🌐 Создать сервер";
                 alert("Ошибка запуска сервера: " + err);
             });
         }
         
         function joinGame(e) { 
-            e.stopPropagation(); 
-            isHost = false; 
+            e.stopPropagation(); isHost = false; 
             const id = document.getElementById('remote-id').value; 
             if(!id) { alert("Введите ID!"); return; } 
 
-            const btn = e.target;
-            const originalText = btn.innerText;
-            btn.innerText = "Подключение...";
-            btn.disabled = true;
+            const btn = e.target; const originalText = btn.innerText;
+            btn.innerText = "Подключение..."; btn.disabled = true;
 
-            // Сначала инициализируем PeerJS для себя
             initPeer((myId) => {
-                logNet("My ID OK. Connecting to remote...");
-                
-                // Используем unreliable connection (UDP)
-                // reliable: true -> TCP (плохо для NAT, медленно)
-                // reliable: false -> UDP (хорошо для игр)
-                conn = peer.connect(id, { reliable: false, serialization: 'json' }); 
+                logNet("Connecting to: " + id);
+                conn = peer.connect(id, { reliable: true }); // Standard connection
                 
                 const connTimeout = setTimeout(() => {
                     if (!isConnected) {
-                        alert("Таймаут соединения. Проверьте ID или фаервол.");
-                        btn.innerText = originalText;
-                        btn.disabled = false;
+                        alert("Таймаут соединения. Если вы в локальной сети, проверьте, что оба устройства используют HTTP (не HTTPS).");
+                        btn.innerText = originalText; btn.disabled = false;
                         if(conn) conn.close();
                     }
-                }, 10000);
+                }, 15000);
 
                 handleConnection(conn, () => {
                     clearTimeout(connTimeout);
-                    btn.innerText = originalText;
-                    btn.disabled = false;
-                    updateUI(false); 
-                    controls.getObject().position.set(0,15,0); 
-                    isGameActive=true; 
+                    btn.innerText = originalText; btn.disabled = false;
+                    updateUI(false); controls.getObject().position.set(0,15,0); isGameActive=true; 
                 }); 
-
             }, (err) => {
-                btn.innerText = originalText;
-                btn.disabled = false;
+                btn.innerText = originalText; btn.disabled = false;
                 alert("Ошибка инициализации PeerJS: " + err);
             });
         }
@@ -856,41 +757,35 @@
         function initPeer(onSuccess, onError) {
             if (peer) peer.destroy();
             
+            // AUTO-CONFIG: Use secure=true only if on HTTPS
+            // This is critical for local network (http://192.168.x.x)
+            const isSecure = location.protocol === 'https:';
+            logNet("Network Mode: " + (isSecure ? "Secure (HTTPS)" : "Insecure (HTTP/Local)"));
+
             try {
-                // ПРИНУДИТЕЛЬНОЕ УКАЗАНИЕ SECURE: TRUE
-                // Это критично для Chrome Android, который запрещает доступ к сети на небезопасных страницах
-                // и может блокировать WebRTC
                 peer = new Peer({
-                    secure: true, 
+                    secure: isSecure, 
                     debug: 1,
                     config: {
                         'iceServers': [
                             { urls: 'stun:stun.l.google.com:19302' },
                             { urls: 'stun:stun1.l.google.com:19302' },
-                            { urls: 'stun:stun2.l.google.com:19302' },
-                            { urls: 'stun:stun3.l.google.com:19302' },
-                            { urls: 'stun:stun4.l.google.com:19302' }
+                            { urls: 'stun:stun2.l.google.com:19302' }
                         ]
                     }
                 });
-            } catch(e) {
-                if(onError) onError(e);
-                return;
-            }
+            } catch(e) { if(onError) onError(e); return; }
 
             let isOpen = false;
             
             const initTimeout = setTimeout(() => {
-                if(!isOpen) {
-                    if(onError) onError("Timeout connecting to PeerServer (Cloud). Try VPN/Mobile Data.");
-                }
+                if(!isOpen) { if(onError) onError("Timeout connecting to PeerServer Cloud. Check Internet."); }
             }, 10000);
 
             peer.on('open', id => {
-                isOpen = true;
-                clearTimeout(initTimeout);
+                isOpen = true; clearTimeout(initTimeout);
                 document.getElementById('my-id').value = id;
-                logNet("Peer Created: " + id);
+                logNet("My ID: " + id);
                 if(onSuccess) onSuccess(id);
             });
             
@@ -902,54 +797,48 @@
             
             peer.on('error', e => {
                 logNet("Peer Error: " + e.type);
-                if(!isOpen) {
-                    clearTimeout(initTimeout);
-                    if(onError) onError(e.type);
-                }
+                if(!isOpen) { clearTimeout(initTimeout); if(onError) onError(e.type); }
             });
         }
 
         function handleConnection(connection, onSuccess = null) {
             conn = connection;
             
-            // Если канал закрылся
-            conn.on('close', () => { 
-                showNotification("Разрыв соединения"); 
-                conn = null; 
-                isConnected = false;
-                document.getElementById('net-status').innerText = "Офлайн";
-                document.getElementById('net-status').classList.remove('online');
-            });
-            conn.on('error', (err) => logNet("Conn Err: " + err));
+            // MONITORING ICE CANDIDATES
+            // We use the internal RTCPeerConnection to see what's happening
+            if(conn.peerConnection) {
+                conn.peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        const type = event.candidate.type || 'unknown'; // host, srflx, relay
+                        logNet(`Found candidate: ${type} (${event.candidate.protocol})`);
+                    }
+                };
+                conn.peerConnection.oniceconnectionstatechange = () => {
+                    logNet(`ICE State: ${conn.peerConnection.iceConnectionState}`);
+                };
+            }
 
-            // Логика открытия
-            const onOpen = () => {
+            conn.on('open', () => {
                 showNotification("Соединение открыто!");
                 document.getElementById('net-status').innerText = "Онлайн";
                 document.getElementById('net-status').classList.add('online');
                 logNet("Channel OPEN");
                 isConnected = true;
                 startNetworkLogic();
-                
-                // Пингуем сразу
-                if (isHost) {
-                    // Отправляем несколько пингов подряд, чтобы пробить NAT
-                    let pingCount = 0;
-                    const buster = setInterval(() => {
-                        if(conn && conn.open) sendData({ type: 'ping' });
-                        pingCount++;
-                        if(pingCount > 5) clearInterval(buster);
-                    }, 200);
-                }
+                if (isHost) setTimeout(() => sendData({ type: 'ping' }), 100);
                 if (onSuccess) onSuccess();
-            };
+            });
 
-            if (conn.open) onOpen();
-            else conn.on('open', onOpen);
+            conn.on('close', () => { 
+                showNotification("Разрыв соединения"); 
+                conn = null; isConnected = false;
+                document.getElementById('net-status').innerText = "Офлайн";
+                document.getElementById('net-status').classList.remove('online');
+            });
+            conn.on('error', (err) => logNet("Conn Err: " + err));
 
             conn.on('data', (data) => {
                 if (data.type === 'ping') return;
-
                 if (data.type === 'handshake_req') {
                     logNet("Handshake Requested.");
                     showNotification("Игрок присоединился!");
@@ -980,17 +869,14 @@
                 logNet("Sending Handshake...");
                 sendData({ type: 'handshake_req' });
                 handshakeInterval = setInterval(() => {
-                    if (conn && conn.open) {
-                        sendData({ type: 'handshake_req' });
-                    }
+                    if (conn && conn.open) { sendData({ type: 'handshake_req' }); }
                 }, 2000);
             }
             setInterval(() => {
                 if (!conn || !conn.open) return; 
                 const p = camera;
                 const posToSend = {x: p.position.x, y: p.position.y - 1.8, z: p.position.z}; 
-                const euler = new THREE.Euler(0, 0, 0, 'YXZ');
-                euler.setFromQuaternion(p.quaternion);
+                const euler = new THREE.Euler(0, 0, 0, 'YXZ'); euler.setFromQuaternion(p.quaternion);
                 sendData({ type: 'move', pos: posToSend, rot: euler.y });
             }, 1000 / 30);
         }
