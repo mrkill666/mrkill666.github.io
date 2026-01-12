@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>nblock Multiplayer (Final Fix)</title>
+    <title>nblock Multiplayer (Reset & Fix)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -26,6 +26,7 @@
         .btn-join:hover:not(:disabled) { background: #1e88e5; }
         .btn-single { background: #FF9800; color: white; width: 100%; margin-bottom: 15px; }
         .btn-single:hover:not(:disabled) { background: #F57C00; }
+        .btn-reset { background: #d32f2f; color: white; font-size: 12px; padding: 5px 10px; margin-top: 10px; }
         .btn-play { background: #9C27B0; color: white; margin-top: 15px; width: 100%; }
         .btn-play:hover:not(:disabled) { background: #7B1FA2; }
         
@@ -79,7 +80,7 @@
     <div id="menu">
         <div class="panel">
             <h1>nblock</h1>
-            <p>v5.0 (Raw Data Fix)</p>
+            <p>v5.5 (Safety Reset)</p>
             <div id="setup-controls">
                 <button class="btn-single" id="btn-single" onclick="startSinglePlayer(event)">👤 Одиночная игра</button>
                 <div style="margin: 10px 0; border-top: 1px solid #555;"></div>
@@ -88,6 +89,7 @@
                     <input type="text" id="remote-id" placeholder="ID друга" style="width: 45%; margin: 0;">
                     <button class="btn-join" id="btn-join" onclick="joinGame(event)">Вход</button>
                 </div>
+                <button class="btn-reset" onclick="resetNetwork(event)">⚠ Сброс сети</button>
             </div>
             <div id="lobby-controls" style="display: none;">
                 <p>Ваш ID:</p>
@@ -97,6 +99,7 @@
                 </div>
                 <p class="status" id="status-msg">Ожидание...</p>
                 <button class="btn-play" onclick="prepareGame(event)">Играть</button>
+                <button class="btn-reset" onclick="location.reload()">Меню</button>
             </div>
         </div>
     </div>
@@ -134,6 +137,7 @@
 
     <script>
         function logNet(msg) {
+            console.log(msg);
             const el = document.getElementById('network-log');
             if(el.innerHTML.length > 500) el.innerHTML = "";
             el.innerHTML = `> ${msg}<br>` + el.innerHTML;
@@ -248,13 +252,10 @@
             chunks[type] = mesh;
         }
 
-        // --- УЛУЧШЕННАЯ ОТПРАВКА ДАННЫХ (RAW JSON) ---
         function sendData(data) {
             if (conn && conn.open) {
                 try {
-                    // Явно превращаем в строку, чтобы не зависеть от внутренней сериализации
-                    const str = JSON.stringify(data);
-                    conn.send(str);
+                    conn.send(data);
                 } catch (e) { console.error("Send error:", e); }
             }
         }
@@ -723,7 +724,44 @@
             setTimeout(() => n.style.transform = "translateX(200%)", 3000);
         }
         function startSinglePlayer(e) { e.stopPropagation(); updateUI(false); controls.getObject().position.set(0,15,0); isGameActive=true; }
-        function createGame(e) { e.stopPropagation(); isHost=true; document.getElementById('setup-controls').style.display='none'; document.getElementById('lobby-controls').style.display='block'; initPeer(); controls.getObject().position.set(0,15,0); }
+        
+        function resetNetwork(e) {
+            e.stopPropagation();
+            if(peer) peer.destroy();
+            if(conn) conn.close();
+            peer = null; conn = null;
+            document.getElementById('btn-join').disabled = false;
+            document.getElementById('btn-join').innerText = "Вход";
+            document.getElementById('btn-create').disabled = false;
+            document.getElementById('btn-create').innerText = "🌐 Создать сервер";
+            logNet("Сетевой модуль сброшен");
+            alert("Сеть сброшена. Попробуйте создать сервер или подключиться снова.");
+        }
+
+        // --- Улучшенная функция создания сервера ---
+        function createGame(e) { 
+            e.stopPropagation(); 
+            const btn = e.target;
+            btn.disabled = true;
+            btn.innerText = "Запуск...";
+            
+            isHost = true; 
+            
+            // Инициализация хоста с таймером
+            initPeer((id) => {
+                // Успех
+                btn.disabled = false;
+                btn.innerText = "🌐 Создать сервер";
+                document.getElementById('setup-controls').style.display='none'; 
+                document.getElementById('lobby-controls').style.display='block'; 
+                controls.getObject().position.set(0,15,0);
+            }, (err) => {
+                // Ошибка
+                btn.disabled = false;
+                btn.innerText = "🌐 Создать сервер";
+                alert("Ошибка запуска сервера: " + err);
+            });
+        }
         
         function joinGame(e) { 
             e.stopPropagation(); 
@@ -736,16 +774,16 @@
             btn.innerText = "Подключение...";
             btn.disabled = true;
 
-            initPeer(); 
-            
-            peer.on('open', () => { 
-                // Улучшение: отключение бинарной сериализации (чистый текст)
-                // Это решает проблему зависания при отправке handshake
-                conn = peer.connect(id, { serialization: 'none', reliable: true }); 
+            // Сначала инициализируем PeerJS для себя
+            initPeer((myId) => {
+                logNet("My ID OK. Connecting to remote...");
+                
+                // Теперь подключаемся
+                conn = peer.connect(id, { reliable: true }); 
                 
                 const connTimeout = setTimeout(() => {
                     if (!isConnected) {
-                        alert("Таймаут. Проверьте NAT/Firewall. Попробуйте с мобильного интернета.");
+                        alert("Таймаут соединения. Проверьте ID или фаервол.");
                         btn.innerText = originalText;
                         btn.disabled = false;
                         if(conn) conn.close();
@@ -760,40 +798,66 @@
                     controls.getObject().position.set(0,15,0); 
                     isGameActive=true; 
                 }); 
-            });
-            
-            peer.on('error', (err) => {
+
+            }, (err) => {
                 btn.innerText = originalText;
                 btn.disabled = false;
-                alert("Ошибка PeerJS: " + err.type);
+                alert("Ошибка инициализации PeerJS: " + err);
             });
         }
 
         function prepareGame(e) { e.stopPropagation(); updateUI(false); isGameActive=true; }
         function copyId() { navigator.clipboard.writeText(document.getElementById('my-id').value); showNotification("ID скопирован"); }
         
-        function initPeer() {
+        function initPeer(onSuccess, onError) {
             if (peer) peer.destroy();
-            peer = new Peer({
-                debug: 1,
-                config: {
-                    'iceServers': [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' },
-                        { urls: 'stun:stun2.l.google.com:19302' }
-                    ],
-                    'iceCandidatePoolSize': 10 // Ускоряет сбор кандидатов
+            
+            try {
+                peer = new Peer({
+                    debug: 1,
+                    config: {
+                        'iceServers': [
+                            { urls: 'stun:stun.l.google.com:19302' },
+                            { urls: 'stun:stun1.l.google.com:19302' },
+                            { urls: 'stun:stun2.l.google.com:19302' }
+                        ]
+                    }
+                });
+            } catch(e) {
+                if(onError) onError(e);
+                return;
+            }
+
+            let isOpen = false;
+            
+            // Таймер на случай если PeerJS вообще не может соединиться с облаком
+            const initTimeout = setTimeout(() => {
+                if(!isOpen) {
+                    if(onError) onError("Timeout connecting to PeerServer (Cloud)");
                 }
+            }, 10000);
+
+            peer.on('open', id => {
+                isOpen = true;
+                clearTimeout(initTimeout);
+                document.getElementById('my-id').value = id;
+                logNet("Peer Created: " + id);
+                if(onSuccess) onSuccess(id);
             });
-            peer.on('open', id => document.getElementById('my-id').value = id);
             
             peer.on('connection', c => { 
                 conn = c;
-                logNet("Incoming... (Accepting)");
+                logNet("Incoming connection...");
                 handleConnection(c);
             });
             
-            peer.on('error', e => logNet("Peer Err: " + e));
+            peer.on('error', e => {
+                logNet("Peer Error: " + e.type);
+                if(!isOpen) {
+                    clearTimeout(initTimeout);
+                    if(onError) onError(e.type);
+                }
+            });
         }
 
         function handleConnection(connection, onSuccess = null) {
@@ -808,11 +872,11 @@
                 showNotification("Соединение открыто!");
                 document.getElementById('net-status').innerText = "Онлайн";
                 document.getElementById('net-status').classList.add('online');
-                logNet("DataChannel OPEN");
+                logNet("Channel OPEN");
                 isConnected = true;
                 startNetworkLogic();
                 
-                // Важно: начинаем пинговать сразу для пробива NAT
+                // Важно: пингуем для пробива NAT
                 if (isHost) {
                     setTimeout(() => sendData({ type: 'ping' }), 100);
                 }
@@ -822,20 +886,8 @@
             if (conn.open) onOpen();
             else conn.on('open', onOpen);
 
-            conn.on('data', (rawData) => {
-                // При serialization: 'none' данные приходят как строка
-                let data;
-                try {
-                    data = JSON.parse(rawData);
-                } catch(e) { 
-                    console.error("JSON Parse Error", e); 
-                    return; 
-                }
-
-                if (data.type === 'ping') {
-                    // Ответ на пинг не обязателен, сам факт получения открывает канал
-                    return;
-                }
+            conn.on('data', (data) => {
+                if (data.type === 'ping') return;
 
                 if (data.type === 'handshake_req') {
                     logNet("Handshake Requested.");
@@ -875,7 +927,6 @@
             if (!isHost) {
                 logNet("Sending Handshake...");
                 sendData({ type: 'handshake_req' });
-                // Повторяем запрос, пока не получим ответ, но реже, чтобы не забить канал
                 handshakeInterval = setInterval(() => {
                     if (conn && conn.open) {
                         sendData({ type: 'handshake_req' });
