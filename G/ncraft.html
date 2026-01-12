@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>nblock Multiplayer (Reset & Fix)</title>
+    <title>nblock Multiplayer (v6.0 Stable Lib)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <!-- ИСПОЛЬЗУЕМ СТАРУЮ СТАБИЛЬНУЮ ВЕРСИЮ PEERJS -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #87CEEB; color: white; touch-action: none; user-select: none; -webkit-user-select: none; }
         
@@ -80,7 +81,7 @@
     <div id="menu">
         <div class="panel">
             <h1>nblock</h1>
-            <p>v5.5 (Safety Reset)</p>
+            <p>v6.0 (UDP + Lib 1.4.7)</p>
             <div id="setup-controls">
                 <button class="btn-single" id="btn-single" onclick="startSinglePlayer(event)">👤 Одиночная игра</button>
                 <div style="margin: 10px 0; border-top: 1px solid #555;"></div>
@@ -778,8 +779,10 @@
             initPeer((myId) => {
                 logNet("My ID OK. Connecting to remote...");
                 
-                // Теперь подключаемся
-                conn = peer.connect(id, { reliable: true }); 
+                // Используем unreliable connection (UDP)
+                // reliable: true -> TCP (плохо для NAT, медленно)
+                // reliable: false -> UDP (хорошо для игр)
+                conn = peer.connect(id, { reliable: false, serialization: 'json' }); 
                 
                 const connTimeout = setTimeout(() => {
                     if (!isConnected) {
@@ -813,13 +816,16 @@
             if (peer) peer.destroy();
             
             try {
+                // PeerJS v1.4.7
                 peer = new Peer({
                     debug: 1,
                     config: {
                         'iceServers': [
                             { urls: 'stun:stun.l.google.com:19302' },
                             { urls: 'stun:stun1.l.google.com:19302' },
-                            { urls: 'stun:stun2.l.google.com:19302' }
+                            { urls: 'stun:stun2.l.google.com:19302' },
+                            { urls: 'stun:stun3.l.google.com:19302' },
+                            { urls: 'stun:stun4.l.google.com:19302' }
                         ]
                     }
                 });
@@ -830,7 +836,6 @@
 
             let isOpen = false;
             
-            // Таймер на случай если PeerJS вообще не может соединиться с облаком
             const initTimeout = setTimeout(() => {
                 if(!isOpen) {
                     if(onError) onError("Timeout connecting to PeerServer (Cloud)");
@@ -863,11 +868,17 @@
         function handleConnection(connection, onSuccess = null) {
             conn = connection;
             
-            conn.on('iceStateChanged', (state) => {
-                logNet("ICE: " + state);
-                if (state === 'failed' || state === 'disconnected') showNotification("Сбой сети");
+            // Если канал закрылся
+            conn.on('close', () => { 
+                showNotification("Разрыв соединения"); 
+                conn = null; 
+                isConnected = false;
+                document.getElementById('net-status').innerText = "Офлайн";
+                document.getElementById('net-status').classList.remove('online');
             });
+            conn.on('error', (err) => logNet("Conn Err: " + err));
 
+            // Логика открытия
             const onOpen = () => {
                 showNotification("Соединение открыто!");
                 document.getElementById('net-status').innerText = "Онлайн";
@@ -876,9 +887,15 @@
                 isConnected = true;
                 startNetworkLogic();
                 
-                // Важно: пингуем для пробива NAT
+                // Пингуем сразу
                 if (isHost) {
-                    setTimeout(() => sendData({ type: 'ping' }), 100);
+                    // Отправляем несколько пингов подряд, чтобы пробить NAT
+                    let pingCount = 0;
+                    const buster = setInterval(() => {
+                        if(conn && conn.open) sendData({ type: 'ping' });
+                        pingCount++;
+                        if(pingCount > 5) clearInterval(buster);
+                    }, 200);
                 }
                 if (onSuccess) onSuccess();
             };
@@ -912,15 +929,6 @@
                     removeBlock(data.x, data.y, data.z, true);
                 }
             });
-
-            conn.on('close', () => { 
-                showNotification("Разрыв соединения"); 
-                conn = null; 
-                isConnected = false;
-                document.getElementById('net-status').innerText = "Офлайн";
-                document.getElementById('net-status').classList.remove('online');
-            });
-            conn.on('error', (err) => logNet("Conn Err: " + err));
         }
 
         function startNetworkLogic() {
