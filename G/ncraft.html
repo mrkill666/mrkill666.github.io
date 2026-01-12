@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>nblock Multiplayer (v6.0 Stable Lib)</title>
+    <title>nblock Mobile Flight + Secure Net</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
-    <!-- ИСПОЛЬЗУЕМ СТАРУЮ СТАБИЛЬНУЮ ВЕРСИЮ PEERJS -->
+    <!-- Возвращаем самую стабильную версию 1.4.7 -->
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #87CEEB; color: white; touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -59,9 +59,14 @@
         #joystick-stick { width: 50px; height: 50px; background: rgba(255,255,255,0.5); border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
         .action-btn { position: absolute; width: 60px; height: 60px; background: rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; color: white; font-weight: bold; display: flex; align-items: center; justify-content: center; font-size: 12px; pointer-events: auto; user-select: none; }
         .action-btn:active { background: rgba(255,255,255,0.2); }
-        #btn-jump { bottom: 160px; right: 20px; }
-        #btn-place { bottom: 90px; right: 20px; background: rgba(76, 175, 80, 0.4); }
-        #btn-break { bottom: 20px; right: 20px; background: rgba(244, 67, 54, 0.4); }
+        /* Кнопки управления */
+        #btn-jump { bottom: 160px; right: 20px; } /* JUMP / UP */
+        #btn-place { bottom: 90px; right: 20px; background: rgba(76, 175, 80, 0.4); } /* BUILD */
+        #btn-break { bottom: 20px; right: 20px; background: rgba(244, 67, 54, 0.4); } /* BREAK */
+        
+        #btn-fly { bottom: 230px; right: 20px; background: rgba(0, 255, 255, 0.3); font-size: 16px; } /* FLY Toggle */
+        #btn-down { bottom: 230px; right: 90px; display: none; } /* DOWN (Shift) */
+        
         #btn-cam { top: 60px; right: 20px; width: 40px; height: 40px; font-size: 10px; }
         #mobile-toggle-btn { top: 10px; left: 10px; width: 40px; height: 40px; font-size: 20px; z-index: 50; background: rgba(0,0,0,0.5); border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white;}
         #look-zone { top: 0; right: 0; width: 60%; height: 80%; }
@@ -81,7 +86,7 @@
     <div id="menu">
         <div class="panel">
             <h1>nblock</h1>
-            <p>v6.0 (UDP + Lib 1.4.7)</p>
+            <p>v7.0 (Mobile Fly + Secure)</p>
             <div id="setup-controls">
                 <button class="btn-single" id="btn-single" onclick="startSinglePlayer(event)">👤 Одиночная игра</button>
                 <div style="margin: 10px 0; border-top: 1px solid #555;"></div>
@@ -130,6 +135,10 @@
         <div id="joystick-zone" class="touch-zone">
             <div id="joystick-bg"><div id="joystick-stick"></div></div>
         </div>
+        <!-- Кнопки управления -->
+        <div id="btn-fly" class="action-btn">🕊️</div>
+        <div id="btn-down" class="action-btn">⬇️</div>
+        
         <div id="btn-jump" class="action-btn">JUMP</div>
         <div id="btn-place" class="action-btn">BUILD</div>
         <div id="btn-break" class="action-btn">BREAK</div>
@@ -465,12 +474,7 @@
                 case 'ShiftLeft': if (isFlying) moveDown = v; break;
                 case 'Digit7': if(v) toggleCameraMode(); break; 
                 case 'KeyF': 
-                    if(v) { 
-                        isFlying = !isFlying; 
-                        player.velocity.y = 0; 
-                        document.getElementById('flight-status').style.display = isFlying ? 'block' : 'none';
-                        showNotification(isFlying ? "Полет ВКЛ" : "Полет ВЫКЛ");
-                    } 
+                    if(v) toggleFlight();
                     break;
             }
         };
@@ -481,6 +485,14 @@
             isThirdPerson = !isThirdPerson;
             localPlayerGroup.visible = isThirdPerson;
             document.getElementById('crosshair').style.display = (isThirdPerson || isMobile) ? 'none' : 'block';
+        }
+
+        function toggleFlight() {
+            isFlying = !isFlying; 
+            player.velocity.y = 0; 
+            document.getElementById('flight-status').style.display = isFlying ? 'block' : 'none';
+            document.getElementById('btn-down').style.display = (isMobile && isFlying) ? 'flex' : 'none';
+            showNotification(isFlying ? "Полет ВКЛ" : "Полет ВЫКЛ");
         }
         
         let isMobile = false;
@@ -544,7 +556,36 @@
                 }
             }
         }, {passive: false});
-        document.getElementById('btn-jump').addEventListener('touchstart', (e)=>{e.preventDefault(); if(canJump){player.velocity.y=12; canJump=false;}});
+        
+        // Mobile Buttons Logic
+        const btnJump = document.getElementById('btn-jump');
+        const btnFly = document.getElementById('btn-fly');
+        const btnDown = document.getElementById('btn-down');
+
+        btnJump.addEventListener('touchstart', (e) => {
+            e.preventDefault(); 
+            if (isFlying) moveUp = true;
+            else if(canJump) { player.velocity.y = 12; canJump=false; }
+        });
+        btnJump.addEventListener('touchend', (e) => {
+            e.preventDefault(); 
+            if (isFlying) moveUp = false;
+        });
+
+        btnDown.addEventListener('touchstart', (e) => {
+            e.preventDefault(); 
+            if (isFlying) moveDown = true;
+        });
+        btnDown.addEventListener('touchend', (e) => {
+            e.preventDefault(); 
+            if (isFlying) moveDown = false;
+        });
+
+        btnFly.addEventListener('touchstart', (e) => {
+            e.preventDefault(); 
+            toggleFlight();
+        });
+
         document.getElementById('btn-cam').addEventListener('touchstart', (e)=>{e.preventDefault(); toggleCameraMode();});
         document.getElementById('btn-place').addEventListener('touchstart', (e)=>{e.preventDefault(); performRaycastAction(2);});
         document.getElementById('btn-break').addEventListener('touchstart', (e)=>{e.preventDefault(); performRaycastAction(0);});
@@ -816,8 +857,11 @@
             if (peer) peer.destroy();
             
             try {
-                // PeerJS v1.4.7
+                // ПРИНУДИТЕЛЬНОЕ УКАЗАНИЕ SECURE: TRUE
+                // Это критично для Chrome Android, который запрещает доступ к сети на небезопасных страницах
+                // и может блокировать WebRTC
                 peer = new Peer({
+                    secure: true, 
                     debug: 1,
                     config: {
                         'iceServers': [
@@ -838,7 +882,7 @@
             
             const initTimeout = setTimeout(() => {
                 if(!isOpen) {
-                    if(onError) onError("Timeout connecting to PeerServer (Cloud)");
+                    if(onError) onError("Timeout connecting to PeerServer (Cloud). Try VPN/Mobile Data.");
                 }
             }, 10000);
 
