@@ -6,7 +6,7 @@
     <title>Инструкция по сборке молчания | Владислав Ножиков</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
-            <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
     <link rel="manifest" href="/icons/site.webmanifest">
@@ -29,6 +29,9 @@
             color: var(--accent-color);
             font-family: 'Inter', sans-serif;
             overflow-x: hidden;
+            /* Запрет выделения текста */
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         /* Эффект зернистости */
@@ -92,14 +95,12 @@
             cursor: pointer;
         }
 
-        /* Горизонтальный блок (Дома) - Соотношение 458 / 153.68 */
         .art-card.wide-horizontal {
             grid-column: 1 / -1;
             aspect-ratio: 458 / 153.68; 
             max-height: 450px;
         }
 
-        /* Вертикальный центрированный блок (Инструкция) - Соотношение 458 / 596.71 */
         .art-card.centered-vertical {
             grid-column: 1 / -1; 
             aspect-ratio: unset;
@@ -120,7 +121,6 @@
             position: relative;
         }
 
-        /* Центрирование одиночной картины в сетке из 3-х колонок */
         .art-card.grid-center {
             grid-column: 2 / 3;
         }
@@ -149,6 +149,7 @@
             object-fit: cover;
             filter: grayscale(0.3);
             transition: all 0.6s ease;
+            -webkit-touch-callout: none; /* Запрет сохранения на iOS */
         }
 
         .art-card:hover img {
@@ -175,20 +176,81 @@
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95);
+            background: rgba(0,0,0,0.98);
             display: none;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 10002;
-            padding: 20px;
-            backdrop-filter: blur(10px);
+            padding: 40px 20px;
+            backdrop-filter: blur(15px);
         }
 
         #modal img {
             max-width: 100%;
-            max-height: 90vh;
+            max-height: 80vh;
             object-fit: contain;
             box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            pointer-events: none; /* Дополнительная защита от перетаскивания */
+        }
+
+        /* Крестик закрытия */
+        .modal-close {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.3s;
+            z-index: 10003;
+        }
+
+        .modal-close:hover {
+            opacity: 0.5;
+        }
+
+        .modal-close::before, .modal-close::after {
+            content: "";
+            position: absolute;
+            width: 25px;
+            height: 1px;
+            background: white;
+        }
+
+        .modal-close::before { transform: rotate(45deg); }
+        .modal-close::after { transform: rotate(-45deg); }
+
+        /* Описание в модальном окне */
+        .modal-caption {
+            margin-top: 25px;
+            text-align: center;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .modal-title {
+            display: block;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .modal-year {
+            display: block;
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.4em;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .reveal {
@@ -202,7 +264,7 @@
         }
     </style>
 </head>
-<body class="noise">
+<body class="noise" oncontextmenu="return false;">
 
     <div id="loader">
         <svg class="knife-svg-main" viewBox="0 0 100 100">
@@ -242,8 +304,14 @@
         </footer>
     </main>
 
+    <!-- Модальное окно -->
     <div id="modal">
-        <img id="modalImg" src="" alt="Full view">
+        <div class="modal-close" id="closeBtn"></div>
+        <img id="modalImg" src="" alt="Full view" oncontextmenu="return false;" ondragstart="return false;">
+        <div class="modal-caption">
+            <span class="modal-title" id="modalTitle"></span>
+            <span class="modal-year">2025</span>
+        </div>
     </div>
 
     <script>
@@ -284,7 +352,7 @@
             if (typeClass === 'centered-vertical') {
                 card.innerHTML = `
                     <div class="card-inner">
-                        <img src="artworks/${id}.jpg" alt="${title}" loading="lazy" onerror="this.parentElement.style.display='none'">
+                        <img src="artworks/${id}.jpg" alt="${title}" loading="lazy" oncontextmenu="return false;" ondragstart="return false;">
                         <div class="art-info">
                             <span class="text-[10px] font-bold uppercase tracking-widest text-white">${title}</span>
                         </div>
@@ -292,53 +360,68 @@
                 `;
             } else {
                 card.innerHTML = `
-                    <img src="artworks/${id}.jpg" alt="${title}" loading="lazy" onerror="this.parentElement.style.display='none'">
+                    <img src="artworks/${id}.jpg" alt="${title}" loading="lazy" oncontextmenu="return false;" ondragstart="return false;">
                     <div class="art-info">
                         <span class="text-[10px] font-bold uppercase tracking-widest text-white">${title}</span>
                     </div>
                 `;
             }
             
-            card.onclick = () => openModal(`artworks/${id}.jpg`);
+            card.onclick = () => openModal(id);
             return card;
         }
 
-        // 1. Приоритетные ряды
         prioritySequence.forEach(row => {
             row.ids.forEach(id => {
                 container.appendChild(createCard(id, row.type));
             });
         });
 
-        // 2. Остальные картины
         const remainingIds = Object.keys(titlesMap)
             .map(Number)
             .filter(id => !usedIds.has(id));
 
         remainingIds.forEach((id, index) => {
             let extraClass = '';
-            // Центрируем последнюю, если она одна в ряду
             if (remainingIds.length % 3 === 1 && index === remainingIds.length - 1) {
                 extraClass = 'grid-center';
             }
             container.appendChild(createCard(id, extraClass));
         });
 
-        // 3. Последняя картина (Дома)
         container.appendChild(createCard(lastId, 'wide-horizontal'));
 
+        // Логика модального окна
         const modal = document.getElementById('modal');
         const modalImg = document.getElementById('modalImg');
-        function openModal(src) {
-            modalImg.src = src;
+        const modalTitle = document.getElementById('modalTitle');
+        const closeBtn = document.getElementById('closeBtn');
+
+        function openModal(id) {
+            const title = titlesMap[id] || "Без названия";
+            modalImg.src = `artworks/${id}.jpg`;
+            modalTitle.innerText = `«${title}»`;
             modal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }
-        modal.onclick = () => {
+
+        function closeModal() {
             modal.style.display = 'none';
             document.body.style.overflow = 'auto';
+        }
+
+        // Закрытие при клике на крестик
+        closeBtn.onclick = (e) => {
+            e.stopPropagation();
+            closeModal();
         };
 
+        // Закрытие при клике на фон (но не на картинку)
+        modal.onclick = (e) => {
+            if (e.target === modal) closeModal();
+        };
+
+        // Загрузка
         window.onload = () => {
             setTimeout(() => {
                 document.body.classList.add('loaded');
