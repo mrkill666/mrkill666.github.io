@@ -754,52 +754,37 @@
         function prepareGame(e) { e.stopPropagation(); updateUI(false); isGameActive=true; }
         function copyId() { navigator.clipboard.writeText(document.getElementById('my-id').value); showNotification("ID скопирован"); }
         
-        function initPeer(onSuccess, onError) {
-            if (peer) peer.destroy();
-            
-            // AUTO-CONFIG: Use secure=true only if on HTTPS
-            // This is critical for local network (http://192.168.x.x)
-            const isSecure = location.protocol === 'https:';
-            logNet("Network Mode: " + (isSecure ? "Secure (HTTPS)" : "Insecure (HTTP/Local)"));
+function initPeer(onSuccess, onError) {
+    if (peer) peer.destroy();
+    
+    const isSecure = location.protocol === 'https:';
+    logNet("Network Mode: " + (isSecure ? "Secure" : "Insecure"));
 
-            try {
-                peer = new Peer({
-                    secure: isSecure, 
-                    debug: 1,
-                    config: {
-                        'iceServers': [
-                            { urls: 'stun:stun.l.google.com:19302' },
-                            { urls: 'stun:stun1.l.google.com:19302' },
-                            { urls: 'stun:stun2.l.google.com:19302' }
-                        ]
-                    }
-                });
-            } catch(e) { if(onError) onError(e); return; }
-
-            let isOpen = false;
-            
-            const initTimeout = setTimeout(() => {
-                if(!isOpen) { if(onError) onError("Timeout connecting to PeerServer Cloud. Check Internet."); }
-            }, 10000);
-
-            peer.on('open', id => {
-                isOpen = true; clearTimeout(initTimeout);
-                document.getElementById('my-id').value = id;
-                logNet("My ID: " + id);
-                if(onSuccess) onSuccess(id);
-            });
-            
-            peer.on('connection', c => { 
-                conn = c;
-                logNet("Incoming connection...");
-                handleConnection(c);
-            });
-            
-            peer.on('error', e => {
-                logNet("Peer Error: " + e.type);
-                if(!isOpen) { clearTimeout(initTimeout); if(onError) onError(e.type); }
-            });
+    peer = new Peer({
+        secure: isSecure, 
+        debug: 1,
+        config: {
+            'iceServers': [
+                { urls: 'stun:stun.l.google.com:19302' },
+                // FREE TURN SERVER (Relays data when firewall blocks it)
+                {
+                    urls: 'turn:openrelay.metered.ca:443',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                },
+                {
+                    urls: 'turn:openrelay.metered.ca:80',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                }
+            ],
+            'iceTransportPolicy': 'all', // Forces the browser to consider all paths
+            'sdpSemantics': 'unified-plan'
         }
+    });
+
+    // ... (rest of your existing open/connection/error events)
+}
 
         function handleConnection(connection, onSuccess = null) {
             conn = connection;
