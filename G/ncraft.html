@@ -3,345 +3,889 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>nblock v8.0 (Full Manual Sync)</title>
+    <title>nblock v8.0 (Auto-Config)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #87CEEB; color: white; touch-action: none; user-select: none; -webkit-user-select: none; }
+        
         #blocker { position: absolute; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 20; cursor: pointer; }
         #instructions { font-size: 36px; text-align: center; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); pointer-events: none; }
         #instructions span { font-size: 16px; color: #ccc; display: block; margin-top: 10px; }
         
         #menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 30; }
-        .panel { background: #333; padding: 20px; border-radius: 10px; border: 2px solid #555; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .panel { background: #333; padding: 30px; border-radius: 10px; border: 2px solid #555; text-align: center; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         h1 { margin-top: 0; color: #4CAF50; text-transform: uppercase; letter-spacing: 2px; }
-        
-        textarea { width: 100%; height: 100px; background: #111; color: #0f0; border: 1px solid #666; font-family: monospace; font-size: 10px; margin: 10px 0; resize: none; box-sizing: border-box; }
-        button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; font-size: 14px; transition: 0.2s; margin: 5px; color: white; }
-        .btn-create { background: #4CAF50; width: 100%; }
-        .btn-join { background: #2196F3; width: 100%; }
-        .btn-single { background: #FF9800; width: 100%; margin-bottom: 15px; }
+        input { padding: 10px; width: 70%; border-radius: 5px; border: 1px solid #666; background: #222; color: white; margin-bottom: 10px; }
+        button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; font-size: 16px; transition: 0.2s; margin: 5px; }
+        button:disabled { background: #555; color: #aaa; cursor: not-allowed; }
+        .btn-create { background: #4CAF50; color: white; width: 100%; }
+        .btn-create:hover:not(:disabled) { background: #45a049; }
+        .btn-join { background: #2196F3; color: white; width: 45%; }
+        .btn-join:hover:not(:disabled) { background: #1e88e5; }
+        .btn-single { background: #FF9800; color: white; width: 100%; margin-bottom: 15px; }
+        .btn-single:hover:not(:disabled) { background: #F57C00; }
+        .btn-reset { background: #d32f2f; color: white; font-size: 12px; padding: 5px 10px; margin-top: 10px; }
+        .btn-play { background: #9C27B0; color: white; margin-top: 15px; width: 100%; }
+        .btn-play:hover:not(:disabled) { background: #7B1FA2; }
         
         #crosshair { position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; transform: translate(-50%, -50%); pointer-events: none; z-index: 10; display: none; }
         #crosshair::before, #crosshair::after { content: ''; position: absolute; background: rgba(255, 255, 255, 0.8); }
         #crosshair::before { top: 9px; left: 0; width: 20px; height: 2px; }
         #crosshair::after { top: 0; left: 9px; width: 2px; height: 20px; }
         
-        #hud { position: absolute; top: 10px; right: 10px; font-size: 12px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; pointer-events: none; display: none; z-index: 15; text-align: right; }
-        #debug-info { position: absolute; top: 60px; left: 10px; color: yellow; font-family: monospace; font-size: 12px; pointer-events: none; z-index: 4; }
-        #network-log { position: absolute; top: 80px; left: 10px; color: lime; font-family: monospace; font-size: 10px; pointer-events: none; z-index: 4; text-align: left; opacity: 0.8; max-height: 200px; overflow: hidden; background: rgba(0,0,0,0.3); padding: 5px; width: 250px; }
+        #hud { position: absolute; top: 10px; right: 10px; font-size: 14px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; pointer-events: none; display: none; z-index: 15; text-align: right; }
+        .key { display: inline-block; padding: 2px 6px; background: #555; border-radius: 3px; border-bottom: 2px solid #333; }
+        
+        #copy-btn { font-size: 12px; padding: 5px; background: #555; color: white; border: none; cursor: pointer; display: none; margin-left: 5px; }
+        #notification { position: absolute; top: 20px; right: 20px; padding: 10px 20px; background: rgba(33, 150, 243, 0.9); color: white; border-radius: 5px; transform: translateX(200%); transition: transform 0.3s ease-in-out; z-index: 100; }
+        
+        #webgl-error { display: none !important; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: red; z-index: 999; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        
+        #debug-info { position: absolute; top: 60px; left: 10px; color: yellow; font-family: monospace; font-size: 12px; pointer-events: none; z-index: 4; text-align: left; }
+        #network-log { position: absolute; top: 80px; left: 10px; color: lime; font-family: monospace; font-size: 10px; pointer-events: none; z-index: 4; text-align: left; opacity: 0.8; max-height: 200px; overflow: hidden; text-shadow: 1px 1px 1px black; background: rgba(0,0,0,0.3); padding: 5px; width: 300px; }
         
         #inventory { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 5px; z-index: 15; display: none; }
         .slot { width: 40px; height: 40px; border: 2px solid #555; cursor: pointer; background-size: cover; image-rendering: pixelated; position: relative; }
         .slot.active { border-color: #fff; transform: scale(1.1); box-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .slot span { position: absolute; top: 0; left: 2px; font-size: 10px; color: white; text-shadow: 1px 1px 0 #000; }
         
         .mobile-controls { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 14; }
         .touch-zone { pointer-events: auto; position: absolute; }
-        #joystick-zone { bottom: 20px; left: 20px; width: 120px; height: 120px; }
-        #joystick-bg { width: 100px; height: 100px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; position: absolute; }
-        #joystick-stick { width: 40px; height: 40px; background: rgba(255,255,255,0.5); border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-        .action-btn { position: absolute; width: 55px; height: 55px; background: rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; pointer-events: auto; }
-        #btn-jump { bottom: 140px; right: 20px; }
-        #btn-place { bottom: 80px; right: 20px; background: rgba(76, 175, 80, 0.4); }
+        #joystick-zone { bottom: 20px; left: 20px; width: 150px; height: 150px; }
+        #joystick-bg { width: 120px; height: 120px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; position: absolute; top: 15px; left: 15px; }
+        #joystick-stick { width: 50px; height: 50px; background: rgba(255,255,255,0.5); border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .action-btn { position: absolute; width: 60px; height: 60px; background: rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; color: white; font-weight: bold; display: flex; align-items: center; justify-content: center; font-size: 12px; pointer-events: auto; user-select: none; }
+        .action-btn:active { background: rgba(255,255,255,0.2); }
+        #btn-jump { bottom: 160px; right: 20px; }
+        #btn-place { bottom: 90px; right: 20px; background: rgba(76, 175, 80, 0.4); }
         #btn-break { bottom: 20px; right: 20px; background: rgba(244, 67, 54, 0.4); }
-        #mobile-toggle-btn { top: 10px; left: 10px; width: 40px; height: 40px; font-size: 20px; z-index: 50; background: rgba(0,0,0,0.5); border-radius: 10px; display: flex; align-items: center; justify-content: center; pointer-events: auto;}
+        #btn-fly { bottom: 230px; right: 20px; background: rgba(0, 255, 255, 0.3); font-size: 16px; }
+        #btn-down { bottom: 230px; right: 90px; display: none; }
+        #btn-cam { top: 60px; right: 20px; width: 40px; height: 40px; font-size: 10px; }
+        #mobile-toggle-btn { top: 10px; left: 10px; width: 40px; height: 40px; font-size: 20px; z-index: 50; background: rgba(0,0,0,0.5); border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white;}
+        #look-zone { top: 0; right: 0; width: 60%; height: 80%; }
+        
+        #net-status { color: #aaa; margin-bottom: 5px; font-weight: bold; }
+        #net-status.online { color: #00ff00; }
+        #flight-status { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); color: #00FFFF; font-weight: bold; text-shadow: 1px 1px 2px black; display: none; pointer-events: none; }
     </style>
 </head>
 <body>
+    <div id="webgl-error"><h1>Ошибка WebGL</h1><p>Попробуйте обновить браузер или драйверы.</p></div>
     <div id="debug-info">Blocks: 0</div>
-    <div id="network-log">Система готова</div>
-    <div id="mobile-toggle-btn">🎮</div>
+    <div id="network-log"></div>
+    <div id="flight-status">РЕЖИМ ПОЛЕТА</div>
+    <div id="mobile-toggle-btn" class="action-btn">🎮</div>
     
     <div id="menu">
         <div class="panel">
-            <h1>nblock v8.0</h1>
+            <h1>nblock</h1>
+            <p>v8.0 (Auto-Config & ICE Log)</p>
             <div id="setup-controls">
-                <button class="btn-single" onclick="startSinglePlayer()">👤 Одиночная игра</button>
-                <button class="btn-create" onclick="setupManualMode(true)">🏠 Создать сервер (Хост)</button>
-                <button class="btn-join" onclick="setupManualMode(false)">🔑 Войти по коду (Гость)</button>
-            </div>
-            <div id="manual-ui" style="display: none;">
-                <p id="manual-desc" style="font-size: 11px; color: #ccc;"></p>
-                <textarea id="sdp-io" placeholder="Сюда вставлять код..."></textarea>
-                <div style="display: flex; flex-wrap: wrap; justify-content: center;">
-                    <button id="manual-btn-main" class="btn-create" style="width: 45%; font-size: 12px;"></button>
-                    <button id="manual-btn-confirm" class="btn-join" style="width: 45%; font-size: 12px; display: none;">Принять ответ</button>
-                    <button onclick="location.reload()" style="background: #555; width: 95%;">Назад</button>
+                <button class="btn-single" id="btn-single" onclick="startSinglePlayer(event)">👤 Одиночная игра</button>
+                <div style="margin: 10px 0; border-top: 1px solid #555;"></div>
+                <button class="btn-create" id="btn-create" onclick="createGame(event)">🌐 Создать сервер</button>
+                <div style="margin-top: 10px; display: flex; justify-content: space-between;">
+                    <input type="text" id="remote-id" placeholder="ID друга" style="width: 45%; margin: 0;">
+                    <button class="btn-join" id="btn-join" onclick="joinGame(event)">Вход</button>
                 </div>
+                <button class="btn-reset" onclick="resetNetwork(event)">⚠ Сброс сети</button>
+            </div>
+            <div id="lobby-controls" style="display: none;">
+                <p>Ваш ID:</p>
+                <div style="display: flex; justify-content: center; align-items: center;">
+                    <input type="text" id="my-id" readonly style="width: 200px; text-align: center; margin: 0; background: #444;">
+                    <button id="copy-btn" onclick="copyId()">Коп.</button>
+                </div>
+                <p class="status" id="status-msg">Ожидание...</p>
+                <button class="btn-play" onclick="prepareGame(event)">Играть</button>
+                <button class="btn-reset" onclick="location.reload()">Меню</button>
             </div>
         </div>
     </div>
 
-    <div id="blocker"><div id="instructions">КЛИКНИТЕ ЧТОБЫ ИГРАТЬ<span>WASD - Ходить, F - Полет, 1-6 - Блоки</span></div></div>
+    <div id="blocker">
+        <div id="instructions">
+            КЛИКНИТЕ ЧТОБЫ ИГРАТЬ
+            <span>WASD - Ходить, F - Полет, SPACE - Прыжок</span>
+            <span>1-6 - Блоки</span>
+        </div>
+    </div>
+
     <div id="crosshair"></div>
     <div id="hud">
-        <span class="key">LKM</span> Сломать | <span class="key">PKM</span> Поставить<br>
-        <span class="key">F</span> Полет | <span class="key">7</span> Камера
+        <div id="net-status">Офлайн</div>
+        <span class="key">LKM</span> Разрушить <br> <span class="key">PKM</span> Поставить <br> <span class="key">WASD</span> Ходить <br> <span class="key">F</span> Полет <br> <span class="key">7</span> Камера
     </div>
+    <div id="notification"></div>
     <div id="inventory"></div>
     
     <div class="mobile-controls" id="mobile-ui">
-        <div id="look-zone" class="touch-zone" style="top:0; right:0; width:60%; height:80%;"></div>
+        <div id="look-zone" class="touch-zone"></div>
         <div id="joystick-zone" class="touch-zone"><div id="joystick-bg"><div id="joystick-stick"></div></div></div>
+        <div id="btn-fly" class="action-btn">🕊️</div>
+        <div id="btn-down" class="action-btn">⬇️</div>
         <div id="btn-jump" class="action-btn">JUMP</div>
-        <div id="btn-place" class="action-btn">PLACE</div>
+        <div id="btn-place" class="action-btn">BUILD</div>
         <div id="btn-break" class="action-btn">BREAK</div>
+        <div id="btn-cam" class="action-btn">CAM</div>
     </div>
 
     <script>
-        // --- ПЕРЕМЕННЫЕ ДВИЖКА ---
-        let renderer, scene, camera, controls, isGameActive = false;
-        let isHost = false, isConnected = false;
-        const worldData = new Map();
-        const chunks = {};
-        const worldActionLog = [];
-        const dummy = new THREE.Object3D();
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
-        let selectedBlock = 'grass';
-        const player = { velocity: new THREE.Vector3(), direction: new THREE.Vector3() };
-        let moveFwd = false, moveBwd = false, moveLeft = false, moveRight = false, canJump = false, isFlying = false;
-        let otherPlayerGroup, otherPlayerTargetPos = new THREE.Vector3(0, -100, 0), otherPlayerTargetRot = 0;
-
         function logNet(msg) {
+            console.log(msg);
             const el = document.getElementById('network-log');
-            el.innerHTML = `> ${msg}<br>` + el.innerHTML.split('<br>').slice(0, 8).join('<br>');
+            if(el.innerHTML.length > 800) el.innerHTML = "";
+            el.innerHTML = `> ${msg}<br>` + el.innerHTML;
         }
 
-        // --- ГРАФИКА И МИР ---
-        function initGraphics() {
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+        let renderer, scene, camera;
+        const fpsElem = document.getElementById('debug-info');
+        const worldActionLog = []; 
+        let isGameActive = false;
+        let isHost = false;
+        let otherPlayerTargetPos = new THREE.Vector3(0, -100, 0);
+        let otherPlayerTargetRot = 0;
+
+        try {
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             document.body.appendChild(renderer.domElement);
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87CEEB);
+            scene.fog = new THREE.Fog(0x87CEEB, 30, 90);
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            
-            const hemiLight = new THREE.HemisphereLight(0x87CEEB, 0x444444, 0.8);
-            scene.add(hemiLight);
+        } catch (e) { document.getElementById('webgl-error').style.display = 'flex'; console.error(e); }
 
-            // Текстуры (упрощенные для стабильности)
-            const textures = {
-                grass: createColorTexture('#5da130'),
-                dirt: createColorTexture('#8b5a2b'),
-                stone: createColorTexture('#7a7a7a')
-            };
-
-            for (let type in textures) {
-                const mat = new THREE.MeshLambertMaterial({ map: textures[type] });
-                const mesh = new THREE.InstancedMesh(geometry, mat, 20000);
-                mesh.count = 0;
-                scene.add(mesh);
-                chunks[type] = mesh;
-            }
-
-            // Модель другого игрока
-            otherPlayerGroup = new THREE.Group();
-            const pMat = new THREE.MeshLambertMaterial({ color: 0xff4444 });
-            const pBody = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.8, 0.5), pMat);
-            otherPlayerGroup.add(pBody);
-            scene.add(otherPlayerGroup);
-
-            controls = new THREE.PointerLockControls(camera, document.body);
-            generateWorld();
-        }
-
-        function createColorTexture(color) {
+        function createBlockTexture(color, noise = 0.1) {
+            const size = 32;
             const canvas = document.createElement('canvas');
-            canvas.width = 16; canvas.height = 16;
+            canvas.width = size; canvas.height = size;
             const ctx = canvas.getContext('2d');
-            ctx.fillStyle = color; ctx.fillRect(0,0,16,16);
-            ctx.fillStyle = 'rgba(0,0,0,0.1)'; ctx.fillRect(0,0,8,8);
+            ctx.fillStyle = color; ctx.fillRect(0,0,size,size);
+            for(let i=0; i<100; i++) { ctx.fillStyle = `rgba(0,0,0,${Math.random()*noise})`; ctx.fillRect(Math.random()*size, Math.random()*size, 2, 2); }
             const tex = new THREE.CanvasTexture(canvas);
-            tex.magFilter = THREE.NearestFilter; return tex;
+            tex.magFilter = THREE.NearestFilter;
+            tex.minFilter = THREE.NearestFilter;
+            tex.userData = { image: canvas };
+            return tex;
+        }
+        
+        const textures = {
+            grass: createBlockTexture('#5da130', 0.12),
+            dirt: createBlockTexture('#8b5a2b', 0.2),
+            stone: createBlockTexture('#7a7a7a', 0.2),
+            wood: createBlockTexture('#a05f2a', 0.1),
+            leaves: createBlockTexture('#3a7a1a', 0.2),
+            sand: createBlockTexture('#E6C288', 0.12)
+        };
+        const blockTypes = ['grass', 'dirt', 'stone', 'wood', 'leaves', 'sand'];
+        let selectedBlock = 'grass';
+        const materials = {
+            grass: new THREE.MeshLambertMaterial({ map: textures.grass }),
+            dirt: new THREE.MeshLambertMaterial({ map: textures.dirt }),
+            stone: new THREE.MeshLambertMaterial({ map: textures.stone }),
+            wood: new THREE.MeshLambertMaterial({ map: textures.wood }),
+            leaves: new THREE.MeshLambertMaterial({ map: textures.leaves, transparent: true, alphaTest: 0.5 }),
+            sand: new THREE.MeshLambertMaterial({ map: textures.sand }),
+        };
+        const otherPlayerMat = new THREE.MeshLambertMaterial({ color: 0xff4444 });
+        const localPlayerMat = new THREE.MeshLambertMaterial({ color: 0x4444ff });
+        const skinMat = new THREE.MeshLambertMaterial({ color: 0xffccaa });
+
+        const MAX_INSTANCES = 60000;
+        const dummy = new THREE.Object3D();
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        const chunks = {}; 
+        const worldData = new Map();
+        
+        const invContainer = document.getElementById('inventory');
+        blockTypes.forEach((type, index) => {
+            const slot = document.createElement('div');
+            slot.className = 'slot';
+            if (index === 0) slot.classList.add('active');
+            slot.style.backgroundImage = `url(${textures[type].userData.image.toDataURL()})`;
+            slot.innerHTML = `<span>${index + 1}</span>`;
+            slot.onclick = () => selectBlock(type, slot);
+            invContainer.appendChild(slot);
+        });
+
+        function selectBlock(type, slotElement = null) {
+            selectedBlock = type;
+            const slots = document.querySelectorAll('.slot');
+            slots.forEach(s => s.classList.remove('active'));
+            if (slotElement) { slotElement.classList.add('active'); } 
+            else { const idx = blockTypes.indexOf(type); if(slots[idx]) slots[idx].classList.add('active'); }
+        }
+        document.addEventListener('keydown', (e) => {
+            const key = parseInt(e.key);
+            if (key >= 1 && key <= 6) selectBlock(blockTypes[key - 1]);
+        });
+
+        for (const type in materials) {
+            const mesh = new THREE.InstancedMesh(geometry, materials[type], MAX_INSTANCES);
+            mesh.count = 0; mesh.castShadow = false; mesh.receiveShadow = true; mesh.frustumCulled = false;
+            scene.add(mesh); chunks[type] = mesh;
         }
 
-        function addBlock(x, y, z, type, remote = false) {
-            const key = `${Math.round(x)},${Math.round(y)},${Math.round(z)}`;
+        function sendData(data) {
+            if (conn && conn.open) {
+                try { conn.send(data); } catch (e) { console.error("Send error:", e); }
+            }
+        }
+
+        function addBlock(x, y, z, type, isRemote = false) {
+            const key = `${x},${y},${z}`;
             if (worldData.has(key)) return;
             const mesh = chunks[type];
+            if (mesh.count >= MAX_INSTANCES) return;
             dummy.position.set(x, y, z);
             dummy.updateMatrix();
             mesh.setMatrixAt(mesh.count, dummy.matrix);
-            worldData.set(key, { type, instanceId: mesh.count });
+            worldData.set(key, { type: type, instanceId: mesh.count });
             mesh.count++;
             mesh.instanceMatrix.needsUpdate = true;
-            document.getElementById('debug-info').innerText = `Blocks: ${worldData.size}`;
+            updateDebug();
             
-            if (!remote) {
+            if (isHost && isRemote) { worldActionLog.push({ type: 'add', x, y, z, blockType: type }); }
+            if (!isRemote) {
                 const action = { type: 'add', x, y, z, blockType: type };
-                if (isHost) worldActionLog.push(action);
+                if (isHost) worldActionLog.push(action); 
                 sendData({ type: 'block_add', ...action });
             }
         }
 
-        function generateWorld() {
-            for(let x=-15; x<=15; x++) {
-                for(let z=-15; z<=15; z++) {
-                    addBlock(x, 0, z, 'grass', true);
-                    if(Math.random() < 0.05) addBlock(x, 1, z, 'stone', true);
-                }
+        function removeBlock(x, y, z, isRemote = false) {
+            const key = `${x},${y},${z}`;
+            const data = worldData.get(key);
+            if (!data) return;
+            const mesh = chunks[data.type];
+            const idToRemove = data.instanceId;
+            const lastId = mesh.count - 1;
+            const lastMatrix = new THREE.Matrix4();
+            mesh.getMatrixAt(lastId, lastMatrix);
+            mesh.setMatrixAt(idToRemove, lastMatrix);
+            const pos = new THREE.Vector3();
+            lastMatrix.decompose(pos, new THREE.Quaternion(), new THREE.Vector3());
+            const lastKey = `${Math.round(pos.x)},${Math.round(pos.y)},${Math.round(pos.z)}`;
+            if (lastId !== idToRemove) {
+                const lastBlockData = worldData.get(lastKey);
+                if (lastBlockData) lastBlockData.instanceId = idToRemove;
             }
-        }
-
-        // --- РУЧНОЙ СЕТЕВОЙ БЛОК (WebRTC) ---
-        let pc, dataChannel;
-
-        function setupManualMode(asHost) {
-            isHost = asHost;
-            document.getElementById('setup-controls').style.display = 'none';
-            document.getElementById('manual-ui').style.display = 'block';
+            worldData.delete(key);
+            mesh.count--;
+            mesh.instanceMatrix.needsUpdate = true;
+            updateDebug();
             
-            pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+            if (isHost && isRemote) { worldActionLog.push({ type: 'remove', x, y, z }); }
+            if (!isRemote) {
+                const action = { type: 'remove', x, y, z };
+                if (isHost) worldActionLog.push(action);
+                sendData({ type: 'block_remove', ...action });
+            }
+        }
+        function updateDebug() { fpsElem.innerText = `Blocks: ${worldData.size}`; }
+        
+        const hemiLight = new THREE.HemisphereLight(0x87CEEB, 0x444444, 0.6);
+        hemiLight.position.set(0, 50, 0); scene.add(hemiLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+        dirLight.position.set(50, 100, 50); dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 1024; dirLight.shadow.mapSize.height = 1024;
+        dirLight.shadow.camera.near = 0.5; dirLight.shadow.camera.far = 200;
+        dirLight.shadow.camera.left = -50; dirLight.shadow.camera.right = 50;
+        dirLight.shadow.camera.top = 50; dirLight.shadow.camera.bottom = -50;
+        scene.add(dirLight);
 
-            pc.onicecandidate = (e) => {
-                if (!e.candidate) {
-                    document.getElementById('sdp-io').value = btoa(JSON.stringify(pc.localDescription));
-                    logNet("Код готов! Скопируйте и отправьте другу.");
+        const waterGeo = new THREE.PlaneGeometry(1000, 1000);
+        const waterMat = new THREE.MeshBasicMaterial({ color: 0x1E90FF, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
+        const water = new THREE.Mesh(waterGeo, waterMat);
+        water.rotation.x = -Math.PI / 2; water.position.y = 1.2; scene.add(water);
+        const WORLD_RADIUS = 50; 
+        
+        function pseudoRandom(x, z) { return Math.abs(Math.sin(x * 12.9898 + z * 78.233) * 43758.5453) % 1; }
+
+        function createTree(x, y, z) {
+            const h = 4 + Math.floor(pseudoRandom(x, z) * 2);
+            for(let i=0; i<h; i++) addBlock(x, y+i, z, 'wood', true);
+            for(let lx=x-2; lx<=x+2; lx++) {
+                for(let lz=z-2; lz<=z+2; lz++) {
+                    for(let ly=y+h-2; ly<=y+h+1; ly++) {
+                        if(Math.abs(lx-x)===2 && Math.abs(lz-z)===2) continue;
+                        if(lx===x && lz===z && ly<y+h) continue;
+                        if(pseudoRandom(lx, ly+lz) > 0.2) addBlock(lx, ly, lz, 'leaves', true);
+                    }
                 }
-            };
-
-            const mainBtn = document.getElementById('manual-btn-main');
-            const desc = document.getElementById('manual-desc');
-
-            if (isHost) {
-                desc.innerText = "ШАГ 1: Жми кнопку и кидай код другу. ШАГ 2: Жди ответ и вставляй его ниже.";
-                mainBtn.innerText = "Генерировать оффер";
-                mainBtn.onclick = async () => {
-                    dataChannel = pc.createDataChannel("gameChannel");
-                    setupDataEvents(dataChannel);
-                    const offer = await pc.createOffer();
-                    await pc.setLocalDescription(offer);
-                    document.getElementById('manual-btn-confirm').style.display = 'inline-block';
-                };
-                
-                document.getElementById('manual-btn-confirm').onclick = async () => {
-                    const ansStr = document.getElementById('sdp-io').value;
-                    const answer = JSON.parse(atob(ansStr));
-                    await pc.setRemoteDescription(new RTCSessionDescription(answer));
-                };
+            }
+        }
+        function generateWorld() {
+            for (let x = -WORLD_RADIUS - 5; x <= WORLD_RADIUS + 5; x++) {
+                for (let z = -WORLD_RADIUS - 5; z <= WORLD_RADIUS + 5; z++) { addBlock(x, 0, z, 'sand', true); }
+            }
+            for (let x = -WORLD_RADIUS; x <= WORLD_RADIUS; x++) {
+                for (let z = -WORLD_RADIUS; z <= WORLD_RADIUS; z++) {
+                    const dist = Math.sqrt(x*x + z*z);
+                    const islandFactor = Math.max(0, 1 - Math.pow(dist / (WORLD_RADIUS - 2), 2));
+                    if (islandFactor > 0.1) {
+                        let h = Math.floor(7 * islandFactor * Math.sin(x/9) * Math.cos(z/9));
+                        h += 4; 
+                        let type;
+                        const isSurface = true; 
+                        if(isSurface) {
+                            for (let y = 1; y <= h; y++) {
+                                if (y === h) { if (y <= 2) type = 'sand'; else type = 'grass'; } 
+                                else if (y > h - 4) { type = 'dirt'; } else { type = 'stone'; }
+                                if (type === 'stone' && y < h-3 && x%2!==0 && z%2!==0) continue; 
+                                addBlock(x, y, z, type, true);
+                            }
+                        }
+                        if (pseudoRandom(x, z) < 0.015 && h > 2) { createTree(x, h + 1, z); }
+                    }
+                }
+            }
+        }
+        generateWorld();
+        
+        const controls = new THREE.PointerLockControls(camera, document.body);
+        const player = { velocity: new THREE.Vector3(), direction: new THREE.Vector3() };
+        let moveFwd = false, moveBwd = false, moveLeft = false, moveRight = false;
+        let moveUp = false, moveDown = false;
+        let canJump = false; let isFlying = false;
+        
+        function createPlayerModel(isLocal) {
+            const group = new THREE.Group();
+            const mat = isLocal ? localPlayerMat : otherPlayerMat;
+            const limbs = {};
+            const legGeo = new THREE.BoxGeometry(0.25, 0.8, 0.25);
+            legGeo.translate(0, -0.3, 0); 
+            const legL = new THREE.Mesh(legGeo, mat);
+            legL.position.set(-0.15, 0.7, 0); 
+            group.add(legL); limbs.legL = legL;
+            const legR = new THREE.Mesh(legGeo, mat);
+            legR.position.set(0.15, 0.7, 0);
+            group.add(legR); limbs.legR = legR;
+            const bodyGeo = new THREE.BoxGeometry(0.5, 0.8, 0.25);
+            const body = new THREE.Mesh(bodyGeo, mat);
+            body.position.y = 1.2; group.add(body);
+            const armGeo = new THREE.BoxGeometry(0.2, 0.8, 0.2);
+            armGeo.translate(0, -0.3, 0);
+            const armL = new THREE.Mesh(armGeo, mat);
+            armL.position.set(-0.4, 1.5, 0);
+            group.add(armL); limbs.armL = armL;
+            const armR = new THREE.Mesh(armGeo, mat);
+            armR.position.set(0.4, 1.5, 0);
+            group.add(armR); limbs.armR = armR;
+            const headGeo = new THREE.BoxGeometry(0.4, 0.4, 0.4);
+            const head = new THREE.Mesh(headGeo, skinMat);
+            head.position.y = 1.8; group.add(head);
+            group.userData.limbs = limbs;
+            return group;
+        }
+        
+        let isThirdPerson = false;
+        const localPlayerGroup = createPlayerModel(true);
+        scene.add(localPlayerGroup); localPlayerGroup.visible = false;
+        const otherPlayerGroup = createPlayerModel(false);
+        scene.add(otherPlayerGroup); otherPlayerGroup.position.set(0, -100, 0);
+        
+        function animateCharacter(group, isMoving, time) {
+            const limbs = group.userData.limbs;
+            if (!limbs) return;
+            if (isMoving) {
+                const speed = 10;
+                const angle = Math.sin(time * speed) * 0.8;
+                limbs.legL.rotation.x = angle; limbs.legR.rotation.x = -angle;
+                limbs.armL.rotation.x = -angle; limbs.armR.rotation.x = angle;
             } else {
-                desc.innerText = "ШАГ 1: Вставь код друга. ШАГ 2: Жми кнопку и отправь новый код другу.";
-                mainBtn.innerText = "Создать ответ";
-                mainBtn.onclick = async () => {
-                    const offStr = document.getElementById('sdp-io').value;
-                    const offer = JSON.parse(atob(offStr));
-                    await pc.setRemoteDescription(new RTCSessionDescription(offer));
-                    const answer = await pc.createAnswer();
-                    await pc.setLocalDescription(answer);
-                };
-                pc.ondatachannel = (e) => setupDataEvents(e.channel);
+                limbs.legL.rotation.x = 0; limbs.legR.rotation.x = 0;
+                limbs.armL.rotation.x = 0; limbs.armR.rotation.x = 0;
             }
         }
+        
+        const onKey = (e, v) => {
+            switch(e.code) {
+                case 'KeyW': moveFwd = v; break;
+                case 'KeyS': moveBwd = v; break;
+                case 'KeyA': moveLeft = v; break;
+                case 'KeyD': moveRight = v; break;
+                case 'Space': 
+                    if (isFlying) moveUp = v;
+                    else if(v && canJump) { player.velocity.y = 12; canJump = false; } 
+                    break;
+                case 'ShiftLeft': if (isFlying) moveDown = v; break;
+                case 'Digit7': if(v) toggleCameraMode(); break; 
+                case 'KeyF': if(v) toggleFlight(); break;
+            }
+        };
+        document.addEventListener('keydown', e => onKey(e, true));
+        document.addEventListener('keyup', e => onKey(e, false));
+        
+        function toggleCameraMode() {
+            isThirdPerson = !isThirdPerson;
+            localPlayerGroup.visible = isThirdPerson;
+            document.getElementById('crosshair').style.display = (isThirdPerson || isMobile) ? 'none' : 'block';
+        }
 
-        function setupDataEvents(channel) {
-            dataChannel = channel;
-            channel.onopen = () => {
-                logNet("СВЯЗЬ УСТАНОВЛЕНА!");
-                isConnected = true;
-                setTimeout(() => {
-                    document.getElementById('menu').style.display = 'none';
-                    isGameActive = true;
-                    if (!isHost) sendData({ type: 'handshake_req' });
-                }, 1000);
-            };
-            channel.onmessage = (e) => {
-                const data = JSON.parse(e.data);
-                if (data.type === 'handshake_req' && isHost) {
-                    sendData({ type: 'handshake_ack', log: worldActionLog });
-                } else if (data.type === 'handshake_ack') {
-                    data.log.forEach(a => addBlock(a.x, a.y, a.z, a.blockType, true));
-                } else if (data.type === 'block_add') {
-                    addBlock(data.x, data.y, data.z, data.blockType, true);
-                } else if (data.type === 'move') {
-                    otherPlayerTargetPos.set(data.pos.x, data.pos.y, data.pos.z);
-                    otherPlayerTargetRot = data.rot;
+        function toggleFlight() {
+            isFlying = !isFlying; player.velocity.y = 0; 
+            document.getElementById('flight-status').style.display = isFlying ? 'block' : 'none';
+            document.getElementById('btn-down').style.display = (isMobile && isFlying) ? 'flex' : 'none';
+            showNotification(isFlying ? "Полет ВКЛ" : "Полет ВЫКЛ");
+        }
+        
+        let isMobile = false;
+        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) enableMobileUI();
+        const mobileToggleBtn = document.getElementById('mobile-toggle-btn');
+        const handleToggle = (e) => {
+             e.preventDefault(); e.stopPropagation();
+             const ui = document.getElementById('mobile-ui');
+             if (ui.style.display === 'block') ui.style.display = 'none';
+             else enableMobileUI();
+        };
+        mobileToggleBtn.addEventListener('click', handleToggle);
+        mobileToggleBtn.addEventListener('touchstart', handleToggle);
+        
+        function enableMobileUI() {
+            isMobile = true;
+            document.getElementById('mobile-ui').style.display = 'block';
+            document.getElementById('hud').style.display = 'none';
+            document.getElementById('crosshair').style.display = 'block';
+            document.getElementById('inventory').style.display = 'flex'; 
+        }
+        
+        const joystickStick = document.getElementById('joystick-stick');
+        const joystickZone = document.getElementById('joystick-zone');
+        let joyTouchId = null; let joyStartX = 0, joyStartY = 0;
+        joystickZone.addEventListener('touchstart', (e) => {
+            e.preventDefault(); const touch = e.changedTouches[0]; joyTouchId = touch.identifier; joyStartX = touch.clientX; joyStartY = touch.clientY;
+        }, {passive: false});
+        joystickZone.addEventListener('touchmove', (e) => {
+            e.preventDefault(); for(let i=0; i<e.changedTouches.length; i++) {
+                if(e.changedTouches[i].identifier === joyTouchId) {
+                    const touch = e.changedTouches[i];
+                    let dx = touch.clientX - joyStartX; let dy = touch.clientY - joyStartY;
+                    const dist = Math.sqrt(dx*dx + dy*dy); const maxDist = 40;
+                    if(dist > maxDist) { dx = (dx/dist)*maxDist; dy = (dy/dist)*maxDist; }
+                    joystickStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+                    moveRight = (dx/maxDist) > 0.2; moveLeft = (dx/maxDist) < -0.2;
+                    moveBwd = (dy/maxDist) > 0.2; moveFwd = (dy/maxDist) < -0.2;
                 }
-            };
-        }
-
-        function sendData(data) {
-            if (dataChannel && dataChannel.readyState === 'open') {
-                dataChannel.send(JSON.stringify(data));
             }
-        }
-
-        // --- УПРАВЛЕНИЕ И ЦИКЛ ---
-        function startSinglePlayer() {
-            document.getElementById('menu').style.display = 'none';
-            isGameActive = true;
-            camera.position.set(0, 5, 0);
-        }
-
-        document.addEventListener('keydown', (e) => {
-            switch(e.code) {
-                case 'KeyW': moveFwd = true; break;
-                case 'KeyS': moveBwd = true; break;
-                case 'KeyA': moveLeft = true; break;
-                case 'KeyD': moveRight = true; break;
-                case 'Space': if(canJump) { player.velocity.y = 10; canJump = false; } break;
-            }
+        }, {passive: false});
+        const resetJoystick = () => { joyTouchId = null; joystickStick.style.transform = `translate(-50%, -50%)`; moveFwd = moveBwd = moveLeft = moveRight = false; };
+        joystickZone.addEventListener('touchend', resetJoystick); joystickZone.addEventListener('touchcancel', resetJoystick);
+        
+        const lookZone = document.getElementById('look-zone');
+        let lookTouchId = null; let lookLastX = 0, lookLastY = 0;
+        lookZone.addEventListener('touchstart', (e) => {
+            const touch = e.changedTouches[0]; lookTouchId = touch.identifier; lookLastX = touch.clientX; lookLastY = touch.clientY;
         });
-        document.addEventListener('keyup', (e) => {
-            switch(e.code) {
-                case 'KeyW': moveFwd = false; break;
-                case 'KeyS': moveBwd = false; break;
-                case 'KeyA': moveLeft = false; break;
-                case 'KeyD': moveRight = false; break;
+        lookZone.addEventListener('touchmove', (e) => {
+            e.preventDefault(); for(let i=0; i<e.changedTouches.length; i++) {
+                if(e.changedTouches[i].identifier === lookTouchId) {
+                    const touch = e.changedTouches[i];
+                    const dx = touch.clientX - lookLastX; const dy = touch.clientY - lookLastY;
+                    lookLastX = touch.clientX; lookLastY = touch.clientY;
+                    const euler = new THREE.Euler(0, 0, 0, 'YXZ');
+                    euler.setFromQuaternion(camera.quaternion);
+                    euler.y -= dx * 0.005; euler.x -= dy * 0.005;
+                    euler.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, euler.x));
+                    camera.quaternion.setFromEuler(euler);
+                }
             }
+        }, {passive: false});
+        
+        // Mobile Buttons Logic
+        const btnJump = document.getElementById('btn-jump');
+        const btnFly = document.getElementById('btn-fly');
+        const btnDown = document.getElementById('btn-down');
+
+        btnJump.addEventListener('touchstart', (e) => {
+            e.preventDefault(); 
+            if (isFlying) moveUp = true;
+            else if(canJump) { player.velocity.y = 12; canJump=false; }
+        });
+        btnJump.addEventListener('touchend', (e) => {
+            e.preventDefault(); 
+            if (isFlying) moveUp = false;
         });
 
-        const raycaster = new THREE.Raycaster();
-        document.addEventListener('mousedown', (e) => {
-            if (!isGameActive || !controls.isLocked) return;
-            raycaster.setFromCamera({x:0, y:0}, camera);
-            const intersects = raycaster.intersectObjects(Object.values(chunks));
-            if (intersects.length > 0) {
+        btnDown.addEventListener('touchstart', (e) => {
+            e.preventDefault(); 
+            if (isFlying) moveDown = true;
+        });
+        btnDown.addEventListener('touchend', (e) => {
+            e.preventDefault(); 
+            if (isFlying) moveDown = false;
+        });
+
+        btnFly.addEventListener('touchstart', (e) => {
+            e.preventDefault(); 
+            toggleFlight();
+        });
+
+        document.getElementById('btn-cam').addEventListener('touchstart', (e)=>{e.preventDefault(); toggleCameraMode();});
+        document.getElementById('btn-place').addEventListener('touchstart', (e)=>{e.preventDefault(); performRaycastAction(2);});
+        document.getElementById('btn-break').addEventListener('touchstart', (e)=>{e.preventDefault(); performRaycastAction(0);});
+
+        const raycaster = new THREE.Raycaster(); raycaster.far = 6; const center = new THREE.Vector2(0,0);
+        function performRaycastAction(buttonType) {
+            raycaster.setFromCamera(center, camera);
+            const meshesToCheck = Object.values(chunks);
+            const intersects = raycaster.intersectObjects(meshesToCheck);
+            if(intersects.length > 0) {
                 const hit = intersects[0];
-                if (e.button === 2) { // PKM
-                    const pos = hit.point.add(hit.face.normal.multiplyScalar(0.5));
-                    addBlock(Math.round(pos.x), Math.round(pos.y), Math.round(pos.z), selectedBlock);
+                const p = hit.point.clone().sub(hit.face.normal.clone().multiplyScalar(0.1));
+                const bx = Math.round(p.x), by = Math.round(p.y), bz = Math.round(p.z);
+                if(buttonType === 0) removeBlock(bx, by, bz);
+                else if (buttonType === 2) {
+                    const p2 = hit.point.clone().add(hit.face.normal.clone().multiplyScalar(0.1));
+                    const nx = Math.round(p2.x), ny = Math.round(p2.y), nz = Math.round(p2.z);
+                    const pp = controls.getObject().position;
+                    if (Math.abs(nx - pp.x) < 0.6 && Math.abs(nz - pp.z) < 0.6 && ny >= pp.y-2.0 && ny <= pp.y+0.2) return;
+                    addBlock(nx, ny, nz, selectedBlock);
                 }
             }
-        });
-
+        }
+        document.addEventListener('mousedown', e => { if(!isGameActive) return; if(!controls.isLocked && !isMobile) return; performRaycastAction(e.button); });
+        
+        function hasBlock(x, y, z) { return worldData.has(`${Math.round(x)},${Math.round(y)},${Math.round(z)}`); }
+        function checkPlayerHorizontalCollision(pos) {
+            if (isFlying) return false;
+            const w = 0.3; const h = 1.9;
+            const points = [
+                [pos.x-w, pos.y-h+0.2, pos.z-w], [pos.x+w, pos.y-h+0.2, pos.z-w],
+                [pos.x-w, pos.y-h+0.2, pos.z+w], [pos.x+w, pos.y-h+0.2, pos.z+w],
+                [pos.x-w, pos.y-1.0, pos.z-w], [pos.x+w, pos.y-1.0, pos.z-w],
+                [pos.x-w, pos.y-0.1, pos.z-w], [pos.x+w, pos.y-0.1, pos.z-w]
+            ];
+            for(let p of points) if(hasBlock(p[0], p[1], p[2])) return true;
+            return false;
+        }
+        
+        let prevTime = performance.now();
         function animate() {
             requestAnimationFrame(animate);
-            if (isGameActive) {
-                const dt = 0.016;
-                // Простая гравитация
-                player.velocity.y -= 25 * dt;
-                camera.position.y += player.velocity.y * dt;
+            if(!renderer) return;
+            const time = performance.now();
+            const dt = Math.min((time - prevTime) / 1000, 0.1);
+            prevTime = time;
+            
+            if(isGameActive) {
+                const camObj = camera; 
                 
-                if (camera.position.y < 1.8) {
-                    camera.position.y = 1.8; player.velocity.y = 0; canJump = true;
+                if (isFlying) {
+                    const flySpeed = 25 * dt;
+                    player.velocity.y = 0; 
+                    if (moveUp) camObj.position.y += flySpeed;
+                    if (moveDown) camObj.position.y -= flySpeed;
+                    const dir = new THREE.Vector3(); camera.getWorldDirection(dir);
+                    const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0,1,0));
+                    if (moveFwd) camObj.position.addScaledVector(dir, flySpeed);
+                    if (moveBwd) camObj.position.addScaledVector(dir, -flySpeed);
+                    if (moveRight) camObj.position.addScaledVector(right, flySpeed);
+                    if (moveLeft) camObj.position.addScaledVector(right, -flySpeed);
+                } else {
+                    if (!canJump) player.velocity.y -= 35 * dt;
+                    player.direction.z = Number(moveFwd) - Number(moveBwd);
+                    player.direction.x = Number(moveRight) - Number(moveLeft);
+                    player.direction.normalize();
+                    if (moveFwd || moveBwd) player.velocity.z += player.direction.z * 60 * dt;
+                    if (moveLeft || moveRight) player.velocity.x += player.direction.x * 60 * dt; 
+                    player.velocity.x -= player.velocity.x * 10 * dt; player.velocity.z -= player.velocity.z * 10 * dt;
+                    
+                    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camObj.quaternion);
+                    forward.y = 0; forward.normalize();
+                    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camObj.quaternion);
+                    right.y = 0; right.normalize();
+                    const vx = (forward.x * player.velocity.z + right.x * player.velocity.x) * dt;
+                    const vz = (forward.z * player.velocity.z + right.z * player.velocity.x) * dt;
+                    
+                    if(checkPlayerHorizontalCollision(new THREE.Vector3(camObj.position.x + vx, camObj.position.y, camObj.position.z))) player.velocity.x = 0;
+                    else camObj.position.x += vx;
+                    if(checkPlayerHorizontalCollision(new THREE.Vector3(camObj.position.x, camObj.position.y, camObj.position.z + vz))) player.velocity.z = 0;
+                    else camObj.position.z += vz;
+
+                    camObj.position.y += player.velocity.y * dt;
+                    const playerHeight = 1.8; const feetY = camObj.position.y - playerHeight; const blockY = Math.round(feetY - 0.5);
+                    if (hasBlock(camObj.position.x, blockY, camObj.position.z)) {
+                        const blockTop = blockY + 0.5;
+                        if (player.velocity.y <= 0 && feetY < blockTop + 0.1) { camObj.position.y = blockTop + playerHeight; player.velocity.y = 0; canJump = true; }
+                    } else canJump = false;
+                    if (player.velocity.y > 0 && hasBlock(camObj.position.x, camObj.position.y + 0.1, camObj.position.z)) { player.velocity.y = 0; camObj.position.y -= 0.1; }
                 }
 
-                // Движение
-                const dir = new THREE.Vector3();
-                camera.getWorldDirection(dir); dir.y = 0; dir.normalize();
-                const side = new THREE.Vector3().crossVectors(camera.up, dir).normalize();
-
-                if(moveFwd) camera.position.addScaledVector(dir, 0.1);
-                if(moveBwd) camera.position.addScaledVector(dir, -0.1);
-                if(moveLeft) camera.position.addScaledVector(side, 0.1);
-                if(moveRight) camera.position.addScaledVector(side, -0.1);
-
-                if (isConnected) {
-                    const euler = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ');
-                    sendData({ type: 'move', pos: camera.position, rot: euler.y });
-                }
+                if(camObj.position.y < -30) { camObj.position.set(0, 15, 0); player.velocity.y = 0; }
+                
+                localPlayerGroup.position.x = camObj.position.x; localPlayerGroup.position.y = camObj.position.y - 1.8; localPlayerGroup.position.z = camObj.position.z;
+                const euler = new THREE.Euler(0, 0, 0, 'YXZ'); euler.setFromQuaternion(camObj.quaternion);
+                localPlayerGroup.rotation.y = euler.y;
+                const isMoving = Math.abs(player.velocity.x) > 0.1 || Math.abs(player.velocity.z) > 0.1 || (isFlying && (moveFwd||moveBwd));
+                animateCharacter(localPlayerGroup, isMoving, time / 1000);
             }
-            otherPlayerGroup.position.lerp(otherPlayerTargetPos, 0.1);
-            otherPlayerGroup.rotation.y = otherPlayerTargetRot;
-            renderer.render(scene, camera);
+
+            otherPlayerGroup.position.lerp(otherPlayerTargetPos, 0.1); 
+            otherPlayerGroup.rotation.y += (otherPlayerTargetRot - otherPlayerGroup.rotation.y) * 0.1;
+            const dist = otherPlayerGroup.position.distanceTo(otherPlayerTargetPos);
+            animateCharacter(otherPlayerGroup, dist > 0.05, time / 1000);
+            
+            if (isThirdPerson && isGameActive) {
+                const originalPos = camera.position.clone();
+                const offset = new THREE.Vector3(0, 0, 5); 
+                offset.applyQuaternion(camera.quaternion);
+                camera.position.add(offset);
+                renderer.render(scene, camera);
+                camera.position.copy(originalPos);
+            } else renderer.render(scene, camera);
+        }
+        animate();
+
+        // --- Сетевая часть ---
+        let peer = null, conn = null;
+        let handshakeInterval = null;
+        let isConnected = false;
+
+        function updateUI(showMenu) {
+            document.getElementById('menu').style.display = showMenu ? 'flex' : 'none';
+            if (isMobile) {
+                document.getElementById('blocker').style.display = 'none'; 
+                document.getElementById('inventory').style.display = showMenu ? 'none' : 'flex';
+                isGameActive = !showMenu;
+            } else {
+                document.getElementById('blocker').style.display = showMenu ? 'none' : 'flex';
+                document.getElementById('inventory').style.display = showMenu ? 'none' : 'flex';
+            }
+        }
+        const blocker = document.getElementById('blocker');
+        blocker.addEventListener('click', () => {
+            blocker.style.display = 'none';
+            document.getElementById('crosshair').style.display = isThirdPerson ? 'none' : 'block';
+            document.getElementById('hud').style.display = 'block';
+            document.getElementById('inventory').style.display = 'flex';
+            isGameActive = true;
+            try { if (document.pointerLockElement !== document.body) controls.lock(); } catch (e) {}
+        });
+        controls.addEventListener('lock', () => {
+            document.getElementById('blocker').style.display = 'none';
+            document.getElementById('crosshair').style.display = isThirdPerson ? 'none' : 'block';
+            document.getElementById('hud').style.display = 'block';
+            document.getElementById('inventory').style.display = 'flex';
+            isGameActive = true;
+        });
+        controls.addEventListener('unlock', () => {
+            if (document.getElementById('menu').style.display === 'none') {
+                document.getElementById('blocker').style.display = 'flex';
+                document.getElementById('crosshair').style.display = 'none';
+                document.getElementById('hud').style.display = 'none';
+                document.getElementById('inventory').style.display = 'none';
+                isGameActive = false;
+            }
+        });
+        function showNotification(msg) {
+            const n = document.getElementById('notification');
+            n.innerText = msg; n.style.transform = "translateX(0)";
+            setTimeout(() => n.style.transform = "translateX(200%)", 3000);
+        }
+        function startSinglePlayer(e) { e.stopPropagation(); updateUI(false); controls.getObject().position.set(0,15,0); isGameActive=true; }
+        
+        function resetNetwork(e) {
+            e.stopPropagation();
+            if(peer) peer.destroy();
+            if(conn) conn.close();
+            peer = null; conn = null;
+            document.getElementById('btn-join').disabled = false; document.getElementById('btn-join').innerText = "Вход";
+            document.getElementById('btn-create').disabled = false; document.getElementById('btn-create').innerText = "🌐 Создать сервер";
+            logNet("Сетевой модуль сброшен");
+            alert("Сеть сброшена. Попробуйте создать сервер или подключиться снова.");
         }
 
-        window.onload = () => {
-            initGraphics();
-            animate();
-            document.body.addEventListener('click', () => { if(isGameActive) controls.lock(); });
-        };
+        // --- Улучшенная функция создания сервера ---
+        function createGame(e) { 
+            e.stopPropagation(); 
+            const btn = e.target; btn.disabled = true; btn.innerText = "Запуск...";
+            isHost = true; 
+            
+            initPeer((id) => {
+                btn.disabled = false; btn.innerText = "🌐 Создать сервер";
+                document.getElementById('setup-controls').style.display='none'; 
+                document.getElementById('lobby-controls').style.display='block'; 
+                controls.getObject().position.set(0,15,0);
+            }, (err) => {
+                btn.disabled = false; btn.innerText = "🌐 Создать сервер";
+                alert("Ошибка запуска сервера: " + err);
+            });
+        }
+        
+        function joinGame(e) { 
+            e.stopPropagation(); isHost = false; 
+            const id = document.getElementById('remote-id').value; 
+            if(!id) { alert("Введите ID!"); return; } 
+
+            const btn = e.target; const originalText = btn.innerText;
+            btn.innerText = "Подключение..."; btn.disabled = true;
+
+            initPeer((myId) => {
+                logNet("Connecting to: " + id);
+                conn = peer.connect(id, { reliable: true }); // Standard connection
+                
+                const connTimeout = setTimeout(() => {
+                    if (!isConnected) {
+                        alert("Таймаут соединения. Если вы в локальной сети, проверьте, что оба устройства используют HTTP (не HTTPS).");
+                        btn.innerText = originalText; btn.disabled = false;
+                        if(conn) conn.close();
+                    }
+                }, 15000);
+
+                handleConnection(conn, () => {
+                    clearTimeout(connTimeout);
+                    btn.innerText = originalText; btn.disabled = false;
+                    updateUI(false); controls.getObject().position.set(0,15,0); isGameActive=true; 
+                }); 
+            }, (err) => {
+                btn.innerText = originalText; btn.disabled = false;
+                alert("Ошибка инициализации PeerJS: " + err);
+            });
+        }
+
+        function prepareGame(e) { e.stopPropagation(); updateUI(false); isGameActive=true; }
+        function copyId() { navigator.clipboard.writeText(document.getElementById('my-id').value); showNotification("ID скопирован"); }
+        
+        function initPeer(onSuccess, onError) {
+            if (peer) peer.destroy();
+            
+            // AUTO-CONFIG: Use secure=true only if on HTTPS
+            // This is critical for local network (http://192.168.x.x)
+            const isSecure = location.protocol === 'https:';
+            logNet("Network Mode: " + (isSecure ? "Secure (HTTPS)" : "Insecure (HTTP/Local)"));
+
+            try {
+                peer = new Peer({
+                    secure: isSecure, 
+                    debug: 1,
+                    config: {
+                        'iceServers': [
+                            { urls: 'stun:stun.l.google.com:19302' },
+                            { urls: 'stun:stun1.l.google.com:19302' },
+                            { urls: 'stun:stun2.l.google.com:19302' }
+                        ]
+                    }
+                });
+            } catch(e) { if(onError) onError(e); return; }
+
+            let isOpen = false;
+            
+            const initTimeout = setTimeout(() => {
+                if(!isOpen) { if(onError) onError("Timeout connecting to PeerServer Cloud. Check Internet."); }
+            }, 10000);
+
+            peer.on('open', id => {
+                isOpen = true; clearTimeout(initTimeout);
+                document.getElementById('my-id').value = id;
+                logNet("My ID: " + id);
+                if(onSuccess) onSuccess(id);
+            });
+            
+            peer.on('connection', c => { 
+                conn = c;
+                logNet("Incoming connection...");
+                handleConnection(c);
+            });
+            
+            peer.on('error', e => {
+                logNet("Peer Error: " + e.type);
+                if(!isOpen) { clearTimeout(initTimeout); if(onError) onError(e.type); }
+            });
+        }
+
+        function handleConnection(connection, onSuccess = null) {
+            conn = connection;
+            
+            // MONITORING ICE CANDIDATES
+            // We use the internal RTCPeerConnection to see what's happening
+            if(conn.peerConnection) {
+                conn.peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        const type = event.candidate.type || 'unknown'; // host, srflx, relay
+                        logNet(`Found candidate: ${type} (${event.candidate.protocol})`);
+                    }
+                };
+                conn.peerConnection.oniceconnectionstatechange = () => {
+                    logNet(`ICE State: ${conn.peerConnection.iceConnectionState}`);
+                };
+            }
+
+            conn.on('open', () => {
+                showNotification("Соединение открыто!");
+                document.getElementById('net-status').innerText = "Онлайн";
+                document.getElementById('net-status').classList.add('online');
+                logNet("Channel OPEN");
+                isConnected = true;
+                startNetworkLogic();
+                if (isHost) setTimeout(() => sendData({ type: 'ping' }), 100);
+                if (onSuccess) onSuccess();
+            });
+
+            conn.on('close', () => { 
+                showNotification("Разрыв соединения"); 
+                conn = null; isConnected = false;
+                document.getElementById('net-status').innerText = "Офлайн";
+                document.getElementById('net-status').classList.remove('online');
+            });
+            conn.on('error', (err) => logNet("Conn Err: " + err));
+
+            conn.on('data', (data) => {
+                if (data.type === 'ping') return;
+                if (data.type === 'handshake_req') {
+                    logNet("Handshake Requested.");
+                    showNotification("Игрок присоединился!");
+                    sendData({ type: 'handshake_ack', log: worldActionLog });
+                } 
+                else if (data.type === 'handshake_ack') {
+                    if (handshakeInterval) { clearInterval(handshakeInterval); handshakeInterval = null; }
+                    logNet("World Sync: " + data.log.length);
+                    showNotification("Синхронизация!");
+                    data.log.forEach(action => {
+                        if (action.type === 'add') addBlock(action.x, action.y, action.z, action.blockType, true);
+                        else if (action.type === 'remove') removeBlock(action.x, action.y, action.z, true);
+                    });
+                }
+                else if(data.type === 'move') {
+                    otherPlayerTargetPos.set(data.pos.x, data.pos.y, data.pos.z);
+                    otherPlayerTargetRot = data.rot;
+                } else if (data.type === 'block_add') {
+                    addBlock(data.x, data.y, data.z, data.blockType, true);
+                } else if (data.type === 'block_remove') {
+                    removeBlock(data.x, data.y, data.z, true);
+                }
+            });
+        }
+
+        function startNetworkLogic() {
+            if (!isHost) {
+                logNet("Sending Handshake...");
+                sendData({ type: 'handshake_req' });
+                handshakeInterval = setInterval(() => {
+                    if (conn && conn.open) { sendData({ type: 'handshake_req' }); }
+                }, 2000);
+            }
+            setInterval(() => {
+                if (!conn || !conn.open) return; 
+                const p = camera;
+                const posToSend = {x: p.position.x, y: p.position.y - 1.8, z: p.position.z}; 
+                const euler = new THREE.Euler(0, 0, 0, 'YXZ'); euler.setFromQuaternion(p.quaternion);
+                sendData({ type: 'move', pos: posToSend, rot: euler.y });
+            }, 1000 / 30);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>
