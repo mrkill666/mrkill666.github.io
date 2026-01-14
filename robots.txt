@@ -1,4 +1,3 @@
 User-Agent: *
-Disallow: /H/
-Disallow: /GAME/
+Disallow: /G/
 Host: nozv.ru
