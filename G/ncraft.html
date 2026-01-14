@@ -755,37 +755,76 @@
         function copyId() { navigator.clipboard.writeText(document.getElementById('my-id').value); showNotification("ID скопирован"); }
         
 function initPeer(onSuccess, onError) {
-    if (peer) peer.destroy();
-    
-    const isSecure = location.protocol === 'https:';
-    logNet("Network Mode: " + (isSecure ? "Secure" : "Insecure"));
+            if (peer) {
+                try { peer.destroy(); } catch(e) {}
+            }
+            
+            const isSecure = location.protocol === 'https:';
+            logNet("Network Mode: " + (isSecure ? "Secure (HTTPS)" : "Insecure (HTTP)"));
+            logNet("Попытка подключения к PeerServer...");
 
-    peer = new Peer({
-        secure: isSecure, 
-        debug: 1,
-        config: {
-            'iceServers': [
-                { urls: 'stun:stun.l.google.com:19302' },
-                // FREE TURN SERVER (Relays data when firewall blocks it)
-                {
-                    urls: 'turn:openrelay.metered.ca:443',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                },
-                {
-                    urls: 'turn:openrelay.metered.ca:80',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
+            try {
+                // Настраиваем подключение: если HTTPS, используем 443 порт
+                peer = new Peer({
+                    debug: 3, // Включаем максимум логов в консоль (F12)
+                    secure: isSecure,
+                    port: isSecure ? 443 : 9000,
+                    config: {
+                        'iceServers': [
+                            { urls: 'stun:stun.l.google.com:19302' },
+                            {
+                                urls: 'turn:openrelay.metered.ca:443',
+                                username: 'openrelayproject',
+                                credential: 'openrelayproject'
+                            }
+                        ],
+                        'iceTransportPolicy': 'all'
+                    }
+                });
+            } catch(e) { 
+                logNet("Ошибка конструктора: " + e.message);
+                if(onError) onError(e); 
+                return; 
+            }
+
+            let isOpen = false;
+            const initTimeout = setTimeout(() => {
+                if(!isOpen) { 
+                    logNet("Таймаут: Сервер PeerJS не отвечает.");
+                    if(onError) onError("Timeout"); 
                 }
-            ],
-            'iceTransportPolicy': 'all', // Forces the browser to consider all paths
-            'sdpSemantics': 'unified-plan'
+            }, 15000);
+
+            peer.on('open', id => {
+                isOpen = true; 
+                clearTimeout(initTimeout);
+                document.getElementById('my-id').value = id;
+                logNet("Успех! Ваш ID: " + id);
+                if(onSuccess) onSuccess(id);
+            });
+            
+            peer.on('connection', c => { 
+                conn = c;
+                logNet("Входящий запрос на соединение...");
+                handleConnection(c);
+            });
+            
+            peer.on('error', e => {
+                logNet("Ошибка PeerJS: " + e.type);
+                console.error("Детальная ошибка:", e);
+                if(!isOpen) { 
+                    clearTimeout(initTimeout); 
+                    if(onError) onError(e.type); 
+                }
+            });
+
+            peer.on('disconnected', () => {
+                logNet("Потеряно соединение с сервером сигнализации.");
+            });
         }
-    });
 
-    // ... (rest of your existing open/connection/error events)
-}
 
+        
         function handleConnection(connection, onSuccess = null) {
             conn = connection;
             
