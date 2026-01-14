@@ -755,20 +755,18 @@
         function copyId() { navigator.clipboard.writeText(document.getElementById('my-id').value); showNotification("ID скопирован"); }
         
 function initPeer(onSuccess, onError) {
-            if (peer) {
-                try { peer.destroy(); } catch(e) {}
-            }
+            if (peer) { try { peer.destroy(); } catch(e) {} }
             
-            const isSecure = location.protocol === 'https:';
-            logNet("Network Mode: " + (isSecure ? "Secure (HTTPS)" : "Insecure (HTTP)"));
-            logNet("Попытка подключения к PeerServer...");
+            logNet("Пытаюсь обойти нестабильность Cloudflare...");
 
             try {
-                // Настраиваем подключение: если HTTPS, используем 443 порт
                 peer = new Peer({
-                    debug: 3, // Включаем максимум логов в консоль (F12)
-                    secure: isSecure,
-                    port: isSecure ? 443 : 9000,
+                    // Пытаемся использовать основной домен напрямую
+                    host: 'peerjs.com', 
+                    path: '/', 
+                    secure: true,
+                    port: 443,
+                    debug: 3,
                     config: {
                         'iceServers': [
                             { urls: 'stun:stun.l.google.com:19302' },
@@ -777,49 +775,25 @@ function initPeer(onSuccess, onError) {
                                 username: 'openrelayproject',
                                 credential: 'openrelayproject'
                             }
-                        ],
-                        'iceTransportPolicy': 'all'
+                        ]
                     }
                 });
             } catch(e) { 
-                logNet("Ошибка конструктора: " + e.message);
-                if(onError) onError(e); 
-                return; 
+                logNet("Ошибка: " + e.message);
+                if(onError) onError(e); return; 
             }
 
-            let isOpen = false;
-            const initTimeout = setTimeout(() => {
-                if(!isOpen) { 
-                    logNet("Таймаут: Сервер PeerJS не отвечает.");
-                    if(onError) onError("Timeout"); 
-                }
-            }, 15000);
-
             peer.on('open', id => {
-                isOpen = true; 
-                clearTimeout(initTimeout);
                 document.getElementById('my-id').value = id;
-                logNet("Успех! Ваш ID: " + id);
+                logNet("ID ПОЛУЧЕН: " + id);
                 if(onSuccess) onSuccess(id);
             });
             
-            peer.on('connection', c => { 
-                conn = c;
-                logNet("Входящий запрос на соединение...");
-                handleConnection(c);
-            });
-            
             peer.on('error', e => {
-                logNet("Ошибка PeerJS: " + e.type);
-                console.error("Детальная ошибка:", e);
-                if(!isOpen) { 
-                    clearTimeout(initTimeout); 
-                    if(onError) onError(e.type); 
+                logNet("Сбой связи: " + e.type);
+                if (e.type === 'server-error' || e.type === 'socket-error') {
+                    logNet("Совет: Включите VPN, сервер PeerJS заблокирован.");
                 }
-            });
-
-            peer.on('disconnected', () => {
-                logNet("Потеряно соединение с сервером сигнализации.");
             });
         }
 
