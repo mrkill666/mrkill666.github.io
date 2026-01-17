@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Пол МакЛава</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'VT323', monospace;
+            background-color: #bd1616; /* ЛАВА (Более насыщенный) */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #game-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* UI Styles */
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            text-shadow: 4px 4px 0 #000; /* Единый стиль тени */
+        }
+
+        .ui-element {
+            pointer-events: auto;
+        }
+
+        h1 {
+            font-size: 80px;
+            color: #fff;
+            margin: 0 0 20px 0;
+            line-height: 0.9;
+            transform: rotate(-3deg);
+            text-transform: uppercase;
+        }
+
+        button {
+            background: #ffcc00;
+            border: 4px solid #fff;
+            color: #333;
+            font-family: 'VT323', monospace;
+            font-size: 32px;
+            padding: 10px 30px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 6px 0 #b38f00;
+            transition: transform 0.1s, box-shadow 0.1s;
+            text-shadow: none;
+        }
+
+        button:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #b38f00;
+        }
+
+        /* Toggle Switch */
+        .toggle-container {
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            font-size: 24px;
+        }
+
+        input[type=checkbox] {
+            transform: scale(1.5);
+            cursor: pointer;
+        }
+
+        /* HUD */
+        #hud {
+            justify-content: space-between;
+            flex-direction: row;
+            align-items: flex-start;
+            padding: 20px;
+            box-sizing: border-box;
+            display: none; /* Hidden by default */
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .stat-box {
+            color: white;
+            font-size: 32px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 18px;
+            color: #ddd;
+            display: block;
+        }
+
+        #block-counter {
+            color: #ffcc00;
+        }
+        
+        /* Multiplier Display */
+        #multiplier-box {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 48px;
+            color: #f1c40f;
+            display: none;
+            animation: pulse 0.5s infinite alternate;
+        }
+        
+        /* Mode Alert */
+        #mode-alert {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 80px;
+            color: #ff3333;
+            font-family: 'VT323', monospace; /* Исправлен шрифт */
+            text-shadow: 4px 4px 0 #000; /* Исправлена тень */
+            display: none;
+            animation: shake 0.5s infinite;
+            z-index: 10;
+        }
+
+        @keyframes pulse {
+            from { transform: translateX(-50%) scale(1); }
+            to { transform: translateX(-50%) scale(1.2); }
+        }
+        
+        @keyframes shake {
+            0% { transform: translateX(-50%) rotate(0deg); }
+            25% { transform: translateX(-52%) rotate(-5deg); }
+            75% { transform: translateX(-48%) rotate(5deg); }
+            100% { transform: translateX(-50%) rotate(0deg); }
+        }
+
+        /* Mobile Controls */
+        #mobile-controls {
+            display: none;
+            pointer-events: none; /* Let clicks pass through empty spaces */
+        }
+
+        .touch-btn {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            pointer-events: auto;
+            touch-action: manipulation;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            backdrop-filter: blur(2px);
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        .touch-btn:active {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        #btn-left { bottom: 20px; left: 20px; width: 80px; height: 80px; }
+        #btn-right { bottom: 20px; right: 20px; width: 80px; height: 80px; }
+        #btn-build { bottom: 20px; left: 50%; transform: translateX(-50%); width: 140px; height: 100px; background: rgba(52, 152, 219, 0.4); border-color: #3498db; }
+
+        /* Screens */
+        #start-screen { display: flex; background: rgba(0,0,0,0.4); }
+        #game-over-screen { display: none; background: rgba(180, 0, 0, 0.6); }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="game-container"></div>
+
+    <!-- HUD -->
+    <div id="hud" class="ui-layer">
+        <div class="stat-box">
+            <span class="stat-label">СЧЕТ</span>
+            <span id="score-display">0</span>
+        </div>
+        <div id="multiplier-box">x1</div>
+        <div class="stat-box">
+            <span class="stat-label">ОБСИДИАН</span>
+            <span id="block-display">0</span>
+        </div>
+    </div>
+    
+    <div id="mode-alert" class="ui-layer">ВУЛКАНЫ!<br>ЛЕТИ!</div>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="ui-layer">
+        <h1>ПОЛ<br>МАКЛАВА</h1>
+        <button id="start-btn" class="ui-element">ИГРАТЬ</button>
+        
+        <div class="toggle-container ui-element">
+            <input type="checkbox" id="mobile-toggle">
+            <label for="mobile-toggle">ТЕЛЕФОН / ПЛАНШЕТ</label>
+        </div>
+        
+        <div style="margin-top: 20px; color: #eee; font-size: 18px; max-width: 400px; line-height: 1.4;">
+            ПК: [ЗАЖМИ W ИЛИ ПРОБЕЛ] Строить | [A/D] Двигаться<br>
+            Собирай ВЕДРА С ВОДОЙ для обсидиана!<br>
+            В режиме ВУЛКАНОВ: Пробел чтобы летать!
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="ui-layer">
+        <h1>ТЫ СГОРЕЛ!</h1>
+        <div class="stat-box" style="margin-bottom: 20px;">
+            РЕЗУЛЬТАТ: <span id="final-score">0</span>
+        </div>
+        <button id="restart-btn" class="ui-element">ЕЩЕ РАЗ</button>
+    </div>
+
+    <!-- Mobile Controls Overlay -->
+    <div id="mobile-controls" class="ui-layer">
+        <div id="btn-left" class="touch-btn">◀</div>
+        <div id="btn-build" class="touch-btn">ДЕЙСТВИЕ</div>
+        <div id="btn-right" class="touch-btn">▶</div>
+    </div>
+
+    <!-- Three.js from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        /**
+         * НАСТРОЙКИ ИГРЫ
+         */
+        const CONFIG = {
+            laneWidth: 1.5,
+            chunkSize: 20,
+            startBlocks: 50,
+            collectReward: 10,
+            runSpeed: 6.0,
+            speedIncrement: 0.1,
+            gravity: 25, 
+            jumpForce: 10, 
+            fogNear: 30,
+            fogFar: 90,
+            comboTimeout: 5000,
+            comboThreshold: 3,
+            comboStep: 3,
+            flappyDuration: 20000, 
+            flappyFirstThreshold: 1000,
+            flappyRepeatInterval: 10000,
+            flappyCeiling: 6.0,
+            colors: {
+                player: 0xe74c3c,    
+                ground: 0x2ecc71,    
+                road: 0x221f2e,      
+                collectible: 0x3498db, 
+                water: 0xbd1616,      // ЛАВА ФОН (более глубокий)
+                sideTree: 0x27ae60,
+                volcano: 0x333333,
+                volcanoLava: 0xff4500,
+                bubble: 0xff6600
+            }
+        };
+
+        /**
+         * МЕНЕДЖЕР ВВОДА
+         */
+        class InputManager {
+            constructor() {
+                this.actions = {
+                    left: false,
+                    right: false,
+                    build: false, 
+                    buildPressed: false 
+                };
+                this.isMobile = false;
+                
+                document.addEventListener('keydown', (e) => this.onKey(e, true));
+                document.addEventListener('keyup', (e) => this.onKey(e, false));
+
+                this.mobileElements = {
+                    left: document.getElementById('btn-left'),
+                    right: document.getElementById('btn-right'),
+                    build: document.getElementById('btn-build'),
+                    container: document.getElementById('mobile-controls')
+                };
+            }
+
+            setMobileMode(enabled) {
+                this.isMobile = enabled;
+                if (enabled) {
+                    this.mobileElements.container.style.display = 'block';
+                    this.bindTouch(this.mobileElements.left, 'left');
+                    this.bindTouch(this.mobileElements.right, 'right');
+                    this.bindTouch(this.mobileElements.build, 'build');
+                } else {
+                    this.mobileElements.container.style.display = 'none';
+                }
+            }
+
+            bindTouch(element, actionName) {
+                const start = (e) => { 
+                    e.preventDefault(); 
+                    this.actions[actionName] = true; 
+                    this.actions[actionName + 'Pressed'] = true;
+                    element.style.transform = "scale(0.95)";
+                };
+                const end = (e) => { 
+                    e.preventDefault(); 
+                    this.actions[actionName] = false; 
+                    this.actions[actionName + 'Pressed'] = false;
+                    element.style.transform = "scale(1)";
+                };
+                
+                element.addEventListener('touchstart', start, {passive: false});
+                element.addEventListener('touchend', end, {passive: false});
+                element.addEventListener('mousedown', start);
+                element.addEventListener('mouseup', end);
+            }
+
+            onKey(e, isDown) {
+                if(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].indexOf(e.code) > -1) {
+                    e.preventDefault();
+                }
+
+                switch(e.code) {
+                    case 'ArrowLeft': 
+                    case 'KeyA':
+                        this.actions.left = isDown; 
+                        break;
+                    case 'ArrowRight': 
+                    case 'KeyD':
+                        this.actions.right = isDown; 
+                        break;
+                    case 'Space': 
+                    case 'KeyW':
+                        this.actions.build = isDown;
+                        if(isDown) this.actions.buildPressed = true;
+                        else this.actions.buildPressed = false;
+                        break;
+                }
+            }
+            
+            getTriggerBuild() {
+                if (this.actions.buildPressed) {
+                    this.actions.buildPressed = false; 
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        /**
+         * ГЕНЕРАТОР МОДЕЛЕЙ
+         */
+        const ModelFactory = {
+            createPlayer: function() {
+                const group = new THREE.Group();
+                const matRed = new THREE.MeshLambertMaterial({ color: CONFIG.colors.player });
+                const matSkin = new THREE.MeshLambertMaterial({ color: 0xffccaa });
+                const matDark = new THREE.MeshLambertMaterial({ color: 0x333333 });
+
+                const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), matSkin);
+                head.position.y = 0.9;
+                group.add(head);
+
+                const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.6, 0.3), matRed);
+                body.position.y = 0.35;
+                group.add(body);
+
+                const legGeo = new THREE.BoxGeometry(0.2, 0.4, 0.2);
+                const legL = new THREE.Mesh(legGeo, matDark);
+                legL.position.set(-0.15, -0.15, 0);
+                group.add(legL);
+
+                const legR = new THREE.Mesh(legGeo, matDark);
+                legR.position.set(0.15, -0.15, 0);
+                group.add(legR);
+
+                const armGeo = new THREE.BoxGeometry(0.15, 0.5, 0.15);
+                const armL = new THREE.Mesh(armGeo, matRed);
+                armL.position.set(-0.35, 0.35, 0);
+                group.add(armL);
+
+                const armR = new THREE.Mesh(armGeo, matRed);
+                armR.position.set(0.35, 0.35, 0);
+                group.add(armR);
+
+                return group;
+            },
+
+            createBucket: function() {
+                const group = new THREE.Group();
+                
+                const bucketGeo = new THREE.CylinderGeometry(0.25, 0.2, 0.4, 8);
+                const matMetal = new THREE.MeshStandardMaterial({ color: 0xbdc3c7, roughness: 0.3, metalness: 0.5 });
+                const bucket = new THREE.Mesh(bucketGeo, matMetal);
+                bucket.position.y = 0.2;
+                group.add(bucket);
+
+                const waterGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.35, 8);
+                const matWater = new THREE.MeshPhongMaterial({ 
+                    color: CONFIG.colors.collectible, 
+                    shininess: 100,
+                    opacity: 0.9,
+                    transparent: true 
+                });
+                const water = new THREE.Mesh(waterGeo, matWater);
+                water.position.y = 0.25; 
+                group.add(water);
+
+                const handleGeo = new THREE.TorusGeometry(0.25, 0.02, 4, 12, Math.PI);
+                const handle = new THREE.Mesh(handleGeo, matMetal);
+                handle.position.y = 0.35;
+                group.add(handle);
+
+                return group;
+            },
+
+            createVolcano: function() {
+                const group = new THREE.Group();
+                
+                // Вулканы теперь короче (высота 2.5 вместо 4)
+                const coneGeo = new THREE.ConeGeometry(1.5, 2.5, 7); 
+                const matRock = new THREE.MeshLambertMaterial({ color: CONFIG.colors.volcano });
+                const volcano = new THREE.Mesh(coneGeo, matRock);
+                volcano.position.y = 0; 
+                group.add(volcano);
+
+                // Корректировка верхушки
+                const topGeo = new THREE.ConeGeometry(0.5, 0.8, 7);
+                const matLava = new THREE.MeshBasicMaterial({ color: CONFIG.colors.volcanoLava });
+                const top = new THREE.Mesh(topGeo, matLava);
+                top.position.y = 1.0; // Позиция кончика ниже
+                group.add(top);
+
+                return group;
+            },
+
+            createLavaBubble: function() {
+                const geo = new THREE.SphereGeometry(0.6, 8, 8);
+                const mat = new THREE.MeshLambertMaterial({ color: CONFIG.colors.bubble, emissive: 0xff3300, emissiveIntensity: 0.5 });
+                const mesh = new THREE.Mesh(geo, mat);
+                return mesh;
+            }
+        };
+
+        /**
+         * МЕНЕДЖЕР МИРА
+         */
+        class World {
+            constructor(scene) {
+                this.scene = scene;
+                this.activeBlocks = [];
+                this.collectibles = [];
+                this.volcanoes = [];
+                this.bubbles = []; 
+                this.lastZ = 0;
+                this.blocksSinceLastBucket = 0; 
+                
+                this.geoBox = new THREE.BoxGeometry(1, 1, 1);
+                this.matRoad = new THREE.MeshPhongMaterial({ 
+                    color: CONFIG.colors.road,
+                    shininess: 60,
+                    specular: 0x444444
+                });
+                
+                this.lavaPlane = new THREE.Mesh(
+                    new THREE.PlaneGeometry(100, 100),
+                    new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.0 })
+                );
+                this.lavaPlane.rotation.x = -Math.PI/2;
+                this.lavaPlane.position.y = -4;
+                this.scene.add(this.lavaPlane);
+            }
+
+            reset() {
+                this.activeBlocks.forEach(b => this.scene.remove(b.mesh));
+                this.collectibles.forEach(c => this.scene.remove(c));
+                this.volcanoes.forEach(v => this.scene.remove(v));
+                this.bubbles.forEach(b => this.scene.remove(b));
+                
+                this.activeBlocks = [];
+                this.collectibles = [];
+                this.volcanoes = [];
+                this.bubbles = [];
+                this.lastZ = 0;
+                this.blocksSinceLastBucket = 0;
+
+                for(let i=0; i<15; i++) {
+                    this.addRoadBlock(0, -i);
+                }
+                this.lastZ = -15;
+            }
+
+            addRoadBlock(x, z, isPlayerBuilt = false) {
+                const ix = Math.round(x);
+                const iz = Math.round(z);
+
+                const mesh = new THREE.Mesh(this.geoBox, this.matRoad);
+                mesh.position.set(ix * CONFIG.laneWidth, -0.5, iz);
+                mesh.receiveShadow = true;
+                
+                if(isPlayerBuilt) {
+                    mesh.scale.set(0.1, 0.1, 0.1);
+                    mesh.targetScale = 1;
+                }
+
+                this.scene.add(mesh);
+                this.activeBlocks.push({ mesh, x: ix, z: iz, type: 'road' });
+            }
+
+            addCollectible(x, z) {
+                const mesh = ModelFactory.createBucket();
+                mesh.position.set(x * CONFIG.laneWidth, 0, z);
+                mesh.userData = { offset: Math.random() * Math.PI, speed: 2 };
+                this.scene.add(mesh);
+                this.collectibles.push(mesh);
+            }
+
+            addVolcano(z) {
+                const mesh = ModelFactory.createVolcano();
+                const lane = Math.floor(Math.random() * 3) - 1;
+                // Скорректирована высота спавна для коротких вулканов
+                mesh.position.set(lane * CONFIG.laneWidth, -1.25, z); 
+                mesh.userData = { offset: Math.random() * 100 };
+                this.scene.add(mesh);
+                this.volcanoes.push(mesh);
+            }
+
+            addBubble(z) {
+                const mesh = ModelFactory.createLavaBubble();
+                const lane = Math.floor(Math.random() * 3) - 1;
+                mesh.position.set(lane * CONFIG.laneWidth, CONFIG.flappyCeiling, z);
+                mesh.userData = { offset: Math.random() * Math.PI };
+                this.scene.add(mesh);
+                this.bubbles.push(mesh);
+            }
+
+            hasGroundAt(x, z) {
+                const gridX = Math.round(x);
+                const gridZ = Math.round(z);
+                return this.activeBlocks.some(b => b.x === gridX && b.z === gridZ);
+            }
+
+            update(playerZ, gameMode) {
+                this.activeBlocks.forEach(b => {
+                    if (b.mesh.targetScale && b.mesh.scale.x < 1) {
+                        const s = b.mesh.scale.x + 0.2; 
+                        b.mesh.scale.set(s,s,s);
+                    }
+                });
+
+                const time = Date.now() * 0.003;
+                this.collectibles.forEach(c => {
+                    c.rotation.y += 0.02;
+                    c.position.y = 0.3 + Math.sin(time + c.userData.offset) * 0.2;
+                });
+                
+                this.volcanoes.forEach(v => {
+                    v.children[1].scale.setScalar(1 + Math.sin(time * 5 + v.userData.offset) * 0.1);
+                });
+                
+                this.bubbles.forEach(b => {
+                    b.scale.setScalar(1 + Math.sin(time * 3 + b.userData.offset) * 0.2);
+                    b.position.y = CONFIG.flappyCeiling + Math.sin(time * 2 + b.userData.offset) * 0.5;
+                });
+
+                this.lavaPlane.position.z = playerZ - 20;
+
+                if (this.lastZ > playerZ - 50) {
+                    this.lastZ--;
+                    this.blocksSinceLastBucket++;
+                    
+                    if (gameMode === 'FLAPPY') {
+                        if (Math.abs(this.lastZ) % 4 === 0) { 
+                             this.addVolcano(this.lastZ);
+                        }
+                        if (Math.abs(this.lastZ) % 5 === 0) {
+                            this.addBubble(this.lastZ);
+                        }
+                    } else if (gameMode === 'RUN') {
+                        if (Math.random() < 0.30 || this.blocksSinceLastBucket > 10) {
+                            const lane = Math.floor(Math.random() * 3) - 1;
+                            this.addCollectible(lane, this.lastZ);
+                            this.blocksSinceLastBucket = 0;
+                        }
+                    }
+                }
+
+                const cleanupZ = playerZ + 10;
+                
+                const cleaner = (arr) => arr.filter(obj => {
+                    const z = obj.position ? obj.position.z : obj.z;
+                    const mesh = obj.mesh || obj;
+                    
+                    if (z > cleanupZ) {
+                        this.scene.remove(mesh);
+                        return false;
+                    }
+                    return true;
+                });
+
+                this.activeBlocks = cleaner(this.activeBlocks);
+                this.collectibles = cleaner(this.collectibles);
+                this.volcanoes = cleaner(this.volcanoes);
+                this.bubbles = cleaner(this.bubbles);
+            }
+
+            removeCollectible(mesh) {
+                this.scene.remove(mesh);
+                this.collectibles = this.collectibles.filter(c => c !== mesh);
+            }
+        }
+
+        /**
+         * ОСНОВНОЙ КЛАСС ИГРЫ
+         */
+        class Game {
+            constructor() {
+                this.container = document.getElementById('game-container');
+                this.input = new InputManager();
+                
+                this.ui = {
+                    start: document.getElementById('start-screen'),
+                    hud: document.getElementById('hud'),
+                    gameOver: document.getElementById('game-over-screen'),
+                    score: document.getElementById('score-display'),
+                    blocks: document.getElementById('block-display'),
+                    multiplier: document.getElementById('multiplier-box'),
+                    finalScore: document.getElementById('final-score'),
+                    toggle: document.getElementById('mobile-toggle'),
+                    modeAlert: document.getElementById('mode-alert')
+                };
+
+                this.initThree();
+                this.world = new World(this.scene);
+                
+                this.playerGroup = ModelFactory.createPlayer();
+                this.scene.add(this.playerGroup);
+
+                this.resetGameData();
+                
+                document.getElementById('start-btn').addEventListener('click', () => this.startGame());
+                document.getElementById('restart-btn').addEventListener('click', () => this.resetAndStart());
+
+                this.state = 'MENU';
+                this.gameMode = 'RUN'; 
+                this.animate();
+            }
+
+            initThree() {
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(CONFIG.colors.water);
+                this.scene.fog = new THREE.Fog(CONFIG.colors.water, CONFIG.fogNear, CONFIG.fogFar);
+
+                const aspect = window.innerWidth / window.innerHeight;
+                const d = 12;
+                this.camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
+                this.camera.position.set(20, 20, 20);
+                this.camera.lookAt(this.scene.position);
+
+                this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                this.container.appendChild(this.renderer.domElement);
+
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+                this.scene.add(ambientLight);
+
+                const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                dirLight.position.set(50, 80, 30);
+                dirLight.castShadow = true;
+                dirLight.shadow.mapSize.width = 2048;
+                dirLight.shadow.mapSize.height = 2048;
+                this.scene.add(dirLight);
+
+                window.addEventListener('resize', () => {
+                    const aspect = window.innerWidth / window.innerHeight;
+                    this.camera.left = -d * aspect;
+                    this.camera.right = d * aspect;
+                    this.camera.top = d;
+                    this.camera.bottom = -d;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+            }
+
+            resetGameData() {
+                this.score = 0;
+                this.blocks = CONFIG.startBlocks;
+                this.speed = CONFIG.runSpeed;
+                this.playerLane = 0;
+                this.targetX = 0;
+                this.isFalling = false;
+                this.verticalVelocity = 0;
+                
+                this.comboStreak = 0;
+                this.multiplier = 1;
+                this.lastCollectTime = 0;
+                
+                this.gameMode = 'RUN';
+                this.nextFlappyScore = CONFIG.flappyFirstThreshold;
+                this.flappyEndTime = 0;
+
+                this.playerGroup.position.set(0, 0, 0);
+                this.playerGroup.rotation.set(0,0,0);
+                
+                this.updateHUD();
+            }
+
+            startGame() {
+                this.input.setMobileMode(this.ui.toggle.checked);
+                this.ui.start.style.display = 'none';
+                this.ui.hud.style.display = 'flex';
+                this.world.reset();
+                this.resetGameData();
+                this.state = 'PLAYING';
+                this.lastTime = performance.now();
+            }
+
+            resetAndStart() {
+                this.ui.gameOver.style.display = 'none';
+                this.startGame();
+            }
+
+            gameOver() {
+                this.state = 'GAMEOVER';
+                this.ui.hud.style.display = 'none';
+                this.ui.modeAlert.style.display = 'none';
+                this.ui.gameOver.style.display = 'flex';
+                this.ui.finalScore.innerText = Math.floor(this.score);
+                this.input.setMobileMode(false);
+            }
+
+            updateHUD() {
+                this.ui.score.innerText = Math.floor(this.score);
+                this.ui.blocks.innerText = this.blocks;
+                
+                if(this.blocks < 5) this.ui.blocks.style.color = '#e74c3c';
+                else this.ui.blocks.style.color = '#ffcc00';
+
+                if (this.multiplier > 1) {
+                    this.ui.multiplier.style.display = 'block';
+                    this.ui.multiplier.innerText = `x${this.multiplier}`;
+                    if(this.multiplier >= 10) this.ui.multiplier.style.color = '#ff0000';
+                    else this.ui.multiplier.style.color = '#f1c40f';
+                } else {
+                    this.ui.multiplier.style.display = 'none';
+                }
+            }
+
+            enterFlappyMode() {
+                this.gameMode = 'FLAPPY';
+                this.flappyEndTime = Date.now() + CONFIG.flappyDuration;
+                this.nextFlappyScore += CONFIG.flappyRepeatInterval;
+                
+                this.verticalVelocity = 15;
+                this.isFalling = true; 
+                
+                this.ui.modeAlert.style.display = 'block';
+                setTimeout(() => this.ui.modeAlert.style.display = 'none', 3000);
+            }
+
+            exitFlappyMode() {
+                this.gameMode = 'LANDING'; // Новый режим посадки
+                
+                // Очистка всех препятствий, чтобы не мешали
+                this.world.volcanoes.forEach(v => this.scene.remove(v));
+                this.world.volcanoes = [];
+                this.world.bubbles.forEach(b => this.scene.remove(b));
+                this.world.bubbles = [];
+
+                // Генерируем платформу под игроком и вперед
+                const z = Math.round(this.playerGroup.position.z);
+                for(let i=-5; i<30; i++) {
+                    this.world.addRoadBlock(this.playerLane, z - i);
+                }
+            }
+
+            updateLogic(dt) {
+                if(this.state !== 'PLAYING') return;
+                const now = Date.now();
+
+                if (this.gameMode === 'RUN' && this.score >= this.nextFlappyScore) {
+                    this.enterFlappyMode();
+                }
+                if (this.gameMode === 'FLAPPY' && now > this.flappyEndTime) {
+                    this.exitFlappyMode();
+                }
+
+                if (this.comboStreak > 0 && (now - this.lastCollectTime > CONFIG.comboTimeout)) {
+                    this.comboStreak = 0;
+                    this.multiplier = 1;
+                }
+
+                let currentSpeed = this.speed;
+                if(this.multiplier >= 10) currentSpeed *= 1.5;
+                
+                const moveZ = currentSpeed * dt;
+                this.playerGroup.position.z -= moveZ;
+                this.score += moveZ * this.multiplier;
+                this.speed += CONFIG.speedIncrement * dt;
+
+                if (this.input.actions.left && this.playerLane > -1) {
+                    this.playerLane--;
+                    this.input.actions.left = false;
+                }
+                if (this.input.actions.right && this.playerLane < 1) {
+                    this.playerLane++;
+                    this.input.actions.right = false;
+                }
+
+                this.targetX = this.playerLane * CONFIG.laneWidth;
+                this.playerGroup.position.x += (this.targetX - this.playerGroup.position.x) * 12 * dt;
+
+                if (this.gameMode === 'RUN') {
+                    this.updateRunLogic(dt);
+                } else if (this.gameMode === 'FLAPPY') {
+                    this.updateFlappyLogic(dt);
+                } else if (this.gameMode === 'LANDING') {
+                    this.updateLandingLogic(dt);
+                }
+
+                this.updateHUD();
+            }
+
+            updateRunLogic(dt) {
+                const currentGridZ = Math.round(this.playerGroup.position.z);
+                const nextGridZ = currentGridZ - 1;
+                
+                if (this.input.actions.build) {
+                    if (this.blocks > 0) {
+                        if (!this.world.hasGroundAt(this.playerLane, currentGridZ)) {
+                             this.world.addRoadBlock(this.playerLane, currentGridZ, true);
+                             this.blocks--;
+                        } 
+                        else if (!this.world.hasGroundAt(this.playerLane, nextGridZ)) {
+                             this.world.addRoadBlock(this.playerLane, nextGridZ, true);
+                             this.blocks--;
+                        }
+                    }
+                }
+
+                const checkZ = this.playerGroup.position.z; 
+                const visualXNormalized = this.playerGroup.position.x / CONFIG.laneWidth;
+                const laneCenter = Math.round(visualXNormalized);
+                
+                const isTransitioning = Math.abs(this.targetX - this.playerGroup.position.x) > 0.1;
+                
+                let supportedFront = false;
+                let supportedBack = false;
+
+                const dist = Math.abs(visualXNormalized - laneCenter);
+                let checkLane1 = laneCenter;
+                let checkLane2 = laneCenter;
+
+                if (dist >= 0.3) { 
+                    checkLane1 = Math.floor(visualXNormalized);
+                    checkLane2 = Math.ceil(visualXNormalized);
+                }
+
+                supportedFront = this.world.hasGroundAt(checkLane1, checkZ - 0.3) || this.world.hasGroundAt(checkLane2, checkZ - 0.3);
+                supportedBack = this.world.hasGroundAt(checkLane1, checkZ + 0.3) || this.world.hasGroundAt(checkLane2, checkZ + 0.3);
+
+                if (isTransitioning) {
+                    const destHasGroundFront = this.world.hasGroundAt(this.playerLane, checkZ - 0.3);
+                    const destHasGroundBack = this.world.hasGroundAt(this.playerLane, checkZ + 0.3);
+                    if (destHasGroundFront || destHasGroundBack) {
+                        supportedFront = true;
+                        supportedBack = true;
+                    }
+                }
+
+                if (!supportedFront && !supportedBack) {
+                    this.isFalling = true;
+                }
+
+                if (this.isFalling) {
+                    this.verticalVelocity -= CONFIG.gravity * dt;
+                    this.playerGroup.position.y += this.verticalVelocity * dt;
+                    this.playerGroup.rotation.x -= 6 * dt;
+                    
+                    if (this.playerGroup.position.y < -10) this.gameOver();
+                } else {
+                    this.verticalVelocity = 0;
+                    this.playerGroup.position.y = Math.abs(Math.sin(Date.now() * 0.015)) * 0.2;
+                }
+
+                this.world.collectibles.forEach(c => {
+                    const dx = c.position.x - this.playerGroup.position.x;
+                    const dz = c.position.z - this.playerGroup.position.z;
+                    if(Math.sqrt(dx*dx + dz*dz) < 0.8) {
+                        this.collectItem(c);
+                    }
+                });
+            }
+
+            updateFlappyLogic(dt) {
+                if (this.input.getTriggerBuild() || (this.isMobile && this.input.actions.buildPressed)) {
+                    this.verticalVelocity = CONFIG.jumpForce;
+                    if(this.isMobile) this.input.actions.buildPressed = false; 
+                }
+
+                this.verticalVelocity -= CONFIG.gravity * 0.8 * dt; 
+                this.playerGroup.position.y += this.verticalVelocity * dt;
+
+                this.playerGroup.rotation.x = Math.max(-0.5, Math.min(0.5, -this.verticalVelocity * 0.05));
+
+                if (this.playerGroup.position.y < -3) {
+                    this.gameOver();
+                }
+
+                // Коллизия с вулканами
+                this.world.volcanoes.forEach(v => {
+                    const dx = Math.abs(v.position.x - this.playerGroup.position.x);
+                    const dz = Math.abs(v.position.z - this.playerGroup.position.z);
+                    if (dz < 1.0 && dx < 1.0) {
+                        if (this.playerGroup.position.y < 2.5) {
+                            this.gameOver();
+                        }
+                    }
+                });
+
+                // Коллизия с пузырями (Потолок)
+                this.world.bubbles.forEach(b => {
+                    const dx = Math.abs(b.position.x - this.playerGroup.position.x);
+                    const dz = Math.abs(b.position.z - this.playerGroup.position.z);
+                    const dy = Math.abs(b.position.y - this.playerGroup.position.y);
+                    
+                    if (dz < 0.8 && dx < 0.8 && dy < 0.8) {
+                        this.gameOver();
+                    }
+                });
+            }
+            
+            updateLandingLogic(dt) {
+                // Быстрое снижение
+                if (this.playerGroup.position.y > 0) {
+                    this.playerGroup.position.y -= 15 * dt; // Скорость посадки
+                    if(this.playerGroup.position.y < 0) this.playerGroup.position.y = 0;
+                }
+                
+                // Выравнивание угла
+                this.playerGroup.rotation.x *= 0.9;
+
+                // Продолжаем генерировать дорогу
+                this.world.update(this.playerGroup.position.z, 'RUN');
+
+                if (this.playerGroup.position.y <= 0) {
+                    this.gameMode = 'RUN';
+                    this.verticalVelocity = 0;
+                    this.isFalling = false;
+                }
+            }
+
+            collectItem(item) {
+                this.blocks += CONFIG.collectReward;
+                this.world.removeCollectible(item);
+                
+                this.playerGroup.scale.set(1.4, 1.4, 1.4);
+                setTimeout(() => this.playerGroup.scale.set(1,1,1), 100);
+
+                this.comboStreak++;
+                this.lastCollectTime = Date.now();
+
+                // Справедливая формула:
+                // До 3 ведер = x1
+                // После 3: (streak - 3) / 3 => каждые 3 ведра +1 к множителю
+                if (this.comboStreak >= CONFIG.comboThreshold) {
+                    const extra = Math.floor((this.comboStreak - CONFIG.comboThreshold) / CONFIG.comboStep);
+                    this.multiplier = 2 + extra; 
+                } else {
+                    this.multiplier = 1;
+                }
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                const time = performance.now();
+                const dt = Math.min((time - this.lastTime) / 1000, 0.1);
+                this.lastTime = time;
+
+                if (this.state === 'PLAYING') {
+                    this.updateLogic(dt);
+                    this.world.update(this.playerGroup.position.z, this.gameMode);
+                }
+
+                if (this.playerGroup) {
+                    this.camera.position.z = this.playerGroup.position.z + 20;
+                    this.camera.lookAt(0, 0, this.playerGroup.position.z);
+                }
+
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+
+        window.onload = () => { new Game(); };
+    </script>
+</body>
+</html>
