@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Бесконечные Кристаллы - Три в Ряд</title>
+    
+    <!-- Подключение шрифта -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+    <!-- Подключение SDK Яндекс Игр -->
+    <script src="https://yandex.ru/games/sdk/v2"></script>
+
+    <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at center, #2b5876 0%, #4e4376 100%);
+            --board-bg: rgba(255, 255, 255, 0.1);
+            --ui-bg: rgba(0, 0, 0, 0.3);
+            --accent: #ffd700;
+            --accent-glow: #ffae00;
+            --text-color: #ffffff;
+            --gem-size: 12.5%;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-gradient);
+            color: var(--text-color);
+            font-family: 'Fredoka One', cursive; /* Игровой шрифт */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* UI Header */
+        .ui-header {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 15px;
+            background: var(--ui-bg);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 20px;
+            box-sizing: border-box;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        #target-info {
+            background: rgba(0,0,0,0.2);
+            padding: 5px 20px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            font-size: 1rem;
+            color: #e0e0e0;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        #target-display {
+            color: #fff;
+            margin-left: 5px;
+        }
+
+        /* Game Board */
+        #board-wrapper {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background: var(--board-bg);
+            backdrop-filter: blur(5px);
+            border-radius: 20px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,255,255,0.1);
+            touch-action: none;
+            overflow: hidden; /* Чтобы фишки не вылетали визуально */
+        }
+        
+        /* Grid background pattern */
+        #board-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 12.5% 12.5%; /* Matches cell size */
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .gem {
+            width: var(--gem-size);
+            height: var(--gem-size);
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), top 0.3s ease-in-out, left 0.3s ease-in-out;
+            z-index: 10;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+        
+        @media (max-width: 400px) {
+            .gem { font-size: 1.6rem; }
+        }
+
+        .gem.selected {
+            z-index: 20;
+            animation: pulse 1s infinite;
+        }
+        
+        /* Эффект подсветки выбранной клетки */
+        .gem.selected::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+            z-index: -1;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1.1); filter: brightness(1.2) drop-shadow(0 0 5px var(--accent)); }
+            50% { transform: scale(1.2); filter: brightness(1.4) drop-shadow(0 0 15px var(--accent)); }
+            100% { transform: scale(1.1); filter: brightness(1.2) drop-shadow(0 0 5px var(--accent)); }
+        }
+
+        .gem.matched {
+            animation: pop 0.4s forwards;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); opacity: 1; filter: brightness(2); }
+            50% { transform: scale(1.5); opacity: 0.8; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        /* Modals */
+        .modal {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(18, 18, 30, 0.9);
+            backdrop-filter: blur(10px);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            text-align: center;
+            border-radius: 20px;
+            padding: 20px;
+        }
+
+        .modal.active { display: flex; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal h2 { 
+            font-size: 2.5rem; 
+            margin-bottom: 10px; 
+            color: var(--accent);
+            text-shadow: 0 0 20px var(--accent-glow);
+            letter-spacing: 2px;
+        }
+        
+        .modal p { 
+            font-size: 1.3rem; 
+            margin-bottom: 30px; 
+            color: #dcdde1;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%);
+            color: #2c3e50;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            font-family: 'Fredoka One', cursive;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(243, 156, 18, 0.4), inset 0 2px 0 rgba(255,255,255,0.4);
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 25px rgba(243, 156, 18, 0.5), inset 0 2px 0 rgba(255,255,255,0.4);
+        }
+
+        .btn:active { 
+            transform: translateY(1px); 
+            box-shadow: 0 5px 10px rgba(243, 156, 18, 0.4), inset 0 2px 0 rgba(255,255,255,0.4);
+        }
+
+        /* Progress Bar */
+        #progress-container {
+            width: 100%;
+            height: 20px;
+            background: rgba(0,0,0,0.4);
+            margin-top: 15px;
+            border-radius: 10px;
+            padding: 3px;
+            box-sizing: border-box;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        #progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00b09b, #96c93d);
+            border-radius: 8px;
+            transition: width 0.5s ease-out;
+            box-shadow: 0 0 10px rgba(150, 201, 61, 0.6);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Блик на прогресс баре */
+        #progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(
+                90deg,
+                rgba(255,255,255,0) 0%,
+                rgba(255,255,255,0.4) 50%,
+                rgba(255,255,255,0) 100%
+            );
+            transform: skewX(-20deg) translateX(-150%);
+            animation: shine 2s infinite;
+        }
+
+        @keyframes shine {
+            100% { transform: skewX(-20deg) translateX(200%); }
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div class="ui-header">
+        <div class="stat-box">
+            <div class="stat-label">Уровень</div>
+            <div class="stat-value" id="level-display">1</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Ходы</div>
+            <div class="stat-value" id="moves-display">20</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Очки</div>
+            <div class="stat-value" id="score-display">0</div>
+        </div>
+    </div>
+    
+    <div id="target-info">
+        Цель: <span id="target-display">1000</span>
+    </div>
+
+    <div id="board-wrapper">
+        <!-- Grid will be generated here -->
+        <div id="start-modal" class="modal active">
+            <h2>Кристаллы</h2>
+            <p>Бесконечное приключение!</p>
+            <button class="btn" onclick="startGame()">ИГРАТЬ</button>
+        </div>
+
+        <div id="level-modal" class="modal">
+            <h2>Победа!</h2>
+            <p>Готов к следующему?</p>
+            <button class="btn" onclick="nextLevel()">ДАЛЬШЕ</button>
+        </div>
+
+        <div id="gameover-modal" class="modal">
+            <h2>Фиаско!</h2>
+            <p id="final-score">Счет: 0</p>
+            <button class="btn" onclick="restartGame()">ЗАНОВО</button>
+        </div>
+    </div>
+
+    <div id="progress-container">
+        <div id="progress-fill"></div>
+    </div>
+</div>
+
+<script>
+    // --- Конфигурация Игры ---
+    const COLS = 8;
+    const ROWS = 8;
+    // Набор фишек (Эмодзи). Порядок важен для добавления сложности.
+    const GEM_TYPES = ['💎', '🔥', '🍀', '⚡', '🟣', '🥥', '🍊', '❤️'];
+    
+    let grid = []; // 2D массив для хранения данных
+    let domGrid = []; // 2D массив для хранения DOM элементов
+    
+    // Состояние игры
+    let score = 0;
+    let moves = 0;
+    let level = 1;
+    let targetScore = 1000;
+    let activeGemTypes = 4; // Начальное кол-во цветов
+    
+    let selectedGem = null; // Выбранная фишка
+    let isProcessing = false; // Блокировка ввода во время анимаций
+    
+    // DOM Элементы
+    const boardEl = document.getElementById('board-wrapper');
+    const scoreEl = document.getElementById('score-display');
+    const movesEl = document.getElementById('moves-display');
+    const levelEl = document.getElementById('level-display');
+    const targetEl = document.getElementById('target-display');
+    const progressFill = document.getElementById('progress-fill');
+    
+    // Yandex SDK
+    let ysdk = null;
+
+    // Инициализация Yandex SDK
+    window.onload = function() {
+        if (window.YaGames) {
+            YaGames.init().then(sdk => {
+                ysdk = sdk;
+                console.log('Yandex SDK initialized');
+            }).catch(console.error);
+        }
+    };
+
+    function showAd() {
+        if (ysdk) {
+            ysdk.adv.showFullscreenAdv({
+                callbacks: {
+                    onClose: function(wasShown) {
+                        // Реклама закрыта
+                        console.log('Ad closed');
+                    },
+                    onError: function(error) {
+                        // Ошибка
+                        console.log('Ad error', error);
+                    }
+                }
+            });
+        } else {
+            console.log('Mock Ad: SDK not available');
+        }
+    }
+
+    // --- Логика Игры ---
+
+    function startGame() {
+        document.getElementById('start-modal').classList.remove('active');
+        level = 1;
+        score = 0;
+        activeGemTypes = 4;
+        initLevel();
+    }
+
+    function initLevel() {
+        // Настройка сложности уровня
+        // Каждые 2 уровня добавляем новый цвет (макс 6-7, чтобы не было невозможно)
+        activeGemTypes = Math.min(4 + Math.floor((level - 1) / 2), GEM_TYPES.length);
+        
+        // Цель растет экспоненциально
+        // БАЛАНС: Увеличили базу до 2000 и множитель до 1.3
+        targetScore = Math.floor(2000 * Math.pow(1.3, level - 1));
+        
+        // БАЛАНС: Даем больше ходов (30), так как цель стала выше
+        moves = 30 + Math.floor(level / 2); 
+        
+        updateUI();
+        createBoard();
+        
+        // Начальная проверка, чтобы не было собранных рядов сразу
+        resolveMatchesLoop(true); 
+    }
+
+    function restartGame() {
+        document.getElementById('gameover-modal').classList.remove('active');
+        startGame();
+    }
+
+    function nextLevel() {
+        document.getElementById('level-modal').classList.remove('active');
+        level++;
+        score = 0; // Сбрасываем очки для нового уровня
+        showAd(); // Показываем рекламу между уровнями
+        initLevel();
+    }
+
+    function updateUI() {
+        scoreEl.innerText = score;
+        movesEl.innerText = moves;
+        levelEl.innerText = level;
+        targetEl.innerText = targetScore;
+        
+        let percentage = Math.min(100, (score / targetScore) * 100);
+        progressFill.style.width = percentage + '%';
+    }
+
+    function createBoard() {
+        // Исправление: удаляем только фишки, чтобы не удалить модальные окна
+        const gems = boardEl.querySelectorAll('.gem');
+        gems.forEach(gem => gem.remove());
+
+        grid = [];
+        domGrid = [];
+        
+        const rect = boardEl.getBoundingClientRect();
+        const cellSize = rect.width / COLS;
+
+        for (let r = 0; r < ROWS; r++) {
+            let row = [];
+            let domRow = [];
+            for (let c = 0; c < COLS; c++) {
+                let type = getRandomGem();
+                row.push(type);
+                
+                let gem = createGemDOM(r, c, type);
+                boardEl.appendChild(gem);
+                domRow.push(gem);
+            }
+            grid.push(row);
+            domGrid.push(domRow);
+        }
+    }
+
+    function createGemDOM(r, c, type) {
+        let el = document.createElement('div');
+        el.classList.add('gem');
+        el.innerText = type;
+        el.dataset.r = r;
+        el.dataset.c = c;
+        el.style.top = (r * 12.5) + '%';
+        el.style.left = (c * 12.5) + '%';
+        
+        // Обработчики событий (мышь + тач)
+        el.addEventListener('mousedown', handleInputStart);
+        el.addEventListener('touchstart', handleInputStart, {passive: false});
+        
+        return el;
+    }
+
+    function getRandomGem() {
+        return GEM_TYPES[Math.floor(Math.random() * activeGemTypes)];
+    }
+
+    // --- Управление ---
+    
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    function handleInputStart(e) {
+        if (isProcessing) return;
+        e.preventDefault(); // Предотвращаем скролл на мобильных
+
+        let target = e.target;
+        if (!target.classList.contains('gem')) return;
+
+        let r = parseInt(target.dataset.r);
+        let c = parseInt(target.dataset.c);
+
+        if (e.type === 'touchstart') {
+            touchStartX = e.changedTouches[0].clientX;
+            touchStartY = e.changedTouches[0].clientY;
+            selectedGem = { r, c, el: target };
+            target.classList.add('selected');
+            // Слушаем окончание свайпа
+            document.addEventListener('touchend', handleInputEnd, {once: true});
+        } else {
+            // Логика клика (Desktop)
+            if (!selectedGem) {
+                selectedGem = { r, c, el: target };
+                target.classList.add('selected');
+            } else {
+                // Если кликнули на ту же фишку - снимаем выделение
+                if (selectedGem.r === r && selectedGem.c === c) {
+                    selectedGem.el.classList.remove('selected');
+                    selectedGem = null;
+                } else {
+                    // Пробуем свапнуть
+                    attemptSwap(selectedGem.r, selectedGem.c, r, c);
+                }
+            }
+        }
+    }
+
+    function handleInputEnd(e) {
+        if (!selectedGem) return;
+
+        let touchEndX = e.changedTouches[0].clientX;
+        let touchEndY = e.changedTouches[0].clientY;
+
+        let diffX = touchEndX - touchStartX;
+        let diffY = touchEndY - touchStartY;
+        
+        // Определяем направление свайпа
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            if (Math.abs(diffX) > 30) { // Порог свайпа
+                attemptSwap(selectedGem.r, selectedGem.c, selectedGem.r, selectedGem.c + (diffX > 0 ? 1 : -1));
+            }
+        } else {
+             if (Math.abs(diffY) > 30) {
+                attemptSwap(selectedGem.r, selectedGem.c, selectedGem.r + (diffY > 0 ? 1 : -1), selectedGem.c);
+             }
+        }
+        
+        // Если свайп не удался или был клик, снимаем выделение через небольшую задержку
+        if (selectedGem) {
+             selectedGem.el.classList.remove('selected');
+             selectedGem = null;
+        }
+    }
+
+    function attemptSwap(r1, c1, r2, c2) {
+        // Снимаем выделение
+        if (selectedGem) selectedGem.el.classList.remove('selected');
+        selectedGem = null;
+
+        // Проверка границ
+        if (r2 < 0 || r2 >= ROWS || c2 < 0 || c2 >= COLS) return;
+        
+        // Проверка на соседство (только по кресту)
+        if (Math.abs(r1 - r2) + Math.abs(c1 - c2) !== 1) return;
+
+        isProcessing = true;
+
+        // Визуальный свап
+        swapVisuals(r1, c1, r2, c2);
+
+        // Логический свап
+        let temp = grid[r1][c1];
+        grid[r1][c1] = grid[r2][c2];
+        grid[r2][c2] = temp;
+
+        setTimeout(() => {
+            // Проверка матчей
+            let matches = findMatches();
+            if (matches.length > 0) {
+                moves--;
+                updateUI();
+                processMatches(matches);
+            } else {
+                // Возврат, если нет матчей
+                swapVisuals(r1, c1, r2, c2); // Возврат визуала
+                let temp = grid[r1][c1];     // Возврат логики
+                grid[r1][c1] = grid[r2][c2];
+                grid[r2][c2] = temp;
+                isProcessing = false;
+            }
+        }, 300);
+    }
+
+    function swapVisuals(r1, c1, r2, c2) {
+        let el1 = domGrid[r1][c1];
+        let el2 = domGrid[r2][c2];
+
+        // Меняем координаты в стилях
+        el1.style.top = (r2 * 12.5) + '%';
+        el1.style.left = (c2 * 12.5) + '%';
+        
+        el2.style.top = (r1 * 12.5) + '%';
+        el2.style.left = (c1 * 12.5) + '%';
+
+        // Обновляем dataset
+        el1.dataset.r = r2; el1.dataset.c = c2;
+        el2.dataset.r = r1; el2.dataset.c = c1;
+
+        // Обновляем массив DOM
+        domGrid[r1][c1] = el2;
+        domGrid[r2][c2] = el1;
+    }
+
+    // --- Механика Матчей ---
+
+    function findMatches() {
+        let matchedSet = new Set();
+
+        // Горизонталь
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS - 2; c++) {
+                let type = grid[r][c];
+                // Исправление: Игнорируем пустые клетки (null), чтобы не матчить "пустоту"
+                if (!type) continue;
+                if (type === grid[r][c+1] && type === grid[r][c+2]) {
+                    matchedSet.add(`${r},${c}`);
+                    matchedSet.add(`${r},${c+1}`);
+                    matchedSet.add(`${r},${c+2}`);
+                }
+            }
+        }
+
+        // Вертикаль
+        for (let c = 0; c < COLS; c++) {
+            for (let r = 0; r < ROWS - 2; r++) {
+                let type = grid[r][c];
+                // Исправление: Игнорируем пустые клетки
+                if (!type) continue;
+                if (type === grid[r+1][c] && type === grid[r+2][c]) {
+                    matchedSet.add(`${r},${c}`);
+                    matchedSet.add(`${r+1},${c}`);
+                    matchedSet.add(`${r+2},${c}`);
+                }
+            }
+        }
+
+        return Array.from(matchedSet).map(str => {
+            let [r, c] = str.split(',').map(Number);
+            return {r, c};
+        });
+    }
+
+    function processMatches(matches) {
+        // Подсчет очков
+        // УМЕНЬШЕНО: было 10 за фишку и 20 бонуса. Стало 5 и 10.
+        // Это заставит игрока искать более длинные цепочки и комбо.
+        let points = matches.length * 5;
+        if (matches.length > 3) points += (matches.length - 3) * 10; // Бонус за 4+
+        score += points;
+        updateUI();
+
+        // Анимация удаления
+        matches.forEach(m => {
+            let el = domGrid[m.r][m.c];
+            // Проверка на существование элемента перед обращением
+            if (el) {
+                el.classList.add('matched');
+            }
+            grid[m.r][m.c] = null; // Помечаем как пустую
+        });
+
+        setTimeout(() => {
+            // Удаляем элементы из DOM
+            matches.forEach(m => {
+                let el = domGrid[m.r][m.c];
+                if(el && el.parentNode) el.parentNode.removeChild(el);
+                domGrid[m.r][m.c] = null;
+            });
+            
+            applyGravity();
+        }, 300);
+    }
+
+    function applyGravity() {
+        // Сдвигаем вниз
+        for (let c = 0; c < COLS; c++) {
+            for (let r = ROWS - 1; r >= 0; r--) {
+                if (grid[r][c] === null) {
+                    // Ищем ближайшую сверху
+                    for (let k = r - 1; k >= 0; k--) {
+                        if (grid[k][c] !== null) {
+                            // Перемещаем логически
+                            grid[r][c] = grid[k][c];
+                            grid[k][c] = null;
+                            
+                            // Перемещаем визуально
+                            let el = domGrid[k][c];
+                            if (el) {
+                                el.style.top = (r * 12.5) + '%';
+                                el.dataset.r = r;
+                            }
+                            domGrid[r][c] = el;
+                            domGrid[k][c] = null;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Заполняем пустоты сверху
+        setTimeout(() => {
+            spawnNewGems();
+        }, 300);
+    }
+
+    function spawnNewGems() {
+        let newGemsAdded = false;
+        for (let c = 0; c < COLS; c++) {
+            for (let r = 0; r < ROWS; r++) {
+                if (grid[r][c] === null) {
+                    newGemsAdded = true;
+                    let type = getRandomGem();
+                    grid[r][c] = type;
+                    
+                    let el = createGemDOM(r, c, type);
+                    // Начинаем чуть выше экрана для анимации падения
+                    el.style.top = '-15%'; 
+                    boardEl.appendChild(el);
+                    domGrid[r][c] = el;
+                    
+                    // Триггерим рефлоу и запускаем анимацию
+                    requestAnimationFrame(() => {
+                         el.style.top = (r * 12.5) + '%';
+                    });
+                }
+            }
+        }
+
+        if (newGemsAdded) {
+            setTimeout(() => {
+                resolveMatchesLoop();
+            }, 350);
+        } else {
+            resolveMatchesLoop();
+        }
+    }
+
+    function resolveMatchesLoop(initialSetup = false) {
+        let matches = findMatches();
+        if (matches.length > 0) {
+            // Если это первоначальная генерация - просто меняем цвета без очков/анимации
+            if (initialSetup) {
+                matches.forEach(m => {
+                    let newType;
+                    do { newType = getRandomGem(); } while(newType === grid[m.r][m.c]);
+                    grid[m.r][m.c] = newType;
+                    if(domGrid[m.r][m.c]) {
+                        domGrid[m.r][m.c].innerText = newType;
+                    }
+                });
+                resolveMatchesLoop(true); // Рекурсивно проверяем снова
+            } else {
+                processMatches(matches); // Продолжаем каскад
+            }
+        } else {
+            isProcessing = false;
+            if (!initialSetup) checkGameState();
+        }
+    }
+
+    function checkGameState() {
+        if (score >= targetScore) {
+            // Уровень пройден
+            setTimeout(() => {
+                let modal = document.getElementById('level-modal');
+                if(modal) modal.classList.add('active');
+            }, 500);
+        } else if (moves <= 0) {
+            // Проигрыш
+            setTimeout(() => {
+                document.getElementById('final-score').innerText = 'Счет: ' + score;
+                let modal = document.getElementById('gameover-modal');
+                if(modal) modal.classList.add('active');
+            }, 500);
+        }
+    }
+
+</script>
+</body>
+</html>
