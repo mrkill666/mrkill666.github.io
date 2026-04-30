@@ -128,11 +128,22 @@
         </div>
     </main>
 
-    <footer class="fixed bottom-8 w-full text-center">
-        <p class="text-[8px] text-gray-700 uppercase tracking-[0.5em]">
-            Владислав Ножиков / 2026
+<footer class="mt-24 md:mt-32 pt-12 border-t border-white/10 flex flex-col md:flex-row justify-between items-start gap-8 reveal">
+    <div class="flex flex-col gap-2">
+        <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">
+            © <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ
         </p>
-    </footer>
+        <!-- Ссылка на политику конфиденциальности -->
+        <a href="/privacy.html" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">
+            Политика конфиденциальности
+        </a>
+    </div>
+</footer>
+
+<!-- Скрипт для автоматического обновления года -->
+<script>
+    document.getElementById('current-year').textContent = new Date().getFullYear();
+</script>
 
 </body>
 </html>
