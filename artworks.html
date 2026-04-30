@@ -311,9 +311,23 @@
             <!-- Элементы генерируются через JS -->
         </div>
 
-        <footer class="mt-32 pt-12 border-t border-white/5 flex flex-col items-center gap-4 reveal">
-            <p class="text-[10px] text-gray-600 uppercase tracking-[0.3em]">© 2026 ВЛАДИСЛАВ НОЖИКОВ</p>
-        </footer>
+<footer class="mt-24 md:mt-32 pt-12 border-t border-white/10 flex flex-col md:flex-row justify-between items-start gap-8 reveal">
+    <div class="flex flex-col gap-2">
+        <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">
+            © <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ
+        </p>
+        <!-- Ссылка на политику конфиденциальности -->
+        <a href="/privacy.html" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">
+            Политика конфиденциальности
+        </a>
+    </div>
+</footer>
+
+<!-- Скрипт для автоматического обновления года -->
+<script>
+    document.getElementById('current-year').textContent = new Date().getFullYear();
+</script>
+
     </main>
 
     <!-- Модальное окно -->
