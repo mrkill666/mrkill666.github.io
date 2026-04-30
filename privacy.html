@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Политика конфиденциальности | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="theme-color" content="#ffffff">
+
+    <style>
+        :root {
+            --bg-color: #050505;
+            --accent-color: #ffffff;
+            --card-bg: #111111;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--accent-color);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Эффект зернистости */
+        .noise::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* Загрузка */
+        #loader {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10001;
+            transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+
+        .knife-svg-main {
+            width: 120px;
+            height: 120px;
+            fill: none;
+            stroke: white;
+            stroke-width: 1.2;
+            animation: rotate-knife 1.5s linear infinite;
+        }
+
+        @keyframes rotate-knife {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .loaded #loader {
+            transform: translateY(-100%);
+        }
+
+        /* Карточка для текста */
+        .content-card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 2rem;
+            border: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media (min-width: 768px) {
+            .content-card {
+                padding: 4rem;
+            }
+        }
+
+        /* Анимация появления */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .break-all {
+            word-break: break-all;
+        }
+    </style>
+
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript">
+        (function(m,e,t,r,i,k,a){
+            m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+            m[i].l=1*new Date();
+            for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+            k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+        })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=106218947', 'ym');
+
+        ym(106218947, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", accurateTrackBounce:true, trackLinks:true});
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/106218947" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    <!-- /Yandex.Metrika counter -->
+    
+</head>
+<body class="noise">
+
+    <!-- Загрузчик -->
+    <div id="loader">
+        <svg class="knife-svg-main" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
+    </div>
+
+    <!-- Навигация с ссылками на главную -->
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-end items-center z-50 mix-blend-difference">
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="/" class="hover:opacity-50 transition">Главная</a>
+            <a href="/#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="/#socials" class="hover:opacity-50 transition">Соцсети</a>
+        </div>
+    </nav>
+
+    <main class="pt-24 md:pt-32 px-6 md:px-12 pb-24 max-w-4xl mx-auto relative">
+        
+        <!-- Заголовок -->
+        <section class="mb-12 md:mb-16">
+            <h1 class="text-4xl md:text-6xl font-black tracking-tighter mb-4 reveal uppercase">
+                Политика <br> <span class="text-transparent" style="-webkit-text-stroke: 1px white;">Конфиденциальности</span>
+            </h1>
+            <p class="text-[10px] uppercase tracking-widest text-gray-500 reveal" style="transition-delay: 0.1s;">
+                Обновлено: Апрель 2026
+            </p>
+        </section>
+
+        <!-- Текст политики в карточке -->
+        <div class="content-card reveal" style="transition-delay: 0.2s;">
+            <div class="space-y-10 text-gray-400 text-sm md:text-base leading-relaxed">
+                
+                <section>
+                    <h2 class="text-lg md:text-xl font-bold text-white uppercase tracking-widest mb-3">1. Общие положения</h2>
+                    <p>Настоящая Политика конфиденциальности описывает, как собираются, используются и хранятся данные пользователей при посещении официального сайта Владислава Ножикова (далее — Сайт). Продолжая использовать Сайт, вы соглашаетесь с условиями данной Политики и использованием файлов cookie.</p>
+                </section>
+
+                <section>
+                    <h2 class="text-lg md:text-xl font-bold text-white uppercase tracking-widest mb-3">2. Сбор данных и Яндекс.Метрика</h2>
+                    <p class="mb-3">Сайт использует сервис веб-аналитики Яндекс.Метрика, предоставляемый компанией ООО «ЯНДЕКС» (119021, Россия, Москва, ул. Л. Толстого, 16).</p>
+                    <p class="mb-3">Яндекс.Метрика использует технологию «cookie» — небольшие текстовые файлы, размещаемые на устройстве пользователя. Они помогают анализировать пользовательскую активность. Собираемая информация <strong>является обезличенной</strong> и не позволяет установить личность пользователя.</p>
+                    <p>Собранные данные передаются и хранятся на серверах Яндекса. Эти данные используются исключительно для оценки посещаемости Сайта и улучшения его работы.</p>
+                </section>
+
+                <section>
+                    <h2 class="text-lg md:text-xl font-bold text-white uppercase tracking-widest mb-3">3. Какие данные мы собираем</h2>
+                    <p class="mb-2">В автоматическом режиме могут собираться следующие аналитические данные:</p>
+                    <ul class="list-disc list-inside space-y-1 ml-2">
+                        <li>Обезличенный IP-адрес;</li>
+                        <li>Тип и версия браузера, операционная система;</li>
+                        <li>Время, проведенное на Сайте, и просмотренные страницы;</li>
+                        <li>Источники перехода (ссылки, с которых вы перешли на Сайт);</li>
+                        <li>Информация о кликах и взаимодействии с элементами Сайта.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2 class="text-lg md:text-xl font-bold text-white uppercase tracking-widest mb-3">4. Управление файлами cookie</h2>
+                    <p>Пользователь может в любой момент отказаться от сбора данных. Для этого вы можете отключить сохранение файлов cookie в настройках вашего браузера. Вы также можете использовать официальное расширение «Блокировщик Яндекс.Метрики». Обратите внимание, что отключение cookie может незначительно повлиять на корректную работу некоторых функций Сайта.</p>
+                </section>
+
+                <section>
+                    <h2 class="text-lg md:text-xl font-bold text-white uppercase tracking-widest mb-3">5. Контакты для связи</h2>
+                    <p class="mb-2">Если у вас возникли вопросы, связанные с Политикой конфиденциальности или обработкой ваших данных, вы можете связаться со мной по электронной почте:</p>
+                    <a href="mailto:business.mrkill666@gmail.com" class="text-white font-bold hover:opacity-70 transition border-b border-white/20 pb-1">business.mrkill666@gmail.com</a>
+                </section>
+
+            </div>
+        </div>
+
+<footer class="mt-24 md:mt-32 pt-12 border-t border-white/10 flex flex-col md:flex-row justify-between items-start gap-8 reveal">
+    <div class="flex flex-col gap-2">
+        <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">
+            © <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ
+        </p>
+        <p class="text-[10px] text-gray-600 uppercase">Красноярск, Россия</p>
+        
+        <!-- Ссылка на политику конфиденциальности -->
+        <a href="/privacy.html" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">
+            Политика конфиденциальности
+        </a>
+    </div>
+    <div class="md:text-right w-full md:w-auto">
+        <p class="text-[10px] text-gray-600 uppercase mb-2">Деловые запросы</p>
+        <a href="mailto:business.mrkill666@gmail.com" class="text-lg md:text-xl font-bold hover:underline break-all">business.mrkill666@gmail.com</a>
+    </div>
+</footer>
+
+<!-- Скрипт для автоматического обновления года -->
+<script>
+    document.getElementById('current-year').textContent = new Date().getFullYear();
+</script>
+
+    </main>
+
+    <script>
+        window.onload = () => {
+            setTimeout(() => {
+                document.body.classList.add('loaded');
+            }, 1000);
+        };
+
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>
