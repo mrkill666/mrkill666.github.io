@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Определитель аккордов | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="apple-mobile-web-app-title" content="Nozhikov">
+    <meta name="application-name" content="Nozhikov">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
+
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript">
+        (function(m,e,t,r,i,k,a){
+            m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+            m[i].l=1*new Date();
+            for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+            k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+        })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=106218947', 'ym');
+        ym(106218947, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", accurateTrackBounce:true, trackLinks:true});
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/106218947" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+
+    <style>
+        :root {
+            --bg-color: #050505;
+            --accent-color: #ffffff;
+            --card-bg: #111111;
+            /* Заменили зеленый на фирменный оранжевый */
+            --active-color: #f97316; 
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--accent-color);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .noise::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05; pointer-events: none; z-index: 9999;
+        }
+
+        /* Загрузка */
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; display: flex; justify-content: center; align-items: center;
+            z-index: 10001; transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+        .knife-svg-main {
+            width: 120px; height: 120px; fill: none; stroke: white; stroke-width: 1.2;
+            animation: rotate-knife 1.5s linear infinite;
+        }
+        @keyframes rotate-knife { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loaded #loader { transform: translateY(-100%); }
+
+        /* Bento Grid */
+        .bento-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: minmax(180px, auto); gap: 1.5rem;
+        }
+        .bento-item {
+            background: var(--card-bg); border-radius: 24px; padding: 2rem;
+            display: flex; flex-direction: column; position: relative; overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: inherit;
+        }
+        .col-span-4 { grid-column: span 4; }
+        @media (max-width: 768px) {
+            .bento-grid { grid-template-columns: 1fr; gap: 1rem; }
+            .col-span-4 { grid-column: span 1; }
+        }
+
+        /* UI Контролы */
+        .lab-controls { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+        .lab-controls select, .lab-controls button {
+            background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1); color: white;
+            padding: 0.75rem 1rem; border-radius: 8px; font-size: 12px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.3s;
+        }
+        .lab-controls button:hover, .lab-controls select:hover { background: white; color: black; }
+        .lab-controls button.active { background: var(--active-color); color: black; border-color: var(--active-color); }
+        
+        /* Дисплей результата */
+        .result-display {
+            background: #0a0a0a; border: 1px solid rgba(255,255,255,0.05); border-radius: 16px;
+            padding: 2rem; margin-top: 2rem; text-align: center; min-height: 140px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .result-title { font-size: 10px; color: gray; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
+        .result-value { font-size: 3rem; font-weight: 900; line-height: 1; letter-spacing: -0.02em; color: var(--active-color); }
+        .result-sub { font-size: 14px; color: #888; margin-top: 0.5rem; font-weight: 700; }
+
+        /* Гитара */
+        .fretboard { display: flex; flex-direction: column; gap: 4px; margin-top: 2rem; overflow-x: auto; padding-bottom: 10px; }
+        .string { display: flex; height: 26px; position: relative; }
+        .string::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: #444; transform: translateY(-50%); z-index: 1; }
+        .fret { flex: 1; min-width: 45px; border-right: 2px solid #333; position: relative; z-index: 2; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.1s; }
+        .fret:hover { background: rgba(255,255,255,0.05); }
+        .fret.open { border-right: 4px solid #fff; background: rgba(255,255,255,0.02); }
+        .note-marker {
+            width: 20px; height: 20px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; opacity: 0; transition: all 0.2s; font-weight: 700;
+        }
+        .fret:hover .note-marker { opacity: 0.5; }
+        
+        /* Исправлено свечение на оранжевое (249, 115, 22) */
+        .fret.active .note-marker { opacity: 1; background: var(--active-color); color: black; transform: scale(1.2); box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);}
+
+        /* Пианино */
+        .piano-wrapper { margin-top: 2rem; overflow-x: auto; padding-bottom: 10px; }
+        .piano { display: flex; position: relative; height: 140px; min-width: 800px; }
+        .key-white {
+            flex: 1; background: #fff; border: 1px solid #ccc; border-radius: 0 0 6px 6px; cursor: pointer; position: relative; z-index: 1; transition: background 0.1s;
+        }
+        .key-black {
+            position: absolute; background: #111; width: calc(100% / 28 * 0.6); height: 60%; top: 0; z-index: 2; border-radius: 0 0 4px 4px; cursor: pointer; transform: translateX(-50%); transition: background 0.1s; border: 1px solid #222;
+        }
+        .key-white:hover { background: #f0f0f0; }
+        .key-black:hover { background: #222; }
+        .key-white.active { background: var(--active-color); border-color: var(--active-color); box-shadow: inset 0 0 15px rgba(0,0,0,0.2);}
+        .key-black.active { background: var(--active-color); border-color: var(--active-color); }
+        .key-label { position: absolute; bottom: 10px; width: 100%; text-align: center; color: #666; font-size: 9px; font-weight: 700; pointer-events: none;}
+        .key-black .key-label { color: #888; bottom: 15px; }
+        .key-white.active .key-label, .key-black.active .key-label { color: #000; }
+    </style>
+</head>
+<body class="noise">
+
+    <div id="loader">
+        <svg class="knife-svg-main" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
+    </div>
+
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index.html" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">
+            Владислав Ножиков
+        </a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="index.html#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="index.html#art" class="hover:opacity-50 transition">Арт</a>
+        </div>
+    </nav>
+
+    <main class="pt-24 md:pt-32 px-6 md:px-12 pb-24 max-w-7xl mx-auto relative">
+        <div class="bento-grid" id="work">
+            
+            <div class="bento-item col-span-4" id="theory-lab">
+                <div>
+                    <span class="text-[10px] uppercase tracking-widest text-gray-500">Theory Lab / Гармония</span>
+                    <h2 class="text-2xl font-bold mt-2 uppercase">Определитель Аккордов и Ладов</h2>
+                    <p class="text-sm text-gray-400 mt-2">Кликай по грифу или клавишам, чтобы узнать название аккорда/лада, либо выбери их из списка для визуализации.</p>
+                </div>
+
+                <div class="lab-controls mt-8 border-b border-white/10 pb-6">
+                    <select id="ctrl-root">
+                        <option value="" disabled selected>Тоника (Корень)</option>
+                        <option value="0">C (До)</option>
+                        <option value="1">C# / Db</option>
+                        <option value="2">D (Ре)</option>
+                        <option value="3">D# / Eb</option>
+                        <option value="4">E (Ми)</option>
+                        <option value="5">F (Фа)</option>
+                        <option value="6">F# / Gb</option>
+                        <option value="7">G (Соль)</option>
+                        <option value="8">G# / Ab</option>
+                        <option value="9">A (Ля)</option>
+                        <option value="10">A# / Bb</option>
+                        <option value="11">B (Си)</option>
+                    </select>
+
+                    <select id="ctrl-type">
+                        <option value="" disabled selected>Тип Аккорда / Лада</option>
+                        <optgroup label="Базовые Аккорды">
+                            <option value="chord_M">Major (Мажор)</option>
+                            <option value="chord_m">Minor (Минор)</option>
+                            <option value="chord_dim">Dim (Уменьшенный)</option>
+                            <option value="chord_aug">Aug (Увеличенный)</option>
+                            <option value="chord_sus2">Sus2</option>
+                            <option value="chord_sus4">Sus4</option>
+                        </optgroup>
+                        <optgroup label="Септаккорды и выше">
+                            <option value="chord_7">7 (Доминантсепт)</option>
+                            <option value="chord_maj7">Maj7 (Большой мажорный)</option>
+                            <option value="chord_m7">m7 (Малый минорный)</option>
+                            <option value="chord_m7b5">m7b5 (Полу-уменьшенный)</option>
+                            <option value="chord_dim7">dim7 (Уменьшенный септ)</option>
+                            <option value="chord_add9">add9</option>
+                            <option value="chord_madd9">m(add9)</option>
+                            <option value="chord_9">9 (Нонаккорд)</option>
+                            <option value="chord_maj9">maj9</option>
+                            <option value="chord_m9">m9</option>
+                            <option value="chord_11">11 (Ундецимаккорд)</option>
+                        </optgroup>
+                        <optgroup label="Диатонические Лады">
+                            <option value="scale_ionian">Ионийский (Major)</option>
+                            <option value="scale_dorian">Дорийский</option>
+                            <option value="scale_phrygian">Фригийский</option>
+                            <option value="scale_lydian">Лидийский</option>
+                            <option value="scale_mixolydian">Миксолидийский</option>
+                            <option value="scale_aeolian">Эолийский (Minor)</option>
+                            <option value="scale_locrian">Локрийский</option>
+                        </optgroup>
+                        <optgroup label="Специальные Гаммы">
+                            <option value="scale_harmonic_minor">Гармонический минор</option>
+                            <option value="scale_melodic_minor">Мелодический минор</option>
+                            <option value="scale_pentatonic_maj">Мажорная Пентатоника</option>
+                            <option value="scale_pentatonic_min">Минорная Пентатоника</option>
+                            <option value="scale_blues">Блюзовый лад</option>
+                        </optgroup>
+                    </select>
+
+                    <button id="ctrl-play">▶ Слушать Арпеджио</button>
+                    <button id="ctrl-clear">Очистить всё</button>
+                </div>
+
+                <!-- Дисплей -->
+                <div class="result-display">
+                    <div class="result-title">Определенный Аккорд / Лад</div>
+                    <div class="result-value" id="result-name">---</div>
+                    <div class="result-sub" id="result-alt">Кликните по нотам, чтобы начать анализ</div>
+                </div>
+
+                <div class="fretboard" id="fretboard"></div>
+                
+                <div class="piano-wrapper">
+                    <div class="piano" id="piano"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <footer class="mt-24 md:mt-32 pt-12 border-t border-white/10 flex flex-col items-center text-center gap-8 reveal">
+            <div class="flex flex-col items-center gap-2">
+                <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">
+                    © <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ
+                </p>        
+                <a href="/privacy.html" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">
+                    Политика конфиденциальности
+                </a>
+            </div>
+        </footer>
+    </main>
+
+    <script>
+        window.onload = () => { setTimeout(() => { document.body.classList.add('loaded'); }, 1000); };
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        const TheoryLab = (() => {
+            // --- ТЕОРЕТИЧЕСКАЯ БАЗА ---
+            const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            
+            // Словари интервалов (в полутонах от тоники)
+            const DICT_CHORDS = {
+                'M': [0, 4, 7],
+                'm': [0, 3, 7],
+                'dim': [0, 3, 6],
+                'aug': [0, 4, 8],
+                'sus2': [0, 2, 7],
+                'sus4': [0, 5, 7],
+                '7': [0, 4, 7, 10],
+                'maj7': [0, 4, 7, 11],
+                'm7': [0, 3, 7, 10],
+                'm7b5': [0, 3, 6, 10],
+                'dim7': [0, 3, 6, 9],
+                'add9': [0, 2, 4, 7],
+                'm(add9)': [0, 2, 3, 7],
+                '9': [0, 2, 4, 7, 10],
+                'maj9': [0, 2, 4, 7, 11],
+                'm9': [0, 2, 3, 7, 10],
+                '11': [0, 2, 4, 5, 7, 10]
+            };
+
+            // Исправленные ключи: теперь они точно совпадают со значениями <option> в HTML
+            const DICT_SCALES = {
+                'ionian': { name: 'Ионийский (Major)', intervals: [0, 2, 4, 5, 7, 9, 11] },
+                'dorian': { name: 'Дорийский', intervals: [0, 2, 3, 5, 7, 9, 10] },
+                'phrygian': { name: 'Фригийский', intervals: [0, 1, 3, 5, 7, 8, 10] },
+                'lydian': { name: 'Лидийский', intervals: [0, 2, 4, 6, 7, 9, 11] },
+                'mixolydian': { name: 'Миксолидийский', intervals: [0, 2, 4, 5, 7, 9, 10] },
+                'aeolian': { name: 'Эолийский (Minor)', intervals: [0, 2, 3, 5, 7, 8, 10] },
+                'locrian': { name: 'Локрийский', intervals: [0, 1, 3, 5, 6, 8, 10] },
+                'harmonic_minor': { name: 'Гармонический минор', intervals: [0, 2, 3, 5, 7, 8, 11] },
+                'melodic_minor': { name: 'Мелодический минор', intervals: [0, 2, 3, 5, 7, 9, 11] },
+                'pentatonic_maj': { name: 'Мажорная Пентатоника', intervals: [0, 2, 4, 7, 9] },
+                'pentatonic_min': { name: 'Минорная Пентатоника', intervals: [0, 3, 5, 7, 10] },
+                'blues': { name: 'Блюзовый лад', intervals: [0, 3, 5, 6, 7, 10] }
+            };
+
+            // Настройки инструментов
+            const STRING_TUNINGS = [64, 59, 55, 50, 45, 40]; // Гитара: E4, B3, G3, D3, A2, E2
+            const FRET_COUNT = 16;
+            const FRET_MARKERS = [3, 5, 7, 9, 12, 15];
+            const PIANO_START = 36; // C2
+            const PIANO_END = 84;   // C6
+
+            // Состояние
+            let activeNotes = new Set(); // Хранит выбранные MIDI-ноты
+            let audioCtx = null;
+
+            const DOM = {
+                fretboard: document.getElementById('fretboard'),
+                piano: document.getElementById('piano'),
+                resName: document.getElementById('result-name'),
+                resAlt: document.getElementById('result-alt'),
+                selRoot: document.getElementById('ctrl-root'),
+                selType: document.getElementById('ctrl-type'),
+                btnPlay: document.getElementById('ctrl-play'),
+                btnClear: document.getElementById('ctrl-clear')
+            };
+
+            // --- AUDIO ENGINE ---
+            function initAudio() {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+            }
+
+            function playNote(midi, delay = 0) {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const masterGain = audioCtx.createGain();
+                
+                osc.type = 'triangle'; // Треугольник звучит мягче для аккордов
+                osc.frequency.value = 440 * Math.pow(2, (midi - 69) / 12);
+                
+                osc.connect(masterGain);
+                masterGain.connect(audioCtx.destination);
+                
+                const startTime = audioCtx.currentTime + delay;
+                osc.start(startTime);
+                
+                // Огибающая (Envelope) с пониженным гейном, чтобы аккорды не хрипели
+                masterGain.gain.setValueAtTime(0, startTime);
+                masterGain.gain.linearRampToValueAtTime(0.15, startTime + 0.05); 
+                masterGain.gain.exponentialRampToValueAtTime(0.001, startTime + 1.5);
+                
+                osc.stop(startTime + 1.5);
+            }
+
+            function playArpeggio() {
+                if (activeNotes.size === 0) return;
+                const sortedNotes = Array.from(activeNotes).sort((a, b) => a - b);
+                sortedNotes.forEach((midi, index) => {
+                    // Арпеджио: каждая нота стартует с задержкой 0.15с
+                    playNote(midi, index * 0.15);
+                });
+                // В конце проигрываем весь аккорд целиком
+                const chordDelay = sortedNotes.length * 0.15 + 0.5;
+                sortedNotes.forEach(midi => playNote(midi, chordDelay));
+            }
+
+            // --- МАТЕМАТИКА АНАЛИЗА ---
+            function identifyHarmony() {
+                if (activeNotes.size === 0) {
+                    DOM.resName.textContent = '---';
+                    DOM.resAlt.textContent = 'Кликните по нотам, чтобы начать анализ';
+                    return;
+                }
+
+                // Извлекаем уникальные классы звуковысотности (Pitch Classes: 0-11)
+                const pitchClasses = Array.from(new Set(Array.from(activeNotes).map(n => n % 12))).sort((a, b) => a - b);
+                
+                let matches = [];
+
+                // Проверяем все 12 возможных тоник
+                for (let root = 0; root < 12; root++) {
+                    // Сдвигаем все ноты относительно текущей тоники
+                    const shifted = pitchClasses.map(p => (p - root + 12) % 12).sort((a, b) => a - b);
+                    const shiftedStr = shifted.join(',');
+
+                    // Ищем в аккордах
+                    for (const [name, intervals] of Object.entries(DICT_CHORDS)) {
+                        if (intervals.join(',') === shiftedStr) {
+                            matches.push(`${NOTE_NAMES[root]}${name}`);
+                        }
+                    }
+                    // Ищем в ладах (используя обновленный словарь)
+                    for (const [key, scaleData] of Object.entries(DICT_SCALES)) {
+                        if (scaleData.intervals.join(',') === shiftedStr) {
+                            matches.push(`${NOTE_NAMES[root]} ${scaleData.name}`);
+                        }
+                    }
+                }
+
+                if (matches.length > 0) {
+                    DOM.resName.textContent = matches[0]; // Показываем самое вероятное совпадение
+                    DOM.resAlt.textContent = matches.length > 1 ? `Также может быть: ${matches.slice(1).join(' / ')}` : 'Точное совпадение';
+                } else {
+                    DOM.resName.textContent = '???';
+                    DOM.resAlt.textContent = `Неизвестная гармония (Ноты: ${pitchClasses.map(p => NOTE_NAMES[p]).join(', ')})`;
+                }
+            }
+
+            // --- УПРАВЛЕНИЕ UI ---
+            function toggleNote(midi) {
+                if (activeNotes.has(midi)) {
+                    activeNotes.delete(midi);
+                } else {
+                    activeNotes.add(midi);
+                    playNote(midi);
+                }
+                
+                // Сбрасываем выпадающие списки (так как перешли в ручной режим)
+                DOM.selRoot.value = "";
+                DOM.selType.value = "";
+
+                renderInstruments();
+                identifyHarmony();
+            }
+
+            function constructFromDropdowns() {
+                const root = parseInt(DOM.selRoot.value);
+                const typeStr = DOM.selType.value;
+                if (isNaN(root) || !typeStr) return;
+
+                activeNotes.clear();
+                
+                const [category, typeKey] = typeStr.split('_');
+                
+                // Получаем интервалы, учитывая новую структуру словаря ладов
+                const intervals = category === 'chord' ? DICT_CHORDS[typeKey] : DICT_SCALES[typeKey].intervals;
+                
+                // Строим аккорд/лад в 3-й и 4-й октаве (от C3 = 48)
+                const baseOctaveMidi = 48 + root; 
+                intervals.forEach(interval => {
+                    activeNotes.add(baseOctaveMidi + interval);
+                });
+
+                renderInstruments();
+                identifyHarmony();
+                playArpeggio();
+            }
+
+            // --- РЕНДЕР ИНСТРУМЕНТОВ ---
+            function isBlackKey(midi) {
+                return [1, 3, 6, 8, 10].includes(midi % 12);
+            }
+
+            function renderInstruments() {
+                // Гриф
+                DOM.fretboard.innerHTML = '';
+                const markerRow = document.createElement('div');
+                markerRow.className = 'flex h-4 text-[8px] text-gray-500 mb-1';
+                for(let i=0; i<=FRET_COUNT; i++) {
+                    const m = document.createElement('div');
+                    m.className = 'flex-1 min-w-[45px] text-center';
+                    if(FRET_MARKERS.includes(i)) m.textContent = i === 12 ? '••' : '•';
+                    markerRow.appendChild(m);
+                }
+                DOM.fretboard.appendChild(markerRow);
+
+                STRING_TUNINGS.forEach(baseMidi => {
+                    const stringEl = document.createElement('div');
+                    stringEl.className = 'string';
+                    for (let fret = 0; fret <= FRET_COUNT; fret++) {
+                        const midi = baseMidi + fret;
+                        const fretEl = document.createElement('div');
+                        fretEl.className = `fret ${fret === 0 ? 'open' : ''}`;
+                        if (activeNotes.has(midi)) fretEl.classList.add('active');
+                        
+                        const marker = document.createElement('div');
+                        marker.className = 'note-marker';
+                        marker.textContent = NOTE_NAMES[midi % 12];
+                        
+                        fretEl.onclick = () => toggleNote(midi);
+                        fretEl.appendChild(marker);
+                        stringEl.appendChild(fretEl);
+                    }
+                    DOM.fretboard.appendChild(stringEl);
+                });
+
+                // Пианино
+                DOM.piano.innerHTML = '';
+                let whiteKeysCount = 0;
+                for (let midi = PIANO_START; midi <= PIANO_END; midi++) {
+                    if (!isBlackKey(midi)) whiteKeysCount++;
+                }
+
+                let currentWhiteIndex = 0;
+                for (let midi = PIANO_START; midi <= PIANO_END; midi++) {
+                    const key = document.createElement('div');
+                    const isBlack = isBlackKey(midi);
+                    
+                    key.className = isBlack ? 'key-black' : 'key-white';
+                    if (activeNotes.has(midi)) key.classList.add('active');
+
+                    if (isBlack) {
+                        key.style.left = `calc((100% / ${whiteKeysCount}) * ${currentWhiteIndex})`;
+                    } else {
+                        currentWhiteIndex++;
+                    }
+
+                    // Добавляем названия нот на клавиши
+                    const label = document.createElement('div');
+                    label.className = 'key-label';
+                    label.textContent = NOTE_NAMES[midi % 12];
+                    key.appendChild(label);
+
+                    key.onclick = () => toggleNote(midi);
+                    DOM.piano.appendChild(key);
+                }
+            }
+
+            // --- СЛУШАТЕЛИ ---
+            DOM.selRoot.addEventListener('change', constructFromDropdowns);
+            DOM.selType.addEventListener('change', constructFromDropdowns);
+            
+            DOM.btnPlay.addEventListener('click', () => {
+                if (activeNotes.size > 0) playArpeggio();
+            });
+
+            DOM.btnClear.addEventListener('click', () => {
+                activeNotes.clear();
+                DOM.selRoot.value = "";
+                DOM.selType.value = "";
+                renderInstruments();
+                identifyHarmony();
+            });
+
+            // Инициализация пустых инструментов
+            renderInstruments();
+
+        })();
+    </script>
+</body>
+</html>
