@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Audio DAW | Ножиков</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
-        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
     <link rel="manifest" href="/icons/site.webmanifest">
@@ -28,7 +28,8 @@
             --border-hover: rgba(255, 255, 255, 0.3);
             --control-bg: #1a1a1a;
             --danger-color: #ff3333;
-            --active-color: #4ade80;
+            /* Фирменный оранжевый */
+            --active-color: #f97316; 
             --font-main: 'Inter', sans-serif;
         }
 
@@ -97,23 +98,20 @@
             padding: 1rem; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
         }
         
-        /* Подсветка активного пэда */
-        .pad.selected { border: 2px solid var(--active-color); box-shadow: inset 0 0 15px rgba(74, 222, 128, 0.1); }
+        /* Подсветка активного пэда оранжевым цветом (249, 115, 22) */
+        .pad.selected { border: 2px solid var(--active-color); box-shadow: inset 0 0 15px rgba(249, 115, 22, 0.15); }
         .pad.playing { background: var(--accent-color); color: #000; transform: scale(0.95); box-shadow: 0 0 20px rgba(255, 255, 255, 0.5); }
         
-        /* Z-INDEX ИСПРАВЛЕН ЗДЕСЬ: */
         .pad-header { display: flex; justify-content: space-between; align-items: flex-start; z-index: 10; position: relative; pointer-events: none;}
         .pad-key { font-size: 1.5rem; font-weight: 900; }
         .pad-label { font-size: 10px; color: gray; text-transform: uppercase; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .pad.playing .pad-label { color: #333; }
         
-        /* Кнопки "Актив" и "Назначить" теперь выше оверлея */
         .pad-actions { display: flex; gap: 4px; z-index: 10; position: relative; }
         .btn-micro { flex: 1; background: #0a0a0a; border: 1px solid var(--border-light); color: gray; font-size: 8px; padding: 0.5rem 0; border-radius: 6px; text-transform: uppercase; cursor: pointer; transition: 0.2s; font-weight: 700;}
         .btn-micro:hover { border-color: var(--accent-color); color: var(--accent-color); background: #222;}
         .btn-micro.target-btn.active-target { background: var(--active-color); color: #000; border-color: var(--active-color);}
 
-        /* Оверлей подрезки (Trimming) с z-index ниже кнопок */
         .trim-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(10, 10, 10, 0.85); backdrop-filter: blur(4px);
@@ -123,7 +121,6 @@
         .pad:hover .trim-overlay { opacity: 1; }
         .trim-label { font-size: 8px; text-transform: uppercase; color: gray; font-weight: 900; display: flex; justify-content: space-between;}
         
-        /* Ползунки */
         input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 12px; width: 12px; border-radius: 50%; background: #ffffff; cursor: pointer; margin-top: -4px; }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #444; border-radius: 2px; }
@@ -142,7 +139,6 @@
         .seq-step:hover { border-color: var(--border-hover); }
         
         .seq-step.active { background: gray; border-color: gray; }
-        /* Подсветка нот в режиме мелодии (зеленоватая) */
         .seq-grid.melody-mode .seq-step.active { background: var(--active-color); border-color: var(--active-color); } 
         
         .seq-step.current { border: 2px solid var(--accent-color); box-shadow: inset 0 0 10px rgba(255,255,255,0.2); }
@@ -152,7 +148,7 @@
         .key-white { flex: 1; background: #2a2a2a; border: 1px solid #111; border-radius: 0 0 6px 6px; cursor: pointer; position: relative; z-index: 1; transition: background 0.1s; }
         .key-black { position: absolute; background: #050505; border: 1px solid #222; width: calc(100% / 14 * 0.6); height: 60%; top: 0; z-index: 2; border-radius: 0 0 4px 4px; cursor: pointer; transform: translateX(-50%); transition: background 0.1s; }
         .key-white:hover { background: #3a3a3a; } .key-black:hover { background: #1a1a1a; }
-        .key-white.active, .key-black.active { background: var(--accent-color); }
+        .key-white.active, .key-black.active { background: var(--active-color); }
     </style>
 </head>
 <body>
@@ -187,7 +183,11 @@
 
         <!-- SAMPLER PADS -->
         <div>
-            <div class="subtitle" style="margin-bottom: 1rem;">3. Пэды (Наведи для подрезки. Кнопка "Актив" связывает пэд с секвенсором)</div>
+            <!-- Заголовок с добавленной кнопкой СТОП -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 1rem;">
+                <div class="subtitle" style="margin: 0;">3. Пэды (Наведи для подрезки. Кнопка "Актив" связывает пэд с секвенсором)</div>
+                <button class="btn" id="btn-stop-all" style="padding: 0.4rem 0.8rem; font-size: 10px;">🛑 Стоп звук</button>
+            </div>
             <div class="pads-grid" id="pads-container"></div>
         </div>
 
@@ -224,7 +224,6 @@
             const KEY_CODES = ['KeyQ', 'KeyW', 'KeyE', 'KeyA', 'KeyS', 'KeyD', 'KeyZ', 'KeyX', 'KeyC'];
             const STEPS = 16;
             
-            // Ноты для Melody Sequencer (1 хроматическая октава, 13 нот)
             const MELODY_LABELS = ['C5', 'B4', 'A#4', 'A4', 'G#4', 'G4', 'F#4', 'F4', 'E4', 'D#4', 'D4', 'C#4', 'C4'];
             const MELODY_SEMITONES = [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
             
@@ -237,7 +236,6 @@
             let currentAudioBuffer = null; 
             let currentAudioName = 'Пусто';
 
-            // activePadIndex указывает, какой пэд сейчас выбран для Пианоролла и Мелодии
             let activePadIndex = 0; 
             let seqMode = 'drums'; 
 
@@ -258,6 +256,9 @@
             const lookahead = 25.0; 
             const scheduleAheadTime = 0.1; 
 
+            // Массив для отслеживания активных звуковых узлов (чтобы была возможность их остановить)
+            let activeSources = [];
+
             // === DOM ЭЛЕМЕНТЫ ===
             const DOM = {
                 btnRecord: document.getElementById('btn-record'),
@@ -265,6 +266,7 @@
                 fileInput: document.getElementById('file-input'),
                 status: document.getElementById('current-buffer-status'),
                 padsContainer: document.getElementById('pads-container'),
+                btnStopAll: document.getElementById('btn-stop-all'),
                 seqGrid: document.getElementById('seq-grid'),
                 seqModeSelect: document.getElementById('seq-mode-select'),
                 btnSeqPlay: document.getElementById('btn-seq-play'),
@@ -330,6 +332,14 @@
             DOM.dropZone.addEventListener('dragleave', () => DOM.dropZone.classList.remove('dragover'));
             DOM.dropZone.addEventListener('drop', (e) => { e.preventDefault(); DOM.dropZone.classList.remove('dragover'); if (e.dataTransfer.files.length > 0) processFile(e.dataTransfer.files[0]); });
 
+            // === КНОПКА СТОП ЗВУК ===
+            DOM.btnStopAll.addEventListener('click', () => {
+                activeSources.forEach(source => {
+                    try { source.stop(); } catch (err) { /* Игнорируем ошибки уже остановленных узлов */ }
+                });
+                activeSources = [];
+            });
+
             // === ВОСПРОИЗВЕДЕНИЕ ===
             const playPad = (index, time = 0) => {
                 const pad = padsState[index];
@@ -340,6 +350,12 @@
                 source.buffer = pad.buffer;
                 source.connect(audioCtx.destination);
                 
+                // Удаляем узел из отслеживания после окончания проигрывания
+                source.onended = () => {
+                    activeSources = activeSources.filter(s => s !== source);
+                };
+                activeSources.push(source);
+
                 const dur = pad.buffer.duration;
                 const offset = dur * pad.trimStart;
                 const playDur = (dur * pad.trimEnd) - offset;
@@ -365,6 +381,11 @@
                 source.buffer = pad.buffer;
                 source.playbackRate.value = Math.pow(2, semitones / 12);
                 source.connect(audioCtx.destination);
+
+                source.onended = () => {
+                    activeSources = activeSources.filter(s => s !== source);
+                };
+                activeSources.push(source);
 
                 const dur = pad.buffer.duration;
                 const offset = dur * pad.trimStart;
@@ -533,6 +554,11 @@
                             source.buffer = pad.buffer;
                             source.playbackRate.value = Math.pow(2, MELODY_SEMITONES[r] / 12);
                             source.connect(audioCtx.destination);
+                            
+                            source.onended = () => {
+                                activeSources = activeSources.filter(s => s !== source);
+                            };
+                            activeSources.push(source);
                             
                             const offset = pad.buffer.duration * pad.trimStart;
                             const playDur = (pad.buffer.duration * pad.trimEnd) - offset;
