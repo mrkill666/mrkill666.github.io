@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Владислав Ножиков | Официальный сайт</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+      <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="apple-mobile-web-app-title" content="Nozhikov">
+    <meta name="application-name" content="Nozhikov">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="msapplication-config" content="/icons/browserconfig.xml">
+    <meta name="theme-color" content="#ffffff">  
+    <style>
+        :root {
+            --bg-color: #050505;
+            --accent-color: #ffffff;
+            --card-bg: #111111;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--accent-color);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .noise::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-auto-rows: minmax(180px, auto);
+            gap: 1.5rem;
+        }
+
+        .bento-item {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .col-span-4 { grid-column: span 4; }
+
+        @media (max-width: 768px) {
+            .bento-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .col-span-4 { grid-column: span 1; }
+        }
+
+        /* Общие контролы для Lab */
+        .lab-controls select, .lab-controls button, .lab-controls input {
+            background: #1a1a1a;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.3s;
+            outline: none;
+        }
+        .lab-controls button:hover, .lab-controls select:hover {
+            background: white;
+            color: black;
+        }
+        .lab-controls button.active {
+            background: white;
+            color: black;
+            font-weight: bold;
+        }
+
+        /* Уникальные стили Rhythm Lab */
+        .tap-btn {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: transparent;
+            border: 2px dashed rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.1s;
+            user-select: none;
+        }
+        .tap-btn:active, .tap-btn.active-key {
+            transform: scale(0.9);
+            background: rgba(255,255,255,0.1);
+            border-style: solid;
+        }
+        
+        .bpm-display {
+            font-size: 4rem;
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: -0.05em;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .step-indicator {
+            display: flex;
+            gap: 4px;
+            margin-top: 1.5rem;
+        }
+        .step-dot {
+            flex: 1;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            transition: background 0.1s;
+        }
+        .step-dot.active { background: white; box-shadow: 0 0 10px white; }
+        .step-dot.beat { background: rgba(255,255,255,0.3); }
+
+        /* Ползунок */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            margin-top: -6px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #333;
+            border-radius: 2px;
+        }
+        
+        .keyboard-hint {
+            font-size: 10px;
+            color: gray;
+            text-align: center;
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+    </style>
+</head>
+<body class="noise">
+
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index.html" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">
+            Владислав Ножиков
+        </a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="#art" class="hover:opacity-50 transition">Арт</a>
+        </div>
+    </nav>
+
+    <main class="pt-24 md:pt-32 px-6 md:px-12 pb-24 max-w-7xl mx-auto relative">
+        <div class="bento-grid" id="work">
+            
+            <!-- Rhythm Lab: Метроном и Драм-машина -->
+            <div class="bento-item col-span-4" id="rhythm-lab">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div>
+                        <span class="text-[10px] uppercase tracking-widest text-gray-500">Rhythm Lab / Интерактив</span>
+                        <h2 class="text-2xl font-bold mt-2 uppercase">Генератор Грува & BPM</h2>
+                    </div>
+                    
+                    <div class="flex items-center gap-6">
+                        <div class="text-right">
+                            <span class="text-[10px] uppercase tracking-widest text-gray-500">Текущий темп</span>
+                            <div class="bpm-display" id="rl-bpm-val">120</div>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <div class="tap-btn" id="rl-tap">TAP</div>
+                            <div class="keyboard-hint">Или жми Пробел</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lab-controls flex flex-wrap items-center gap-4 mt-8">
+                    <button id="rl-play" class="w-32">▶ Старт</button>
+                    
+                    <select id="rl-groove">
+                        <option value="metronome">Метроном</option>
+                        <option value="rock">Рок</option>
+                        <option value="hiphop">Хип-Хоп</option>
+                        <option value="dubstep">Дабстеп</option>
+                        <option value="jazz">Джаз (Свинг)</option>
+                        <option value="blues">Блюз (Шаффл)</option>
+                        <option value="rap">Трэп / Рэп</option>
+                    </select>
+
+                    <select id="rl-signature">
+                        <option value="8,4">2/4</option>
+                        <option value="12,4">3/4</option>
+                        <option value="16,4" selected>4/4</option>
+                        <option value="20,4">5/4</option>
+                        <option value="24,4">6/4</option>
+                        <option value="28,4">7/4</option>
+                        <option value="10,2">5/8</option>
+                        <option value="12,2">6/8</option>
+                        <option value="14,2">7/8</option>
+                        <option value="18,2">9/8</option>
+                        <option value="22,2">11/8</option>
+                        <option value="26,2">13/8</option>
+                    </select>
+
+                    <div class="flex-1 min-w-[200px] flex items-center gap-4">
+                        <span class="text-[10px] text-gray-500 font-bold">6</span>
+                        <input type="range" id="rl-bpm-slider" min="6" max="666" value="120">
+                        <span class="text-[10px] text-gray-500 font-bold">666</span>
+                    </div>
+                </div>
+
+                <!-- Визуализатор шагов -->
+                <div class="step-indicator" id="rl-steps"></div>
+            </div>
+
+        </div>
+
+        <footer class="mt-24 md:mt-32 pt-12 border-t border-white/10 flex flex-col items-center text-center gap-8 reveal">
+            <div class="flex flex-col items-center gap-2">
+                <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">
+                    © <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ
+                </p>        
+                <a href="/privacy.html" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">
+                    Политика конфиденциальности
+                </a>
+            </div>
+        </footer>
+    </main>
+
+    <script>
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        // --- RHYTHM LAB MODULE ---
+        const RhythmLab = (() => {
+            const state = {
+                bpm: 120,
+                isPlaying: false,
+                groove: 'metronome',
+                signatureSteps: 16, // Кол-во 16-х нот в такте
+                stepPerBeat: 4,     // Через сколько 16-х нот идет акцент (доля)
+                currentStep: 0,
+                nextNoteTime: 0.0
+            };
+
+            let audioCtx = null;
+            let noiseBuffer = null;
+            let timerID = null;
+            const lookahead = 25.0; 
+            const scheduleAheadTime = 0.1; 
+
+            const DOM = {
+                tap: document.getElementById('rl-tap'),
+                play: document.getElementById('rl-play'),
+                groove: document.getElementById('rl-groove'),
+                signature: document.getElementById('rl-signature'),
+                bpmSlider: document.getElementById('rl-bpm-slider'),
+                bpmVal: document.getElementById('rl-bpm-val'),
+                steps: document.getElementById('rl-steps')
+            };
+
+            const GROOVES = {
+                metronome: { kick: [], snare: [], hihat: [], click: [] },
+                rock: {
+                    kick:  [1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0],
+                    snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+                    hihat: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+                    click: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
+                },
+                hiphop: {
+                    kick:  [1,0,0,0, 0,0,1,0, 0,0,0,0, 1,0,0,0],
+                    snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+                    hihat: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,1],
+                    click: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
+                },
+                dubstep: { 
+                    kick:  [1,0,0,0, 0,0,0,0, 0,0,1,0, 0,0,0,0],
+                    snare: [0,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0],
+                    hihat: [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
+                    click: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
+                },
+                jazz: { 
+                    kick:  [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+                    snare: [0,0,0,0, 2,0,0,0, 0,0,0,0, 2,0,0,0], 
+                    hihat: [1,0,0,1, 1,0,0,1, 1,0,0,1, 1,0,0,1],
+                    click: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
+                },
+                blues: { 
+                    kick:  [1,0,1,0, 0,0,0,0, 1,0,1,0, 0,0,0,0],
+                    snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+                    hihat: [1,0,0,1, 1,0,0,1, 1,0,0,1, 1,0,0,1],
+                    click: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
+                },
+                rap: { 
+                    kick:  [1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,1,0],
+                    snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+                    hihat: [1,1,1,1, 1,0,1,0, 1,1,1,1, 1,0,1,0],
+                    click: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
+                }
+            };
+
+            function generateMetronome() {
+                const s = state.signatureSteps;
+                const spb = state.stepPerBeat;
+                const click = new Array(s).fill(0);
+                const hihat = new Array(s).fill(0);
+                const kick = new Array(s).fill(0);
+                const snare = new Array(s).fill(0);
+
+                for (let i = 0; i < s; i++) {
+                    if (i === 0) {
+                        click[i] = 2; // Сильная доля (акцент)
+                        hihat[i] = 1; // Хэт одновременно с тиком
+                    } else if (i % spb === 0) {
+                        click[i] = 1; // Слабая доля (обычный тик)
+                        hihat[i] = 1; // Хэт одновременно с тиком
+                    }
+                }
+                GROOVES.metronome = { kick, snare, hihat, click };
+            }
+
+            function initAudio() {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const bufferSize = audioCtx.sampleRate * 2; 
+                    noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                    const output = noiseBuffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        output[i] = Math.random() * 2 - 1;
+                    }
+                }
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+            }
+
+            // --- СИНТЕЗАТОРЫ ---
+            function playClick(time, isAccent) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(isAccent ? 1500 : 1000, time);
+                osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.05);
+
+                gain.gain.setValueAtTime(0, time);
+                gain.gain.linearRampToValueAtTime(1, time + 0.005);
+                gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+
+                osc.start(time);
+                osc.stop(time + 0.05);
+            }
+
+            function playKick(time) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(150, time);
+                osc.frequency.exponentialRampToValueAtTime(0.001, time + 0.5);
+
+                gain.gain.setValueAtTime(0, time);
+                gain.gain.linearRampToValueAtTime(1, time + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, time + 0.5);
+
+                osc.start(time);
+                osc.stop(time + 0.5);
+            }
+
+            function playSnare(time, type) {
+                const osc = audioCtx.createOscillator();
+                const oscGain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(250, time);
+                osc.connect(oscGain);
+                oscGain.connect(audioCtx.destination);
+
+                oscGain.gain.setValueAtTime(0, time);
+                oscGain.gain.linearRampToValueAtTime(type === 2 ? 0.2 : 0.5, time + 0.01);
+                oscGain.gain.exponentialRampToValueAtTime(0.001, time + 0.2);
+                osc.start(time);
+                osc.stop(time + 0.2);
+
+                if (type !== 2) {
+                    const noise = audioCtx.createBufferSource();
+                    noise.buffer = noiseBuffer;
+                    const noiseFilter = audioCtx.createBiquadFilter();
+                    noiseFilter.type = 'highpass';
+                    noiseFilter.frequency.value = 1000;
+                    const noiseGain = audioCtx.createGain();
+                    
+                    noise.connect(noiseFilter);
+                    noiseFilter.connect(noiseGain);
+                    noiseGain.connect(audioCtx.destination);
+
+                    noiseGain.gain.setValueAtTime(0, time);
+                    noiseGain.gain.linearRampToValueAtTime(0.5, time + 0.01);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.2);
+
+                    noise.start(time);
+                    noise.stop(time + 0.2);
+                }
+            }
+
+            function playHihat(time) {
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = noiseBuffer;
+                const noiseFilter = audioCtx.createBiquadFilter();
+                noiseFilter.type = 'bandpass';
+                noiseFilter.frequency.value = 10000;
+                const noiseGain = audioCtx.createGain();
+                
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(audioCtx.destination);
+
+                noiseGain.gain.setValueAtTime(0, time);
+                noiseGain.gain.linearRampToValueAtTime(0.3, time + 0.01);
+                noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+
+                noise.start(time);
+                noise.stop(time + 0.1);
+            }
+
+            // --- СЕКВЕНСОР ---
+            function nextNote() {
+                const secondsPerBeat = 60.0 / state.bpm;
+                state.nextNoteTime += 0.25 * secondsPerBeat; 
+                
+                state.currentStep++;
+                if (state.currentStep >= state.signatureSteps) {
+                    state.currentStep = 0;
+                }
+            }
+
+            function scheduleNote(stepNumber, time) {
+                const delay = (time - audioCtx.currentTime) * 1000;
+                setTimeout(() => {
+                    document.querySelectorAll('.step-dot').forEach((el, i) => {
+                        el.classList.toggle('active', i === stepNumber);
+                    });
+                }, delay > 0 ? delay : 0);
+
+                const p = GROOVES[state.groove];
+                
+                const kickVal = p.kick[stepNumber % p.kick.length];
+                const snareVal = p.snare[stepNumber % p.snare.length];
+                const hihatVal = p.hihat[stepNumber % p.hihat.length];
+                const clickVal = p.click[stepNumber % p.click.length];
+
+                if (clickVal) playClick(time, clickVal === 2);
+                if (kickVal) playKick(time);
+                if (snareVal) playSnare(time, snareVal);
+                if (hihatVal) playHihat(time);
+            }
+
+            function scheduler() {
+                while (state.nextNoteTime < audioCtx.currentTime + scheduleAheadTime) {
+                    scheduleNote(state.currentStep, state.nextNoteTime);
+                    nextNote();
+                }
+                timerID = setTimeout(scheduler, lookahead);
+            }
+
+            function togglePlay() {
+                initAudio();
+                state.isPlaying = !state.isPlaying;
+                if (state.isPlaying) {
+                    state.currentStep = 0;
+                    state.nextNoteTime = audioCtx.currentTime + 0.05;
+                    scheduler();
+                    DOM.play.textContent = '⏹ Стоп';
+                    DOM.play.classList.add('active');
+                } else {
+                    clearTimeout(timerID);
+                    DOM.play.textContent = '▶ Старт';
+                    DOM.play.classList.remove('active');
+                    document.querySelectorAll('.step-dot').forEach(el => el.classList.remove('active'));
+                }
+            }
+
+            // --- TAP TEMPO ---
+            let tapTimes = [];
+            function handleTap() {
+                const now = performance.now();
+                if (tapTimes.length > 0 && now - tapTimes[tapTimes.length - 1] > 12000) {
+                    tapTimes = []; 
+                }
+                tapTimes.push(now);
+
+                if (tapTimes.length > 1) {
+                    let totalDiff = 0;
+                    for (let i = 1; i < tapTimes.length; i++) {
+                        totalDiff += tapTimes[i] - tapTimes[i - 1];
+                    }
+                    const avgDiffMs = totalDiff / (tapTimes.length - 1);
+                    const calculatedBPM = Math.round(60000 / avgDiffMs);
+                    
+                    if (calculatedBPM >= 6 && calculatedBPM <= 666) {
+                        updateBPM(calculatedBPM);
+                    }
+                }
+                
+                // Визуальный отклик кнопки TAP
+                DOM.tap.classList.add('active-key');
+                setTimeout(() => {
+                    DOM.tap.classList.remove('active-key');
+                }, 100);
+            }
+
+            function updateBPM(val) {
+                state.bpm = val;
+                DOM.bpmVal.textContent = val;
+                DOM.bpmSlider.value = val;
+            }
+
+            function renderSteps() {
+                DOM.steps.innerHTML = '';
+                for (let i = 0; i < state.signatureSteps; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = `step-dot ${i % state.stepPerBeat === 0 ? 'beat' : ''}`;
+                    DOM.steps.appendChild(dot);
+                }
+            }
+
+            // Слушатели
+            DOM.play.addEventListener('click', togglePlay);
+            DOM.tap.addEventListener('click', handleTap);
+            
+            DOM.bpmSlider.addEventListener('input', (e) => updateBPM(e.target.value));
+            
+            DOM.groove.addEventListener('change', (e) => { state.groove = e.target.value; });
+            
+            DOM.signature.addEventListener('change', (e) => { 
+                const parts = e.target.value.split(',');
+                state.signatureSteps = parseInt(parts[0]); 
+                state.stepPerBeat = parseInt(parts[1]);
+                
+                generateMetronome(); 
+                renderSteps();
+                
+                if(state.currentStep >= state.signatureSteps) state.currentStep = 0;
+            });
+
+            // --- ДОБАВЛЕНО: Управление TAP TEMPO через Пробел ---
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    // Игнорируем пробел, если фокус находится на селектах или других кнопках
+                    // чтобы не вызывать конфликты со стандартным управлением браузера
+                    if (['INPUT', 'SELECT', 'BUTTON'].includes(e.target.tagName) && e.target !== DOM.tap) {
+                        return; 
+                    }
+                    e.preventDefault(); // Предотвращаем скролл страницы вниз
+                    handleTap();        // Запускаем отстукивание
+                }
+            });
+
+            // Init UI
+            generateMetronome();
+            renderSteps();
+
+        })();
+    </script>
+
+<!-- Всплывашка-нож (Cookie) - Финальная версия -->
+    <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
+        
+        <!-- Острие и лезвие -->
+        <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" 
+             style="border-bottom-left-radius: 120px 100%; border-top-left-radius: 0;">
+            
+            <div class="relative z-10 flex items-center justify-end w-full">
+                <!-- Убрана точка после Cookie -->
+                <p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight text-right">
+                    Мы собираем <span class="text-white font-bold">Cookie</span><br>
+                    <a href="/privacy.html" class="underline hover:text-white transition">Политика</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- "Палочка" (Гарда) -->
+        <!-- Заменили прозрачный белый (bg-white/20) на плотный серый (bg-neutral-600) -->
+        <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm relative z-10 pointer-events-none shadow-sm"></div>
+
+        <!-- Рукоять, которая и является кнопкой "Принять" -->
+        <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center relative px-4 md:px-6 hover:bg-white hover:text-black hover:border-white transition-colors cursor-pointer group">
+            
+            <!-- Текст ПРИНЯТЬ на самой рукояти (без лишних элементов) -->
+            <span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap z-20 relative">
+                Принять
+            </span>
+            
+        </button>
+
+    </div>
+
+    <!-- Скрипт логики всплывашки -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cookieKnife = document.getElementById('cookie-knife');
+            const acceptBtn = document.getElementById('accept-cookie-btn');
+
+            if (!localStorage.getItem('cookieAccepted')) {
+                setTimeout(() => {
+                    cookieKnife.classList.remove('translate-y-40', 'opacity-0');
+                    cookieKnife.classList.add('translate-y-0', 'opacity-100');
+                }, 2500);
+            }
+
+            acceptBtn.addEventListener('click', () => {
+                localStorage.setItem('cookieAccepted', 'true');
+                cookieKnife.classList.remove('translate-y-0', 'opacity-100');
+                cookieKnife.classList.add('translate-y-40', 'opacity-0');
+            });
+        });
+    </script>
+
+</body>
+</html>

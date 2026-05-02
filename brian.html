@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Владислав Ножиков | Официальный сайт</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="apple-mobile-web-app-title" content="Nozhikov">
+    <meta name="application-name" content="Nozhikov">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="msapplication-config" content="/icons/browserconfig.xml">
+    <meta name="theme-color" content="#ffffff">
+    <style>
+        :root {
+            --bg-color: #050505;
+            --accent-color: #ffffff;
+            --card-bg: #111111;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--accent-color);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .noise::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-auto-rows: minmax(180px, auto);
+            gap: 1.5rem;
+        }
+
+        .bento-item {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .col-span-4 { grid-column: span 4; }
+
+        @media (max-width: 768px) {
+            .bento-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .col-span-4 { grid-column: span 1; }
+        }
+
+        /* Общие контролы */
+        .lab-controls select, .lab-controls button {
+            background: #1a1a1a;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.3s;
+            outline: none;
+        }
+        .lab-controls button:hover, .lab-controls select:hover {
+            background: white;
+            color: black;
+        }
+
+        /* Анимация карты */
+        .card-reveal {
+            /* Заменил forwards на both, чтобы элемент был невидим во время animation-delay */
+            animation: cardFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes cardFade {
+            0% {
+                opacity: 0;
+                transform: translateY(20px) scale(0.98);
+                filter: blur(4px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                filter: blur(0);
+            }
+        }
+
+        /* Большая кнопка */
+        .btn-draw {
+            background: transparent !important;
+            border: 1px solid rgba(255,255,255,0.3) !important;
+            font-size: 14px !important;
+            padding: 1rem 2.5rem !important;
+            border-radius: 100px !important;
+            font-weight: 900 !important;
+            letter-spacing: 0.15em !important;
+        }
+        .btn-draw:hover {
+            background: white !important;
+            color: black !important;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="noise">
+
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index.html" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">
+            Владислав Ножиков
+        </a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="#art" class="hover:opacity-50 transition">Арт</a>
+        </div>
+    </nav>
+
+    <main class="pt-24 md:pt-32 px-6 md:px-12 pb-24 max-w-7xl mx-auto relative">
+        <div class="bento-grid" id="work">
+            
+            <!-- Oblique Strategies -->
+            <div class="bento-item col-span-4" id="strategies-lab">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div>
+                        <span class="text-[10px] uppercase tracking-widest text-gray-500">Mind Lab / Инсайт</span>
+                        <h2 class="text-2xl font-bold mt-2 uppercase">Обходные Стратегии</h2>
+                    </div>
+                    
+                    <div class="lab-controls">
+                        <select id="os-deck">
+                            <option value="classic">Колода: Брайан Ино</option>
+                            <option value="knives">Колода: Ножевая</option>
+                            <option value="tarot">Колода: Таро</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Зона отображения карты -->
+                <div class="flex-1 flex justify-center items-center min-h-[300px] py-12 px-4 md:px-20 relative">
+                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-white/5 opacity-50 rounded-xl pointer-events-none"></div>
+                    
+                    <!-- Контейнер для генерации текста -->
+                    <div id="os-card-container" class="w-full flex flex-col justify-center items-center relative z-10">
+                        <p class="text-2xl md:text-4xl lg:text-5xl font-black text-center leading-tight tracking-tighter uppercase card-reveal">
+                            Нажми кнопку или пробел, чтобы вытянуть карту
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap justify-center items-center gap-4 lab-controls mt-6">
+                    <button id="os-draw-1-btn" class="btn-draw">1 Карта</button>
+                    <button id="os-draw-2-btn" class="btn-draw">2 Карты</button>
+                </div>
+            </div>
+
+        </div>
+
+        <footer class="mt-24 md:mt-32 pt-12 border-t border-white/10 flex flex-col items-center text-center gap-8 reveal">
+            <div class="flex flex-col items-center gap-2">
+                <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">
+                    © <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ
+                </p>        
+                <a href="/privacy.html" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">
+                    Политика конфиденциальности
+                </a>
+            </div>
+        </footer>
+    </main>
+
+    <script>
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        // --- OBLIQUE STRATEGIES MODULE ---
+        const ObliqueStrategies = (() => {
+            const DECKS = {
+                classic: [
+                    "Почитай свою ошибку как скрытое намерение.", "Отбрось привычные инструменты.", "Какую часть процесса можно опустить?", 
+                    "Работай с совершенно другой скоростью.", "Прислушайся к тихому голосу.", "Вырази проблему максимально простыми словами.", 
+                    "Делай что-то скучное.", "Сделай внезапное, деструктивное и непредсказуемое действие.", "Используй старую идею.", 
+                    "Вода.", "Не ломай тишину.", "Подчеркни недостатки.", "Измени роль инструментов.", "Повторение — это форма изменения.", 
+                    "Обратись к случайности.", "Иди на улицу. Заблокируй дверь.", "Дыши глубже.", "Разрушь целое на части, выдели самое важное.", 
+                    "Рассматривай переходы как самостоятельные элементы.", "Чего ты не делаешь?", "Делай только одно дело за раз.", 
+                    "Посмотри на порядок, в котором ты всё делаешь.", "Доверься тому, что ты уже знаешь.", "Переверни это с ног на голову.", 
+                    "Поменяй фазы местами.", "Попробуй подделать это.", "Используй фильтры.", "Смирись с тем, что не можешь контролировать.", 
+                    "Как бы это сделал твой лучший друг?", "Сосредоточься на фоне, а не на фигуре.", "Сделай паузу.", 
+                    "Не думай о результате, думай о процессе.", "Просто продолжай.", "Замени самый важный элемент на самый незначительный.", 
+                    "Работай в темноте.", "Начни с конца и двигайся к началу.", "Задай себе глупый вопрос.", "Используй «неправильный» цвет/звук/слово.", 
+                    "Убери всё лишнее.", "Посмотри на это с другой стороны комнаты.", "Сосредоточься на одной крошечной детали.", 
+                    "Пусть это решит подкидывание монетки.", "Притворись кем-то другим.", "Вспомни свои сны.", "Найди самое слабое место и сделай его главным.", 
+                    "Представь, что это уже закончено.", "Изучай не объект, а его тень.", "Дай этому остыть.", "Что бы сделал ребенок?", 
+                    "Переведи это в другую плоскость.", "Слушай, а не смотри.", "Сохраняй спокойствие.", "Игнорируй правила, которые сам же установил.", 
+                    "Добавь хаоса.", "Упрощай до предела.", "Усложняй до абсурда.", "Смени масштаб.", "Найди ритм там, где его нет.", 
+                    "Сделай это громче.", "Сделай это тише.", "Используй меньше материалов.", "Ограничь себя во времени.", "Ограничь себя в пространстве.", 
+                    "Не пытайся понравиться.", "Забудь о перфекционизме.", "Сделай черновик финальной версией.", "Выйди за рамки.", 
+                    "Разрежь это на части и склей случайным образом.", "Найди красоту в уродливом.", "Задай новый контекст.", "Оставь пустое место.", 
+                    "Не бойся клише.", "Измени освещение.", "Поменяй инструменты местами.", "Сделай это слишком большим.", "Сделай это слишком маленьким.", 
+                    "Спроси совета у случайного человека.", "Представь, что это музыка.", "Представь, что это архитектура.", "Сосредоточься на ошибках других.", 
+                    "Нарушь симметрию.", "Создай симметрию.", "Используй то, что под рукой.", "Откажись от главной идеи.", "Сделай это медленнее.", 
+                    "Сделай это быстрее.", "Найди баланс.", "Разрушь баланс.", "Обрати внимание на края.", "Сфокусируйся на центре.", "Сделай это прозрачным.", 
+                    "Сделай это плотным.", "Используй контраст.", "Сгладь углы.", "Обостри углы.", "Найди скрытый смысл.", "Откажись от любого смысла.", 
+                    "Сделай это личным.", "Сделай это анонимным.", "Прекрати работу прямо сейчас."
+                ],
+                knives: [
+                    "Почитай ошибку при заточке как скрытый узор на клинке.", "Режь на совершенно другой скорости.", "Достань самый старый, заржавевший нож из ящика и используй его.", 
+                    "Опиши форму лезвия максимально простыми словами.", "Задействуй только режущую кромку, забудь о существовании острия.", "Какой хват рукояти сейчас выбрал бы твой лучший друг?", 
+                    "Закалка в ледяной воде.", "Полностью откажись от ножен.", "Не нарушай тишину скольжения стали.", "Обрати пристальное внимание на угол, под которым ты держишь клинок.", 
+                    "Намеренно подчеркни недостатки рукояти.", "Посмотри на сделанный разрез в микроскоп (или представь это).", "Делай тонкую работу нарочито грубым тесаком.", 
+                    "Измени баланс: мысленно перемести весь вес на навершие.", "Отложи изящный нож и возьми грубый инструмент.", "Что прямо сейчас можно отсечь навсегда?", 
+                    "Забудь о строгой симметрии спусков.", "Изучай природу ржавчины, а не блеск стали.", "Оставь на лезвии следы грубой ковки.", "Преврати ошибку кузнеца в главную особенность клинка.", 
+                    "Режь то, что обычно принято рубить.", "Руби то, что обычно аккуратно нарезают.", "Перемести свое внимание с лезвия на больстер (упор).", "Точи лезвие на камне, пока оно не исчезнет.", 
+                    "Представь, что твой нож сделан из хрупкого стекла.", "Взгляни на оставленный срез, а не на сам нож.", "Примени грубую силу там, где обычно нужна хирургическая точность.", 
+                    "Используй нож не для реза, а как рычаг (если позволяет геометрия).", "Сделай долгую паузу перед тем, как вонзить острие.", "Обрати внимание на крошки и стружку, оставшиеся после реза.", 
+                    "Прислушайся к звуку заточки на самом грубом абразивном камне.", "Мысленно сократи длину клинка вдвое. Как теперь работать?", "Смотри только на блики света, играющие на стали.", 
+                    "Доверься тяжести ножа, а не мышечной силе руки.", "Измени угол заточки кардинально.", "Как бы этот разрез выглядел в полной темноте?", "Представь, что ты вырезаешь форму из воздуха, а не из материи.", 
+                    "Откажись от своего самого привычного хвата.", "Рассматривай случайные зазубрины как полезную микропилу.", "Очисти клинок от любых гравировок и украшений.", 
+                    "Сосредоточься на пустоте, которую оставляет нож в материале.", "Сделай рез настолько медленным, насколько это физически возможно.", "Найди свой самый неудобный нож и выполни задачу им.", 
+                    "Сосредоточься только на текстуре рукояти: почувствуй дерево, рог или пластик.", "Обильно смажь клинок маслом и просто смотри на него, не касаясь.", "Работай так, будто лезвие раскалено добела.", 
+                    "Позволь ножу самому выбрать траекторию движения через волокна.", "Избавься от идеальной зеркальной полировки.", "Скрести функционал складного карманника и кухонного шефа.", 
+                    "Слушай щелчок замка складного ножа снова и снова. В этом есть ритм.", "Режь строго по прямой там, где напрашивается кривая.", "Осознай нож как прямое продолжение твоего указательного пальца.", 
+                    "Что если сделать нож тупым в середине и острым только по краям?", "Задай себе один вопрос: «Действительно ли он достаточно остр?».", "Смени материал: перейди от углеродистой стали к порошковой или керамике.", 
+                    "Дай своему ножу имя и обращайся с ним как с напарником.", "Сосредоточься исключительно на медитативном процессе правки на кожаном ремне.", "Отсекай лишнее раз за разом, пока не останется только голая суть.", 
+                    "Разбери складной нож до последнего винтика, смажь и собери заново.", "Выполни задачу обратной стороной клинка (обухом).", "Используй только самый кончик ножа, ни миллиметром больше.", 
+                    "Изучи сопротивление материала до того, как начнешь резать.", "Взвесь нож на раскрытой ладони с закрытыми глазами.", "Представь, что этот нож нельзя будет заточить больше никогда в жизни.", 
+                    "Замотай лезвие плотной изолентой, оставив открытым только один миллиметр.", "Убери нож подальше. Подумай, как сделать это без лезвия."
+                ],
+                tarot: [
+                    "Почитай случайно выпавшую, «не ту» карту как самый точный ответ подсознания.", "Тасуй колоду на совершенно другой скорости.", "Используй старый, проверенный расклад для совершенно новой проблемы.", 
+                    "Опиши значение сложного Аркана словами, понятными пятилетнему ребенку.", "Задействуй только Старшие Арканы, временно забудь о существовании Младших.", "Какую карту прямо сейчас вытянул бы для тебя твой злейший враг?", 
+                    "Очисти колоду тишиной.", "Полностью откажись от традиционных книжных значений.", "Не нарушай гнетущую тишину перевернутых карт.", "Обрати внимание на случайный порядок, в котором собираешь колоду после сеанса.", 
+                    "Намеренно подчеркни самые пугающие аспекты Башни или Смерти.", "Рассмотри одну крошечную деталь на фоновом пейзаже карты.", "Делай сложный расклад, доставая карты вслепую и не переворачивая до конца.", 
+                    "Смени фокус с предсказания результата на медитативный процесс тасования.", "Отложи Таро. Возьми обычные игральные или метафорические карты.", "Какую масть можно прямо сейчас исключить из расклада, не потеряв смысла?", 
+                    "Разрушь строгую симметрию «Кельтского креста».", "Изучи узор рубашки карт, а не их лицевую сторону.", "Оставь на столе только те карты, что случайно выпали из рук при тасовке.", 
+                    "Преврати мрачный прогноз в практичный предупреждающий совет.", "Читай масть Пентаклей так, будто это масть Кубков.", "Перемести акцент с Фигур Двора на простые номерные карты.", 
+                    "Тасуй колоду до тех пор, пока физически не устанут руки.", "Представь, что Жрица онемела. Что она пытается показать жестами?", "Взгляни на пустое пространство стола между разложенными картами.", 
+                    "Примени холодную логику Мечей там, где напрашивается интуиция Кубков.", "Используй карту Мага как инструмент для медитации, а не ответ.", "Сделай долгую паузу перед тем, как перевернуть итоговую карту.", 
+                    "Обрати внимание на карты, которые остались на самом дне колоды.", "Прислушайся к шелесту скользящего картона.", "Сократи огромный расклад до одной единственной карту-сути.", 
+                    "Смотри не на символы, а только на преобладающие цвета.", "Доверяй первому импульсу в теле, а не энциклопедии толкований.", "Поменяй местами позиции «прошлое» и «будущее».", 
+                    "Что эта карта значит в контексте твоего детства?", "Читай расклад так, будто он сделан для совершенно незнакомого человека.", "Найди на карте животное и представь, что прогноз дает именно оно.", 
+                    "Раздели колоду на светлые и темные карты визуально, без учета значений.", "Проведи по картам кончиками пальцев с закрытыми глазами.", "Какая карта сейчас является твоей абсолютной противоположностью?", 
+                    "Представь, что все персонажи на картах спят. О чем они видят сны?", "Вытащи карту для решения проблемы, которой у тебя еще нет.", "Соедини две несовместимые карты в единый образ-гибрид.", 
+                    "Выбрось из головы астрологические и каббалистические соответствия.", "Найди в раскладе скрытую шутку.", "Задай колоде вопрос, на который можно ответить только «да» или «нет». Вытащи три карты. Запутайся. Распутайся.", 
+                    "Прочитай карту от лица персонажа, изображенного на ней.", "Какую карту ты боишься вытянуть больше всего? Найди ее и положи в центр.", "Сделай расклад только из перевернутых карт.", 
+                    "Что скрывается за рамками изображения этой карты?", "Оставь расклад лежать на столе до утра.", "Какая стихия полностью отсутствует в раскладе? Почему это важно?", 
+                    "Переведи значение карты в музыкальный жанр.", "Вытащи карту и сразу же закрой ее рукой. Попытайся «считать» ее энергию.", "Представь, что карты — это кадры из фильма. Напиши к нему сценарий.", 
+                    "Найди в колоде карту, которая больше всего похожа на твое текущее настроение.", "Сконцентрируйся на предметах, которые персонажи карт держат в руках.", "Сделай расклад для самой колоды. Чего хочет она?", 
+                    "Читай карты с конца к началу.", "Представь, что персонаж карты пытается тебя обмануть.", "Выбери карту-сигнификатор закрытыми глазами.", "Какая погода сейчас на этой карте?", 
+                    "Сложи номера всех карт в раскладе и найди Аркан с таким номером.", "Прочитай расклад шепотом.", "Задай вопрос о прошлом, а не о будущем.", "Обрати внимание на направление взглядов персонажей. Куда они смотрят?", 
+                    "Сделай расклад в полной тишине, не произнося вопрос вслух.", "Представь, что этот Аркан — место. Опиши, как там пахнет.", "Используй только Пажей и Рыцарей.", "Какая карта является тенью той, что ты только что вытянул?", 
+                    "Перерисуй выпавшую карту по памяти.", "Сделай расклад, используя только карты с четными номерами.", "Найди на карте деталь, которую ты раньше никогда не замечал.", 
+                    "Что бы сказала эта карта, если бы могла говорить только одно слово?", "Соедини линии на картах в раскладе в единый маршрут.", "Представь, что колода пуста, и нарисуй ответ в своем воображении.", 
+                    "Убери колоду в шкаф. Начни читать знаки вокруг себя в реальном мире."
+                ]
+            };
+
+            const DOM = {
+                btn1: document.getElementById('os-draw-1-btn'),
+                btn2: document.getElementById('os-draw-2-btn'),
+                deckSelect: document.getElementById('os-deck'),
+                cardContainer: document.getElementById('os-card-container')
+            };
+
+            let lastIndex = -1;
+            let lastDrawCount = 1; // Запоминаем, сколько карт тянули последним (для пробела)
+
+            function drawCards(count) {
+                lastDrawCount = count;
+                const currentDeck = DOM.deckSelect.value;
+                const cards = DECKS[currentDeck];
+                
+                let selectedIndices = [];
+                let selectedTexts = [];
+
+                for (let i = 0; i < count; i++) {
+                    let randomIndex;
+                    let attempts = 0;
+                    // Ищем уникальный индекс
+                    do {
+                        randomIndex = Math.floor(Math.random() * cards.length);
+                        attempts++;
+                    } while (
+                        (selectedIndices.includes(randomIndex) || 
+                        (count === 1 && randomIndex === lastIndex)) && 
+                        attempts < 50
+                    );
+                    
+                    selectedIndices.push(randomIndex);
+                    selectedTexts.push(cards[randomIndex]);
+                }
+
+                if (count === 1) {
+                    lastIndex = selectedIndices[0];
+                }
+
+                // Сбрасываем контейнер (хак с offsetWidth для перезапуска CSS-анимаций)
+                DOM.cardContainer.innerHTML = '';
+                void DOM.cardContainer.offsetWidth; 
+                
+                if (count === 1) {
+                    DOM.cardContainer.innerHTML = `
+                        <p class="text-2xl md:text-4xl lg:text-5xl font-black text-center leading-tight tracking-tighter uppercase card-reveal">
+                            ${selectedTexts[0]}
+                        </p>
+                    `;
+                } else {
+                    // Верстка для двух карт: текст чуть меньше, разделены тонкой полоской
+                    DOM.cardContainer.innerHTML = `
+                        <p class="text-xl md:text-3xl lg:text-4xl font-black text-center leading-tight tracking-tighter uppercase text-gray-300 card-reveal">
+                            ${selectedTexts[0]}
+                        </p>
+                        <div class="w-16 h-px bg-white/20 my-6 card-reveal" style="animation-delay: 0.1s;"></div>
+                        <p class="text-xl md:text-3xl lg:text-4xl font-black text-center leading-tight tracking-tighter uppercase card-reveal" style="animation-delay: 0.2s;">
+                            ${selectedTexts[1]}
+                        </p>
+                    `;
+                }
+            }
+
+            // Слушатели кнопок
+            DOM.btn1.addEventListener('click', () => drawCards(1));
+            DOM.btn2.addEventListener('click', () => drawCards(2));
+            
+            // При смене колоды сразу вытягиваем карты (в том же количестве, что и до этого)
+            DOM.deckSelect.addEventListener('change', () => drawCards(lastDrawCount));
+
+            // Обработка нажатия пробела
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    if (['INPUT', 'SELECT', 'BUTTON'].includes(e.target.tagName)) return;
+                    e.preventDefault();
+                    
+                    // Визуальный отклик активной кнопки
+                    const activeBtn = lastDrawCount === 1 ? DOM.btn1 : DOM.btn2;
+                    activeBtn.style.transform = 'scale(0.95)';
+                    setTimeout(() => activeBtn.style.transform = '', 100);
+                    
+                    drawCards(lastDrawCount);
+                }
+            });
+
+        })();
+    </script>
+
+<!-- Всплывашка-нож (Cookie) - Финальная версия -->
+    <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
+        
+        <!-- Острие и лезвие -->
+        <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" 
+             style="border-bottom-left-radius: 120px 100%; border-top-left-radius: 0;">
+            
+            <div class="relative z-10 flex items-center justify-end w-full">
+                <!-- Убрана точка после Cookie -->
+                <p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight text-right">
+                    Мы собираем <span class="text-white font-bold">Cookie</span><br>
+                    <a href="/privacy.html" class="underline hover:text-white transition">Политика</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- "Палочка" (Гарда) -->
+        <!-- Заменили прозрачный белый (bg-white/20) на плотный серый (bg-neutral-600) -->
+        <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm relative z-10 pointer-events-none shadow-sm"></div>
+
+        <!-- Рукоять, которая и является кнопкой "Принять" -->
+        <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center relative px-4 md:px-6 hover:bg-white hover:text-black hover:border-white transition-colors cursor-pointer group">
+            
+            <!-- Текст ПРИНЯТЬ на самой рукояти (без лишних элементов) -->
+            <span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap z-20 relative">
+                Принять
+            </span>
+            
+        </button>
+
+    </div>
+
+    <!-- Скрипт логики всплывашки -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cookieKnife = document.getElementById('cookie-knife');
+            const acceptBtn = document.getElementById('accept-cookie-btn');
+
+            if (!localStorage.getItem('cookieAccepted')) {
+                setTimeout(() => {
+                    cookieKnife.classList.remove('translate-y-40', 'opacity-0');
+                    cookieKnife.classList.add('translate-y-0', 'opacity-100');
+                }, 2500);
+            }
+
+            acceptBtn.addEventListener('click', () => {
+                localStorage.setItem('cookieAccepted', 'true');
+                cookieKnife.classList.remove('translate-y-0', 'opacity-100');
+                cookieKnife.classList.add('translate-y-40', 'opacity-0');
+            });
+        });
+    </script>
+
+</body>
+</html>

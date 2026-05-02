@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Muжic lab | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="apple-mobile-web-app-title" content="Nozhikov">
+    <meta name="application-name" content="Nozhikov">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="msapplication-config" content="/icons/browserconfig.xml">
+    <meta name="theme-color" content="#ffffff">
+    <style>
+        /* =========================================
+           ОБЩИЕ СТИЛИ И ПЕРЕМЕННЫЕ
+           ========================================= */
+        :root {
+            --bg-color: #050505;
+            --card-bg: #111111;
+            --accent-color: #ffffff;
+            --border-light: rgba(255, 255, 255, 0.05);
+            --border-hover: rgba(255, 255, 255, 0.15);
+            --font-main: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--accent-color);
+            font-family: var(--font-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Эффект зернистости фона */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* =========================================
+           BENTO GRID И КАРТОЧКИ ХАБА
+           ========================================= */
+        .hub-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            .hub-grid { grid-template-columns: 1fr; }
+        }
+
+        .hub-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 24px;
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s, border-color 0.3s;
+            min-height: 320px;
+        }
+
+        .hub-card:hover {
+            transform: scale(1.02);
+            background: #141414;
+            border-color: var(--border-hover);
+        }
+
+        /* Типографика внутри карточек */
+        .card-tag {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: gray;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-title {
+            font-size: 1.75rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+        }
+
+        .card-desc {
+            font-size: 0.875rem;
+            color: #888;
+            line-height: 1.5;
+            max-width: 85%;
+        }
+
+        /* Стили векторной графики (SVG) */
+        .card-icon {
+            margin-top: auto;
+            align-self: flex-end;
+            width: 120px;
+            height: 120px;
+            opacity: 0.3;
+            transition: all 0.5s ease;
+        }
+
+        .hub-card:hover .card-icon {
+            opacity: 1;
+            transform: scale(1.1) rotate(-5deg);
+        }
+
+        /* Специфичные анимации для каждой иконки при наведении */
+        .hub-card:hover .svg-wave { animation: slideWave 2s linear infinite; }
+        .hub-card:hover .svg-beat { animation: heartbeat 1s ease-in-out infinite; }
+        .hub-card:hover .svg-spin { animation: spinSlow 4s linear infinite; }
+        .hub-card:hover .svg-float { animation: floatSync 2s ease-in-out infinite; }
+
+        @keyframes slideWave {
+            0% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: 50; }
+        }
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        @keyframes spinSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes floatSync {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* =========================================
+           КНОПКА НАЗАД / LINK
+           ========================================= */
+        .arrow-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 700;
+            margin-top: 1.5rem;
+            color: var(--accent-color);
+            transition: opacity 0.2s;
+        }
+        .hub-card:hover .arrow-link {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ВЕРХНЯЯ НАВИГАЦИЯ -->
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index.html" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">
+            Владислав Ножиков
+        </a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="index.html#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="index.html#art" class="hover:opacity-50 transition">Арт</a>
+        </div>
+    </nav>
+
+    <!-- ОСНОВНОЙ КОНТЕНТ -->
+    <main class="pt-32 px-6 md:px-12 pb-24 max-w-7xl mx-auto relative z-10">
+        
+        <!-- ХИДЕР ХАБА -->
+        <header class="mb-12 md:mb-16">
+            <h1 class="text-5xl md:text-8xl font-black tracking-tighter uppercase mb-4">
+                Muжic <span class="text-transparent" style="-webkit-text-stroke: 1px white;">lab</span>
+            </h1>
+            <p class="text-lg md:text-xl text-gray-400 max-w-2xl leading-relaxed">
+                Интерактивная лаборатория звука, ритма и творческого хаоса. Сборник инструментов для композиторов, музыкантов и исследователей смыслов.
+            </p>
+        </header>
+
+        <!-- СЕТКА ИНСТРУМЕНТОВ -->
+        <div class="hub-grid">
+            
+     <!-- 3. MICRO-DAW -->
+            <a href="daw.html" class="hub-card">
+                <div class="card-tag">Запись</div>
+                <h2 class="card-title">Сэмплер & Секвенсор</h2>
+                <p class="card-desc">Полноценная микро-студия (DAW). Записывай голос с микрофона, режь сэмплы, выставляй их по шагам и меняй тональность в пианоролле.</p>
+                <div class="arrow-link">Открыть модуль →</div>
+                
+                <!-- Векторная графика (Секвенсор и Волна) -->
+                <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
+                    <!-- Таймлайн секвенсора -->
+                    <rect x="10" y="20" width="15" height="10" fill="white" />
+                    <rect x="30" y="20" width="15" height="10" opacity="0.3" />
+                    <rect x="50" y="20" width="15" height="10" fill="white" />
+                    <rect x="70" y="20" width="15" height="10" opacity="0.3" />
+                    
+                    <rect x="10" y="40" width="15" height="10" opacity="0.3" />
+                    <rect x="30" y="40" width="15" height="10" fill="white" />
+                    <rect x="50" y="40" width="15" height="10" opacity="0.3" />
+                    <rect x="70" y="40" width="15" height="10" fill="white" />
+                    
+                    <!-- Имитация аудиоволны/микрофона -->
+                    <path d="M 20 80 L 30 65 L 40 85 L 50 60 L 60 90 L 70 70 L 80 80" stroke-width="2" stroke-linejoin="round" class="svg-slide" />
+                </svg>
+            </a>
+
+            <!-- 4. OBLIQUE STRATEGIES -->
+            <a href="brian.html" class="hub-card">
+                <div class="card-tag">Инсайт</div>
+                <h2 class="card-title">Обходные Стратегии</h2>
+                <p class="card-desc">Цифровые колоды Брайана Ино, авторская «Ножевая» колода и метафорическое Таро для поиска нестандартных решений и взлома ступора.</p>
+                <div class="arrow-link">Открыть модуль →</div>
+                
+                <!-- Векторная графика (Пересекающиеся карты) -->
+                <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
+                    <g class="svg-float">
+                        <!-- Карта 1 (Задняя) -->
+                        <rect x="20" y="15" width="40" height="60" rx="2" transform="rotate(-15 40 45)" opacity="0.4" />
+                        <!-- Карта 2 (Передняя) -->
+                        <rect x="40" y="25" width="40" height="60" rx="2" transform="rotate(5 60 55)" fill="#111111" />
+                        <!-- Глаз / Абстракция внутри передней карты -->
+                        <circle cx="60" cy="50" r="8" />
+                        <path d="M 50 50 Q 60 40 70 50 Q 60 60 50 50 Z" />
+                    </g>
+                </svg>
+            </a>
+
+            <!-- 1. ВИЗУАЛИЗАТОР -->
+            <a href="visualizer.html" class="hub-card">
+                <div class="card-tag">Теория</div>
+                <h2 class="card-title">Генеративный Визуализатор</h2>
+                <p class="card-desc">Интерактивная связь между гитарным грифом, пианино и нотным станом. Изучай теорию и генерируй звук через Web Audio API.</p>
+                <div class="arrow-link">Открыть модуль →</div>
+                
+                <!-- Векторная графика (Волны и Стан) -->
+                <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
+                    <path class="svg-wave" d="M 0 50 Q 25 20, 50 50 T 100 50" stroke-dasharray="5 5" />
+                    <line x1="10" y1="30" x2="90" y2="30" stroke-width="1" opacity="0.5"/>
+                    <line x1="10" y1="40" x2="90" y2="40" stroke-width="1" opacity="0.5"/>
+                    <line x1="10" y1="60" x2="90" y2="60" stroke-width="1" opacity="0.5"/>
+                    <line x1="10" y1="70" x2="90" y2="70" stroke-width="1" opacity="0.5"/>
+                    <circle cx="30" cy="50" r="4" fill="white" />
+                    <circle cx="70" cy="40" r="4" fill="white" />
+                </svg>
+            </a>
+
+            <!-- 2. RHYTHM LAB -->
+            <a href="rhythm.html" class="hub-card">
+                <div class="card-tag">Пульс</div>
+                <h2 class="card-title">Генератор Грува & BPM</h2>
+                <p class="card-desc">Продвинутый метроном с функцией Tap Tempo (пробел/клик), сложными размерами такта и встроенными синтетическими барабанами.</p>
+                <div class="arrow-link">Открыть модуль →</div>
+                
+                <!-- Векторная графика (Сетка пэдов/Метроном) -->
+                <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
+                    <rect x="20" y="20" width="25" height="25" rx="4" class="svg-beat" style="transform-origin: 32.5px 32.5px;" />
+                    <rect x="55" y="20" width="25" height="25" rx="4" opacity="0.5"/>
+                    <rect x="20" y="55" width="25" height="25" rx="4" opacity="0.5"/>
+                    <rect x="55" y="55" width="25" height="25" rx="4" class="svg-beat" style="transform-origin: 67.5px 67.5px; animation-delay: 0.5s;" />
+                    <circle cx="50" cy="50" r="2" fill="white" />
+                </svg>
+            </a>
+
+       
+
+        </div>
+
+    </main>
+<!-- Всплывашка-нож (Cookie) - Финальная версия -->
+    <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
+        
+        <!-- Острие и лезвие -->
+        <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" 
+             style="border-bottom-left-radius: 120px 100%; border-top-left-radius: 0;">
+            
+            <div class="relative z-10 flex items-center justify-end w-full">
+                <!-- Убрана точка после Cookie -->
+                <p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight text-right">
+                    Мы собираем <span class="text-white font-bold">Cookie</span><br>
+                    <a href="/privacy.html" class="underline hover:text-white transition">Политика</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- "Палочка" (Гарда) -->
+        <!-- Заменили прозрачный белый (bg-white/20) на плотный серый (bg-neutral-600) -->
+        <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm relative z-10 pointer-events-none shadow-sm"></div>
+
+        <!-- Рукоять, которая и является кнопкой "Принять" -->
+        <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center relative px-4 md:px-6 hover:bg-white hover:text-black hover:border-white transition-colors cursor-pointer group">
+            
+            <!-- Текст ПРИНЯТЬ на самой рукояти (без лишних элементов) -->
+            <span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap z-20 relative">
+                Принять
+            </span>
+            
+        </button>
+
+    </div>
+
+    <!-- Скрипт логики всплывашки -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cookieKnife = document.getElementById('cookie-knife');
+            const acceptBtn = document.getElementById('accept-cookie-btn');
+
+            if (!localStorage.getItem('cookieAccepted')) {
+                setTimeout(() => {
+                    cookieKnife.classList.remove('translate-y-40', 'opacity-0');
+                    cookieKnife.classList.add('translate-y-0', 'opacity-100');
+                }, 2500);
+            }
+
+            acceptBtn.addEventListener('click', () => {
+                localStorage.setItem('cookieAccepted', 'true');
+                cookieKnife.classList.remove('translate-y-0', 'opacity-100');
+                cookieKnife.classList.add('translate-y-40', 'opacity-0');
+            });
+        });
+    </script>
+
+    <!-- ФУТЕР -->
+    <footer class="mt-12 md:mt-24 pt-12 pb-12 border-t border-white/10 flex flex-col items-center text-center gap-8 relative z-10">
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">
+                © <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ
+            </p>        
+            <a href="/privacy.html" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">
+                Политика конфиденциальности
+            </a>
+        </div>
+    </footer>
+
+    <script>
+        // Установка текущего года в футере
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>

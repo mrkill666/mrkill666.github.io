@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Владислав Ножиков | Официальный сайт</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="apple-mobile-web-app-title" content="Nozhikov">
+    <meta name="application-name" content="Nozhikov">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="msapplication-config" content="/icons/browserconfig.xml">
+    <meta name="theme-color" content="#ffffff">
+    <style>
+        :root {
+            --bg-color: #050505;
+            --accent-color: #ffffff;
+            --card-bg: #111111;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--accent-color);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Эффект зернистости */
+        .noise::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* Bento Grid */
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-auto-rows: minmax(180px, auto);
+            gap: 1.5rem;
+        }
+
+        .bento-item {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .col-span-4 { grid-column: span 4; }
+
+        @media (max-width: 768px) {
+            .bento-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .col-span-4 { grid-column: span 1; }
+        }
+
+        /* Визуализатор CSS */
+        .music-lab-controls select, .music-lab-controls button {
+            background: #1a1a1a;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .music-lab-controls button:hover, .music-lab-controls select:hover {
+            background: white;
+            color: black;
+        }
+        .music-lab-controls button.active {
+            background: white;
+            color: black;
+            font-weight: bold;
+        }
+        .music-lab-controls button.recording {
+            background: #ff3333;
+            color: white;
+            border-color: #ff3333;
+        }
+
+        /* Гитара */
+        .fretboard {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 1rem;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+        .string {
+            display: flex;
+            height: 24px;
+            position: relative;
+        }
+        .string::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 0; right: 0;
+            height: 2px;
+            background: #444;
+            transform: translateY(-50%);
+            z-index: 1;
+        }
+        .fret {
+            flex: 1;
+            min-width: 40px;
+            border-right: 2px solid #333;
+            position: relative;
+            z-index: 2;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .fret.open {
+            border-right: 4px solid #fff;
+            background: rgba(255,255,255,0.05);
+        }
+        .note-marker {
+            width: 16px;
+            height: 16px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            opacity: 0;
+            transition: all 0.2s;
+        }
+        .fret:hover .note-marker { opacity: 0.5; }
+        .fret.active .note-marker { opacity: 1; background: white; color: black; font-weight: bold; transform: scale(1.2); }
+        .fret.highlighted .note-marker { opacity: 1; background: #666; color: white; }
+
+        /* Пианино */
+        .piano-wrapper {
+            margin-top: 2rem;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+        .piano {
+            display: flex;
+            position: relative;
+            height: 120px;
+            min-width: 800px;
+        }
+        .key-white {
+            flex: 1;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 0 0 4px 4px;
+            cursor: pointer;
+            position: relative;
+            z-index: 1;
+            transition: background 0.1s;
+        }
+        .key-black {
+            position: absolute;
+            background: #111;
+            width: calc(100% / 28 * 0.6);
+            height: 65%;
+            top: 0;
+            z-index: 2;
+            border-radius: 0 0 4px 4px;
+            cursor: pointer;
+            transform: translateX(-50%);
+            transition: background 0.1s;
+        }
+        .key-white.active { background: #e0e0e0; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        .key-black.active { background: #333; }
+        .key-white.highlighted { background: #f0f0f0; }
+        .key-black.highlighted { background: #222; }
+
+        /* Нотный стан */
+        .staff-container {
+            margin-top: 2rem;
+            background: rgba(255,255,255,0.02);
+            border-radius: 12px;
+            padding: 1rem;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body class="noise">
+
+    <!-- Обновленная навигация с надписью/ссылкой -->
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index.html" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">
+            Владислав Ножиков
+        </a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="#art" class="hover:opacity-50 transition">Арт</a>
+            <a href="#socials" class="hover:opacity-50 transition">Соцсети</a>
+        </div>
+    </nav>
+
+    <main class="pt-24 md:pt-32 px-6 md:px-12 pb-24 max-w-7xl mx-auto relative">
+        <div class="bento-grid" id="work">
+            
+            <!-- Интерактивный Визуализатор -->
+            <div class="bento-item col-span-4" id="music-lab">
+                <div>
+                    <span class="text-[10px] uppercase tracking-widest text-gray-500">Music Lab / Интерактив</span>
+                    <h2 class="text-2xl font-bold mt-2 uppercase">Генеративный Визуализатор</h2>
+                </div>
+
+                <div class="music-lab-controls flex flex-wrap gap-4 mt-6">
+                    <select id="ctrl-notation">
+                        <option value="latin">Нотация: C, D, E</option>
+                        <option value="ru">Нотация: До, Ре, Ми</option>
+                    </select>
+                    <select id="ctrl-accidental">
+                        <option value="sharp">Знаки: Диезы (♯)</option>
+                        <option value="flat">Знаки: Бемоли (♭)</option>
+                    </select>
+                    <button id="ctrl-highlight">Подсветка октав: ВЫКЛ</button>
+                    <button id="ctrl-sound" class="active">Звук: ВКЛ</button>
+                    <button id="ctrl-record">⏺ Запись</button>
+                    <button id="ctrl-play">▶ Воспроизвести</button>
+                    <button id="ctrl-clear">Сброс</button>
+                </div>
+
+                <!-- Нотный стан -->
+                <div class="staff-container relative min-w-[600px] h-[200px]" id="staff-svg-container">
+                    <!-- SVG генерируется через JS -->
+                </div>
+
+                <!-- Гитара -->
+                <div class="fretboard" id="fretboard"></div>
+
+                <!-- Пианино -->
+                <div class="piano-wrapper">
+                    <div class="piano" id="piano"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Возвращенный Футер -->
+        <footer class="mt-24 md:mt-32 pt-12 border-t border-white/10 flex flex-col items-center text-center gap-8 reveal">
+            <div class="flex flex-col items-center gap-2">
+                <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">
+                    © <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ
+                </p>        
+                <a href="/privacy.html" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">
+                    Политика конфиденциальности
+                </a>
+            </div>
+        </footer>
+
+    </main>
+
+    <script>
+        // Скрипт обновления года в футере
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        // Инкапсулированный модуль Music Visualizer
+        const MusicVisualizer = (() => {
+            // Константы
+            const NOTES_LATIN_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            const NOTES_LATIN_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+            const NOTES_RU_SHARP = ['До', 'До#', 'Ре', 'Ре#', 'Ми', 'Фа', 'Фа#', 'Соль', 'Соль#', 'Ля', 'Ля#', 'Си'];
+            const NOTES_RU_FLAT = ['До', 'Реb', 'Ре', 'Миb', 'Ми', 'Фа', 'Сольb', 'Соль', 'Ляb', 'Ля', 'Сиb', 'Си'];
+            
+            const STRING_TUNINGS = [64, 59, 55, 50, 45, 40]; // E4, B3, G3, D3, A2, E2
+            const FRET_COUNT = 16;
+            const FRET_MARKERS = [3, 5, 7, 9, 12, 15];
+            const PIANO_START = 36; // C2
+            const PIANO_END = 84;   // C6
+
+            // Базовые шаги для нотного стана (от C)
+            const BASE_STEPS = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6]; 
+
+            // State
+            const state = {
+                selectedMidi: null,
+                accidental: 'sharp',
+                notation: 'latin',
+                highlightAll: false,
+                soundEnabled: true,
+                isRecording: false,
+                isPlaying: false,
+                melody: [],
+                playbackIndex: -1
+            };
+
+            // Audio Context
+            let audioCtx = null;
+
+            // DOM Elements
+            const DOM = {
+                fretboard: document.getElementById('fretboard'),
+                piano: document.getElementById('piano'),
+                staff: document.getElementById('staff-svg-container'),
+                btnHighlight: document.getElementById('ctrl-highlight'),
+                btnSound: document.getElementById('ctrl-sound'),
+                btnRecord: document.getElementById('ctrl-record'),
+                btnPlay: document.getElementById('ctrl-play'),
+                btnClear: document.getElementById('ctrl-clear'),
+                selNotation: document.getElementById('ctrl-notation'),
+                selAccidental: document.getElementById('ctrl-accidental')
+            };
+
+            // Audio Engine
+            function initAudio() {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+            }
+
+            function playSound(midi) {
+                if (!state.soundEnabled) return;
+                initAudio();
+                
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.value = 440 * Math.pow(2, (midi - 69) / 12);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                const now = audioCtx.currentTime;
+                osc.start(now);
+                
+                // Envelope
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.3, now + 0.05); // Attack
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5); // Decay
+                
+                osc.stop(now + 1.5);
+            }
+
+            // Utils
+            function getNoteName(midi) {
+                const arr = state.notation === 'latin' 
+                    ? (state.accidental === 'sharp' ? NOTES_LATIN_SHARP : NOTES_LATIN_FLAT)
+                    : (state.accidental === 'sharp' ? NOTES_RU_SHARP : NOTES_RU_FLAT);
+                return arr[midi % 12];
+            }
+
+            function isBlackKey(midi) {
+                return [1, 3, 6, 8, 10].includes(midi % 12);
+            }
+
+            // Actions
+            function handleNoteClick(midi) {
+                if (state.isPlaying) return;
+                
+                state.selectedMidi = midi;
+                if (state.isRecording) {
+                    state.melody.push(midi);
+                }
+                
+                playSound(midi);
+                render();
+            }
+
+            let playInterval = null;
+            function togglePlayback() {
+                if (state.melody.length === 0) return;
+                
+                state.isPlaying = !state.isPlaying;
+                state.isRecording = false;
+                
+                if (state.isPlaying) {
+                    DOM.btnPlay.textContent = '⏹ Стоп';
+                    DOM.btnPlay.classList.add('active');
+                    state.playbackIndex = 0;
+                    
+                    playInterval = setInterval(() => {
+                        if (state.playbackIndex >= state.melody.length) {
+                            togglePlayback(); // Stop
+                            return;
+                        }
+                        const midi = state.melody[state.playbackIndex];
+                        state.selectedMidi = midi;
+                        playSound(midi);
+                        render();
+                        state.playbackIndex++;
+                    }, 600);
+                } else {
+                    DOM.btnPlay.textContent = '▶ Воспроизвести';
+                    DOM.btnPlay.classList.remove('active');
+                    clearInterval(playInterval);
+                    state.playbackIndex = -1;
+                    state.selectedMidi = null;
+                    render();
+                }
+            }
+
+            // Renders
+            function renderGuitar() {
+                DOM.fretboard.innerHTML = '';
+                
+                const markerRow = document.createElement('div');
+                markerRow.className = 'flex h-4 text-[8px] text-gray-500 mb-1';
+                for(let i=0; i<=FRET_COUNT; i++) {
+                    const m = document.createElement('div');
+                    m.className = 'flex-1 min-w-[40px] text-center';
+                    if(FRET_MARKERS.includes(i)) m.textContent = i === 12 ? '••' : '•';
+                    markerRow.appendChild(m);
+                }
+                DOM.fretboard.appendChild(markerRow);
+
+                STRING_TUNINGS.forEach(baseMidi => {
+                    const stringEl = document.createElement('div');
+                    stringEl.className = 'string';
+                    
+                    for (let fret = 0; fret <= FRET_COUNT; fret++) {
+                        const midi = baseMidi + fret;
+                        const fretEl = document.createElement('div');
+                        fretEl.className = `fret ${fret === 0 ? 'open' : ''}`;
+                        
+                        const marker = document.createElement('div');
+                        marker.className = 'note-marker';
+                        marker.textContent = getNoteName(midi);
+                        
+                        if (state.selectedMidi === midi) fretEl.classList.add('active');
+                        else if (state.highlightAll && state.selectedMidi !== null && (midi % 12) === (state.selectedMidi % 12)) {
+                            fretEl.classList.add('highlighted');
+                        }
+
+                        fretEl.onclick = () => handleNoteClick(midi);
+                        fretEl.appendChild(marker);
+                        stringEl.appendChild(fretEl);
+                    }
+                    DOM.fretboard.appendChild(stringEl);
+                });
+            }
+
+            function renderPiano() {
+                DOM.piano.innerHTML = '';
+                let whiteKeysCount = 0;
+                
+                for (let midi = PIANO_START; midi <= PIANO_END; midi++) {
+                    if (!isBlackKey(midi)) whiteKeysCount++;
+                }
+
+                let currentWhiteIndex = 0;
+                for (let midi = PIANO_START; midi <= PIANO_END; midi++) {
+                    const key = document.createElement('div');
+                    const isBlack = isBlackKey(midi);
+                    
+                    key.className = isBlack ? 'key-black' : 'key-white';
+                    
+                    if (state.selectedMidi === midi) key.classList.add('active');
+                    else if (state.highlightAll && state.selectedMidi !== null && (midi % 12) === (state.selectedMidi % 12)) {
+                        key.classList.add('highlighted');
+                    }
+
+                    if (isBlack) {
+                        key.style.left = `calc((100% / ${whiteKeysCount}) * ${currentWhiteIndex})`;
+                    } else {
+                        currentWhiteIndex++;
+                    }
+
+                    key.onclick = () => handleNoteClick(midi);
+                    DOM.piano.appendChild(key);
+                }
+            }
+
+            function renderStaff() {
+                let svgHTML = `<svg width="100%" height="100%" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">`;
+                
+                const drawLine = (y) => `<line x1="50" y1="${y}" x2="550" y2="${y}" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`;
+                [30, 40, 50, 60, 70].forEach(y => svgHTML += drawLine(y)); 
+                [90, 100, 110, 120, 130].forEach(y => svgHTML += drawLine(y)); 
+
+                svgHTML += `<text x="20" y="65" fill="rgba(255,255,255,0.5)" font-size="36" font-family="serif">𝄞</text>`;
+                svgHTML += `<text x="20" y="115" fill="rgba(255,255,255,0.5)" font-size="36" font-family="serif">𝄢</text>`;
+
+                let notesToDraw = [...state.melody];
+                if (state.selectedMidi !== null && !state.isPlaying && !state.isRecording) {
+                    notesToDraw.push(state.selectedMidi);
+                }
+
+                notesToDraw.forEach((midi, index) => {
+                    const octave = Math.floor(midi / 12) - 1;
+                    const noteIndex = midi % 12;
+                    const stepFromC0 = octave * 7 + BASE_STEPS[noteIndex];
+                    const stepMiddleC = 4 * 7 + 0; 
+                    const stepDiff = stepFromC0 - stepMiddleC;
+                    
+                    const cy = 80 - (stepDiff * 5);
+                    const cx = 100 + (index * 30); 
+                    
+                    const isCurrent = (state.isPlaying && index === state.playbackIndex) || 
+                                      (!state.isPlaying && midi === state.selectedMidi);
+                    const color = isCurrent ? '#ffffff' : '#666666';
+
+                    svgHTML += `<ellipse cx="${cx}" cy="${cy}" rx="6" ry="4" fill="${color}" transform="rotate(-15 ${cx} ${cy})"/>`;
+
+                    const stemUp = cy > 80; 
+                    if (stemUp) {
+                        svgHTML += `<line x1="${cx+5}" y1="${cy}" x2="${cx+5}" y2="${cy-25}" stroke="${color}" stroke-width="1.5"/>`;
+                    } else {
+                        svgHTML += `<line x1="${cx-5}" y1="${cy}" x2="${cx-5}" y2="${cy+25}" stroke="${color}" stroke-width="1.5"/>`;
+                    }
+
+                    if (cy <= 20 || cy === 80 || cy >= 140) {
+                        let ly = cy;
+                        if(cy === 80) {
+                            svgHTML += `<line x1="${cx-10}" y1="80" x2="${cx+10}" y2="80" stroke="${color}" stroke-width="1"/>`;
+                        } else {
+                            while(ly <= 20) {
+                                svgHTML += `<line x1="${cx-10}" y1="${ly}" x2="${cx+10}" y2="${ly}" stroke="${color}" stroke-width="1"/>`;
+                                ly += 10;
+                            }
+                            while(ly >= 140) {
+                                svgHTML += `<line x1="${cx-10}" y1="${ly}" x2="${cx+10}" y2="${ly}" stroke="${color}" stroke-width="1"/>`;
+                                ly -= 10;
+                            }
+                        }
+                    }
+
+                    if (isBlackKey(midi)) {
+                        const sign = state.accidental === 'sharp' ? '♯' : '♭';
+                        svgHTML += `<text x="${cx-18}" y="${cy+4}" fill="${color}" font-size="14" font-family="sans-serif">${sign}</text>`;
+                    }
+                });
+
+                svgHTML += `</svg>`;
+                DOM.staff.innerHTML = svgHTML;
+            }
+
+            function render() {
+                renderGuitar();
+                renderPiano();
+                renderStaff();
+            }
+
+            DOM.selNotation.addEventListener('change', (e) => { state.notation = e.target.value; render(); });
+            DOM.selAccidental.addEventListener('change', (e) => { state.accidental = e.target.value; render(); });
+            
+            DOM.btnHighlight.addEventListener('click', () => {
+                state.highlightAll = !state.highlightAll;
+                DOM.btnHighlight.textContent = `Подсветка октав: ${state.highlightAll ? 'ВКЛ' : 'ВЫКЛ'}`;
+                DOM.btnHighlight.classList.toggle('active', state.highlightAll);
+                render();
+            });
+
+            DOM.btnSound.addEventListener('click', () => {
+                state.soundEnabled = !state.soundEnabled;
+                DOM.btnSound.textContent = `Звук: ${state.soundEnabled ? 'ВКЛ' : 'ВЫКЛ'}`;
+                DOM.btnSound.classList.toggle('active', state.soundEnabled);
+            });
+
+            DOM.btnRecord.addEventListener('click', () => {
+                if(state.isPlaying) return;
+                state.isRecording = !state.isRecording;
+                DOM.btnRecord.classList.toggle('recording', state.isRecording);
+            });
+
+            DOM.btnPlay.addEventListener('click', togglePlayback);
+
+            DOM.btnClear.addEventListener('click', () => {
+                state.melody = [];
+                state.selectedMidi = null;
+                render();
+            });
+
+            // Init
+            render();
+
+        })();
+    </script>
+
+<!-- Всплывашка-нож (Cookie) - Финальная версия -->
+    <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
+        
+        <!-- Острие и лезвие -->
+        <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" 
+             style="border-bottom-left-radius: 120px 100%; border-top-left-radius: 0;">
+            
+            <div class="relative z-10 flex items-center justify-end w-full">
+                <!-- Убрана точка после Cookie -->
+                <p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight text-right">
+                    Мы собираем <span class="text-white font-bold">Cookie</span><br>
+                    <a href="/privacy.html" class="underline hover:text-white transition">Политика</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- "Палочка" (Гарда) -->
+        <!-- Заменили прозрачный белый (bg-white/20) на плотный серый (bg-neutral-600) -->
+        <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm relative z-10 pointer-events-none shadow-sm"></div>
+
+        <!-- Рукоять, которая и является кнопкой "Принять" -->
+        <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center relative px-4 md:px-6 hover:bg-white hover:text-black hover:border-white transition-colors cursor-pointer group">
+            
+            <!-- Текст ПРИНЯТЬ на самой рукояти (без лишних элементов) -->
+            <span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap z-20 relative">
+                Принять
+            </span>
+            
+        </button>
+
+    </div>
+
+    <!-- Скрипт логики всплывашки -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cookieKnife = document.getElementById('cookie-knife');
+            const acceptBtn = document.getElementById('accept-cookie-btn');
+
+            if (!localStorage.getItem('cookieAccepted')) {
+                setTimeout(() => {
+                    cookieKnife.classList.remove('translate-y-40', 'opacity-0');
+                    cookieKnife.classList.add('translate-y-0', 'opacity-100');
+                }, 2500);
+            }
+
+            acceptBtn.addEventListener('click', () => {
+                localStorage.setItem('cookieAccepted', 'true');
+                cookieKnife.classList.remove('translate-y-0', 'opacity-100');
+                cookieKnife.classList.add('translate-y-40', 'opacity-0');
+            });
+        });
+    </script>
+
+</body>
+</html>

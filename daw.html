@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio DAW | Ножиков</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* =========================================
+           ОБЩИЕ СТИЛИ
+           ========================================= */
+        :root {
+            --bg-color: #050505;
+            --card-bg: #111111;
+            --accent-color: #ffffff;
+            --border-light: rgba(255, 255, 255, 0.1);
+            --border-hover: rgba(255, 255, 255, 0.3);
+            --control-bg: #1a1a1a;
+            --danger-color: #ff3333;
+            --active-color: #4ade80;
+            --font-main: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-color); color: var(--accent-color);
+            font-family: var(--font-main); min-height: 100vh;
+            display: flex; justify-content: center; align-items: flex-start;
+            padding: 2rem; overflow-x: hidden;
+        }
+
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05; pointer-events: none; z-index: 9999;
+        }
+
+        .app-container {
+            background: var(--card-bg); border: 1px solid var(--border-light);
+            border-radius: 24px; padding: 2rem; width: 100%; max-width: 900px;
+            position: relative; z-index: 10; display: flex; flex-direction: column; gap: 2rem;
+        }
+
+        .subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: gray; font-weight: 700; margin-bottom: 0.5rem; }
+        .title { font-size: 2rem; font-weight: 900; text-transform: uppercase; line-height: 1.1; letter-spacing: -0.02em; }
+
+        .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        @media (max-width: 768px) { .controls-grid { grid-template-columns: 1fr; } }
+
+        .control-panel { background: var(--bg-color); border: 1px solid var(--border-light); border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+
+        /* Кнопки и инпуты */
+        .btn {
+            background: var(--control-bg); color: var(--accent-color); border: 1px solid var(--border-light);
+            border-radius: 8px; padding: 0.75rem 1rem; font-size: 12px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.3s ease;
+        }
+        .btn:hover { background: var(--accent-color); color: #000; }
+        .btn.active { background: var(--active-color); color: #000; border-color: var(--active-color); }
+        .btn-record.recording { background: var(--danger-color); border-color: var(--danger-color); color: #fff; animation: pulse 1.5s infinite; }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); }
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border-light); border-radius: 8px; padding: 1rem; text-align: center; font-size: 12px; color: gray; text-transform: uppercase; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center;
+        }
+        .drop-zone.dragover { border-color: var(--accent-color); background: rgba(255, 255, 255, 0.05); color: var(--accent-color); }
+
+        .status-bar { background: var(--bg-color); border: 1px solid var(--border-light); border-radius: 8px; padding: 1rem; font-size: 12px; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
+        .status-value { font-weight: 700; color: var(--active-color); }
+
+        select { background: var(--bg-color); color: white; border: 1px solid var(--border-light); padding: 0.5rem; border-radius: 8px; font-size: 12px; outline: none; cursor: pointer; text-transform: uppercase; font-weight: 700;}
+
+        /* =========================================
+           СЭМПЛЕР (PADS + TRIMMING)
+           ========================================= */
+        .pads-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        .pad {
+            background: var(--control-bg); border: 1px solid var(--border-light); border-radius: 16px;
+            aspect-ratio: 1; display: flex; flex-direction: column; justify-content: space-between;
+            padding: 1rem; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+        }
+        
+        /* Подсветка активного пэда */
+        .pad.selected { border: 2px solid var(--active-color); box-shadow: inset 0 0 15px rgba(74, 222, 128, 0.1); }
+        .pad.playing { background: var(--accent-color); color: #000; transform: scale(0.95); box-shadow: 0 0 20px rgba(255, 255, 255, 0.5); }
+        
+        /* Z-INDEX ИСПРАВЛЕН ЗДЕСЬ: */
+        .pad-header { display: flex; justify-content: space-between; align-items: flex-start; z-index: 10; position: relative; pointer-events: none;}
+        .pad-key { font-size: 1.5rem; font-weight: 900; }
+        .pad-label { font-size: 10px; color: gray; text-transform: uppercase; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pad.playing .pad-label { color: #333; }
+        
+        /* Кнопки "Актив" и "Назначить" теперь выше оверлея */
+        .pad-actions { display: flex; gap: 4px; z-index: 10; position: relative; }
+        .btn-micro { flex: 1; background: #0a0a0a; border: 1px solid var(--border-light); color: gray; font-size: 8px; padding: 0.5rem 0; border-radius: 6px; text-transform: uppercase; cursor: pointer; transition: 0.2s; font-weight: 700;}
+        .btn-micro:hover { border-color: var(--accent-color); color: var(--accent-color); background: #222;}
+        .btn-micro.target-btn.active-target { background: var(--active-color); color: #000; border-color: var(--active-color);}
+
+        /* Оверлей подрезки (Trimming) с z-index ниже кнопок */
+        .trim-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 10, 10, 0.85); backdrop-filter: blur(4px);
+            display: flex; flex-direction: column; justify-content: center; gap: 8px;
+            padding: 1rem; opacity: 0; transition: opacity 0.2s; z-index: 5;
+        }
+        .pad:hover .trim-overlay { opacity: 1; }
+        .trim-label { font-size: 8px; text-transform: uppercase; color: gray; font-weight: 900; display: flex; justify-content: space-between;}
+        
+        /* Ползунки */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 12px; width: 12px; border-radius: 50%; background: #ffffff; cursor: pointer; margin-top: -4px; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #444; border-radius: 2px; }
+
+        /* =========================================
+           СЕКВЕНСОР И PIANO ROLL
+           ========================================= */
+        .sequencer-container, .piano-roll-container { background: var(--bg-color); border: 1px solid var(--border-light); border-radius: 16px; padding: 1.5rem; overflow-x: auto;}
+        .seq-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;}
+        
+        .bpm-control { display: flex; align-items: center; gap: 1rem; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+        .seq-grid { display: flex; flex-direction: column; gap: 4px; }
+        .seq-row { display: flex; align-items: center; gap: 4px; }
+        .seq-label { width: 35px; font-size: 10px; font-weight: 900; color: gray; text-align: right; padding-right: 8px; }
+        .seq-step { flex: 1; height: 30px; background: var(--control-bg); border: 1px solid var(--border-light); border-radius: 4px; cursor: pointer; transition: background 0.1s; min-width: 20px; }
+        .seq-step:hover { border-color: var(--border-hover); }
+        
+        .seq-step.active { background: gray; border-color: gray; }
+        /* Подсветка нот в режиме мелодии (зеленоватая) */
+        .seq-grid.melody-mode .seq-step.active { background: var(--active-color); border-color: var(--active-color); } 
+        
+        .seq-step.current { border: 2px solid var(--accent-color); box-shadow: inset 0 0 10px rgba(255,255,255,0.2); }
+        .seq-step:nth-child(4n + 2) { background: #181818; }
+
+        .piano { display: flex; position: relative; height: 120px; min-width: 400px; margin-top: 1rem; }
+        .key-white { flex: 1; background: #2a2a2a; border: 1px solid #111; border-radius: 0 0 6px 6px; cursor: pointer; position: relative; z-index: 1; transition: background 0.1s; }
+        .key-black { position: absolute; background: #050505; border: 1px solid #222; width: calc(100% / 14 * 0.6); height: 60%; top: 0; z-index: 2; border-radius: 0 0 4px 4px; cursor: pointer; transform: translateX(-50%); transition: background 0.1s; }
+        .key-white:hover { background: #3a3a3a; } .key-black:hover { background: #1a1a1a; }
+        .key-white.active, .key-black.active { background: var(--accent-color); }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- HEADER -->
+        <div>
+            <div class="subtitle">Микро-DAW Студия</div>
+            <h1 class="title">Сэмплер & Секвенсор</h1>
+        </div>
+
+        <!-- INPUT CONTROLS -->
+        <div class="controls-grid">
+            <div class="control-panel">
+                <div class="subtitle">1. Входной сигнал</div>
+                <button class="btn btn-record" id="btn-record">⏺ Запись с микрофона</button>
+            </div>
+            <div class="control-panel">
+                <div class="subtitle">2. Аудиофайл (.mp3, .wav)</div>
+                <label class="drop-zone" id="drop-zone">
+                    <span>Перетащи файл или кликни</span>
+                    <input type="file" id="file-input" accept="audio/*" style="display: none;">
+                </label>
+            </div>
+        </div>
+
+        <!-- STATUS -->
+        <div class="status-bar">
+            <span>Звук в буфере (Ожидает назначения):</span>
+            <span class="status-value" id="current-buffer-status">Пусто</span>
+        </div>
+
+        <!-- SAMPLER PADS -->
+        <div>
+            <div class="subtitle" style="margin-bottom: 1rem;">3. Пэды (Наведи для подрезки. Кнопка "Актив" связывает пэд с секвенсором)</div>
+            <div class="pads-grid" id="pads-container"></div>
+        </div>
+
+        <!-- STEP SEQUENCER -->
+        <div class="sequencer-container">
+            <div class="seq-header">
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <div class="subtitle" style="margin: 0;">4. Секвенсор</div>
+                    <select id="seq-mode-select">
+                        <option value="drums">Ударные (9 Пэдов)</option>
+                        <option value="melody">Мелодия (Активный Пэд)</option>
+                    </select>
+                </div>
+                <div class="bpm-control">
+                    <button class="btn btn-play" id="btn-seq-play">▶ Старт</button>
+                    <span>BPM: <span id="bpm-val">120</span></span>
+                    <input type="range" id="bpm-slider" min="60" max="200" value="120">
+                </div>
+            </div>
+            <div class="seq-grid" id="seq-grid"></div>
+        </div>
+
+        <!-- PIANO ROLL -->
+        <div class="piano-roll-container">
+            <div class="subtitle">5. Пианоролл (Изменяет высоту Активного Пэда)</div>
+            <div class="piano" id="piano-roll"></div>
+        </div>
+    </div>
+
+    <script>
+        const App = (() => {
+            // === ГЛОБАЛЬНЫЕ НАСТРОЙКИ ===
+            const PAD_KEYS = ['Q', 'W', 'E', 'A', 'S', 'D', 'Z', 'X', 'C'];
+            const KEY_CODES = ['KeyQ', 'KeyW', 'KeyE', 'KeyA', 'KeyS', 'KeyD', 'KeyZ', 'KeyX', 'KeyC'];
+            const STEPS = 16;
+            
+            // Ноты для Melody Sequencer (1 хроматическая октава, 13 нот)
+            const MELODY_LABELS = ['C5', 'B4', 'A#4', 'A4', 'G#4', 'G4', 'F#4', 'F4', 'E4', 'D#4', 'D4', 'C#4', 'C4'];
+            const MELODY_SEMITONES = [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
+            
+            // === СОСТОЯНИЕ (STATE) ===
+            let audioCtx = null;
+            let mediaRecorder = null;
+            let recordedChunks = [];
+            let isRecording = false;
+            
+            let currentAudioBuffer = null; 
+            let currentAudioName = 'Пусто';
+
+            // activePadIndex указывает, какой пэд сейчас выбран для Пианоролла и Мелодии
+            let activePadIndex = 0; 
+            let seqMode = 'drums'; 
+
+            const padsState = new Array(9).fill(null).map(() => ({
+                buffer: null,
+                name: 'Пусто',
+                trimStart: 0.0, 
+                trimEnd: 1.0,   
+                seqMatrix: Array(STEPS).fill(false), 
+                melodyMatrix: Array(13).fill().map(() => Array(STEPS).fill(false)) 
+            }));
+            
+            let isPlayingSeq = false;
+            let currentStep = 0;
+            let nextNoteTime = 0.0;
+            let timerID = null;
+            let bpm = 120;
+            const lookahead = 25.0; 
+            const scheduleAheadTime = 0.1; 
+
+            // === DOM ЭЛЕМЕНТЫ ===
+            const DOM = {
+                btnRecord: document.getElementById('btn-record'),
+                dropZone: document.getElementById('drop-zone'),
+                fileInput: document.getElementById('file-input'),
+                status: document.getElementById('current-buffer-status'),
+                padsContainer: document.getElementById('pads-container'),
+                seqGrid: document.getElementById('seq-grid'),
+                seqModeSelect: document.getElementById('seq-mode-select'),
+                btnSeqPlay: document.getElementById('btn-seq-play'),
+                bpmSlider: document.getElementById('bpm-slider'),
+                bpmVal: document.getElementById('bpm-val'),
+                pianoRoll: document.getElementById('piano-roll')
+            };
+
+            // === WEB AUDIO API INIT ===
+            const initAudioContext = () => {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+            };
+
+            const updateBufferStatus = (name, buffer) => {
+                currentAudioBuffer = buffer;
+                currentAudioName = name;
+                DOM.status.textContent = name;
+            };
+
+            // === ЛОГИКА ЗАПИСИ И ЗАГРУЗКИ ===
+            const toggleRecording = async () => {
+                initAudioContext();
+                if (!isRecording) {
+                    try {
+                        if (!mediaRecorder) {
+                            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                            mediaRecorder = new MediaRecorder(stream);
+                            mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+                            mediaRecorder.onstop = async () => {
+                                const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+                                recordedChunks = [];
+                                const arrayBuffer = await blob.arrayBuffer();
+                                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                                updateBufferStatus('Микрофон (Запись)', audioBuffer);
+                            };
+                        }
+                        mediaRecorder.start();
+                        isRecording = true;
+                        DOM.btnRecord.classList.add('recording');
+                        DOM.btnRecord.textContent = '⏹ Остановить';
+                    } catch (err) { alert('Ошибка микрофона: ' + err.message); }
+                } else {
+                    if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
+                    isRecording = false;
+                    DOM.btnRecord.classList.remove('recording');
+                    DOM.btnRecord.textContent = '⏺ Запись с микрофона';
+                }
+            };
+
+            DOM.btnRecord.addEventListener('click', toggleRecording);
+
+            const processFile = async (file) => {
+                if (!file.type.startsWith('audio/')) return;
+                initAudioContext();
+                const arrayBuffer = await file.arrayBuffer();
+                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                updateBufferStatus(file.name, audioBuffer);
+            };
+
+            DOM.fileInput.addEventListener('change', (e) => { if (e.target.files.length > 0) processFile(e.target.files[0]); });
+            DOM.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); DOM.dropZone.classList.add('dragover'); });
+            DOM.dropZone.addEventListener('dragleave', () => DOM.dropZone.classList.remove('dragover'));
+            DOM.dropZone.addEventListener('drop', (e) => { e.preventDefault(); DOM.dropZone.classList.remove('dragover'); if (e.dataTransfer.files.length > 0) processFile(e.dataTransfer.files[0]); });
+
+            // === ВОСПРОИЗВЕДЕНИЕ ===
+            const playPad = (index, time = 0) => {
+                const pad = padsState[index];
+                if (!pad.buffer) return;
+                initAudioContext();
+                
+                const source = audioCtx.createBufferSource();
+                source.buffer = pad.buffer;
+                source.connect(audioCtx.destination);
+                
+                const dur = pad.buffer.duration;
+                const offset = dur * pad.trimStart;
+                const playDur = (dur * pad.trimEnd) - offset;
+
+                if (playDur <= 0) return; 
+
+                if (time === 0) {
+                    source.start(0, offset, playDur);
+                    visualizePad(index);
+                } else {
+                    source.start(time, offset, playDur);
+                    const delay = (time - audioCtx.currentTime) * 1000;
+                    if(delay > 0) setTimeout(() => visualizePad(index), delay);
+                }
+            };
+
+            const playPitched = (semitones, keyEl, time = 0) => {
+                const pad = padsState[activePadIndex];
+                if (!pad.buffer) return;
+                initAudioContext();
+
+                const source = audioCtx.createBufferSource();
+                source.buffer = pad.buffer;
+                source.playbackRate.value = Math.pow(2, semitones / 12);
+                source.connect(audioCtx.destination);
+
+                const dur = pad.buffer.duration;
+                const offset = dur * pad.trimStart;
+                const playDur = (dur * pad.trimEnd) - offset;
+                
+                if (playDur <= 0) return;
+
+                if (time === 0) {
+                    source.start(0, offset, playDur);
+                    if (keyEl) {
+                        keyEl.classList.add('active');
+                        setTimeout(() => keyEl.classList.remove('active'), 150);
+                    }
+                } else {
+                    source.start(time, offset, playDur);
+                }
+            };
+
+            const visualizePad = (index) => {
+                const padEl = document.getElementById(`pad-${index}`);
+                padEl.classList.add('playing');
+                setTimeout(() => padEl.classList.remove('playing'), 150);
+            };
+
+            // === UI ПЭДОВ ===
+            const renderPads = () => {
+                DOM.padsContainer.innerHTML = '';
+                PAD_KEYS.forEach((key, index) => {
+                    const padEl = document.createElement('div');
+                    padEl.className = `pad ${index === activePadIndex ? 'selected' : ''}`;
+                    padEl.id = `pad-${index}`;
+                    
+                    padEl.innerHTML = `
+                        <div class="pad-header"><span class="pad-key">${key}</span><span class="pad-label" id="pad-label-${index}">Пусто</span></div>
+                        
+                        <div class="trim-overlay">
+                            <div class="trim-label"><span>Начало</span> <span id="val-s-${index}">0%</span></div>
+                            <input type="range" class="trim-start" min="0" max="100" value="0" step="1">
+                            <div class="trim-label"><span>Конец</span> <span id="val-e-${index}">100%</span></div>
+                            <input type="range" class="trim-end" min="0" max="100" value="100" step="1">
+                        </div>
+
+                        <div class="pad-actions">
+                            <button class="btn-micro target-btn ${index === activePadIndex ? 'active-target' : ''}" id="target-${index}">Актив</button>
+                            <button class="btn-micro" id="assign-${index}">Назначить</button>
+                        </div>
+                    `;
+
+                    padEl.addEventListener('mousedown', (e) => {
+                        if (['INPUT', 'BUTTON'].includes(e.target.tagName)) return;
+                        playPad(index);
+                    });
+
+                    padEl.querySelector(`#assign-${index}`).addEventListener('click', () => {
+                        if (!currentAudioBuffer) { alert('Сначала запишите звук или загрузите файл!'); return; }
+                        padsState[index].buffer = currentAudioBuffer;
+                        padsState[index].name = currentAudioName;
+                        document.getElementById(`pad-label-${index}`).textContent = currentAudioName;
+                        
+                        padsState[index].trimStart = 0;
+                        padsState[index].trimEnd = 1;
+                        padEl.querySelector('.trim-start').value = 0;
+                        padEl.querySelector('.trim-end').value = 100;
+                        padEl.querySelector(`#val-s-${index}`).textContent = '0%';
+                        padEl.querySelector(`#val-e-${index}`).textContent = '100%';
+                    });
+
+                    padEl.querySelector(`#target-${index}`).addEventListener('click', () => {
+                        activePadIndex = index;
+                        renderPads(); 
+                        if (seqMode === 'melody') drawSequencer(); 
+                    });
+
+                    const startInput = padEl.querySelector('.trim-start');
+                    const endInput = padEl.querySelector('.trim-end');
+                    
+                    startInput.addEventListener('input', (e) => {
+                        let val = parseInt(e.target.value);
+                        let endVal = parseInt(endInput.value);
+                        if (val >= endVal) { val = endVal - 1; e.target.value = val; }
+                        padsState[index].trimStart = val / 100;
+                        padEl.querySelector(`#val-s-${index}`).textContent = val + '%';
+                    });
+
+                    endInput.addEventListener('input', (e) => {
+                        let val = parseInt(e.target.value);
+                        let startVal = parseInt(startInput.value);
+                        if (val <= startVal) { val = startVal + 1; e.target.value = val; }
+                        padsState[index].trimEnd = val / 100;
+                        padEl.querySelector(`#val-e-${index}`).textContent = val + '%';
+                    });
+
+                    DOM.padsContainer.appendChild(padEl);
+                });
+            };
+
+            // === СЕКВЕНСОР ===
+            const drawSequencer = () => {
+                DOM.seqGrid.innerHTML = '';
+                DOM.seqGrid.className = `seq-grid ${seqMode === 'melody' ? 'melody-mode' : ''}`;
+
+                if (seqMode === 'drums') {
+                    for (let r = 0; r < 9; r++) {
+                        const row = document.createElement('div'); row.className = 'seq-row';
+                        const label = document.createElement('div'); label.className = 'seq-label'; label.textContent = PAD_KEYS[r]; row.appendChild(label);
+
+                        for (let c = 0; c < STEPS; c++) {
+                            const step = document.createElement('div');
+                            step.className = `seq-step ${padsState[r].seqMatrix[c] ? 'active' : ''}`;
+                            step.id = `step-${r}-${c}`;
+                            step.addEventListener('mousedown', () => {
+                                padsState[r].seqMatrix[c] = !padsState[r].seqMatrix[c];
+                                step.classList.toggle('active', padsState[r].seqMatrix[c]);
+                            });
+                            row.appendChild(step);
+                        }
+                        DOM.seqGrid.appendChild(row);
+                    }
+                } else if (seqMode === 'melody') {
+                    for (let r = 0; r < 13; r++) {
+                        const row = document.createElement('div'); row.className = 'seq-row';
+                        const label = document.createElement('div'); label.className = 'seq-label'; label.textContent = MELODY_LABELS[r]; row.appendChild(label);
+
+                        for (let c = 0; c < STEPS; c++) {
+                            const step = document.createElement('div');
+                            step.className = `seq-step ${padsState[activePadIndex].melodyMatrix[r][c] ? 'active' : ''}`;
+                            step.id = `step-${r}-${c}`;
+                            step.addEventListener('mousedown', () => {
+                                padsState[activePadIndex].melodyMatrix[r][c] = !padsState[activePadIndex].melodyMatrix[r][c];
+                                step.classList.toggle('active', padsState[activePadIndex].melodyMatrix[r][c]);
+                            });
+                            row.appendChild(step);
+                        }
+                        DOM.seqGrid.appendChild(row);
+                    }
+                }
+            };
+
+            DOM.seqModeSelect.addEventListener('change', (e) => {
+                seqMode = e.target.value;
+                drawSequencer();
+            });
+
+            // Планировщик
+            const scheduleNote = (stepNumber, time) => {
+                const delay = (time - audioCtx.currentTime) * 1000;
+                setTimeout(() => {
+                    document.querySelectorAll('.seq-step').forEach(el => el.classList.remove('current'));
+                    const rowsCount = seqMode === 'drums' ? 9 : 13;
+                    for(let r=0; r<rowsCount; r++) {
+                        const stepEl = document.getElementById(`step-${r}-${stepNumber}`);
+                        if(stepEl) stepEl.classList.add('current');
+                    }
+                }, delay > 0 ? delay : 0);
+
+                for (let r = 0; r < 9; r++) {
+                    if (padsState[r].seqMatrix[stepNumber]) playPad(r, time);
+                }
+
+                for (let padIdx = 0; padIdx < 9; padIdx++) {
+                    if (!padsState[padIdx].buffer) continue;
+                    for (let r = 0; r < 13; r++) {
+                        if (padsState[padIdx].melodyMatrix[r][stepNumber]) {
+                            const pad = padsState[padIdx];
+                            const source = audioCtx.createBufferSource();
+                            source.buffer = pad.buffer;
+                            source.playbackRate.value = Math.pow(2, MELODY_SEMITONES[r] / 12);
+                            source.connect(audioCtx.destination);
+                            
+                            const offset = pad.buffer.duration * pad.trimStart;
+                            const playDur = (pad.buffer.duration * pad.trimEnd) - offset;
+                            if(playDur > 0) source.start(time, offset, playDur);
+                        }
+                    }
+                }
+            };
+
+            const scheduler = () => {
+                while (nextNoteTime < audioCtx.currentTime + scheduleAheadTime) {
+                    scheduleNote(currentStep, nextNoteTime);
+                    nextNoteTime += 0.25 * (60.0 / bpm);
+                    currentStep = (currentStep + 1) % STEPS;
+                }
+                timerID = setTimeout(scheduler, lookahead);
+            };
+
+            DOM.btnSeqPlay.addEventListener('click', () => {
+                initAudioContext();
+                isPlayingSeq = !isPlayingSeq;
+                if (isPlayingSeq) {
+                    currentStep = 0; nextNoteTime = audioCtx.currentTime + 0.05;
+                    scheduler();
+                    DOM.btnSeqPlay.textContent = '⏹ Стоп'; DOM.btnSeqPlay.classList.add('active');
+                } else {
+                    clearTimeout(timerID);
+                    DOM.btnSeqPlay.textContent = '▶ Старт'; DOM.btnSeqPlay.classList.remove('active');
+                    document.querySelectorAll('.seq-step').forEach(el => el.classList.remove('current'));
+                }
+            });
+
+            DOM.bpmSlider.addEventListener('input', (e) => { bpm = e.target.value; DOM.bpmVal.textContent = bpm; });
+
+            // === PIANO ROLL ===
+            const renderPianoRoll = () => {
+                DOM.pianoRoll.innerHTML = '';
+                const semitoneMap = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23];
+                const isBlackKeyPattern = [1, 3, null, 6, 8, 10, null, 13, 15, null, 18, 20, 22];
+
+                for (let i = 0; i < 14; i++) {
+                    const whiteKey = document.createElement('div'); whiteKey.className = 'key-white';
+                    const semitone = semitoneMap[i];
+                    whiteKey.addEventListener('mousedown', () => playPitched(semitone, whiteKey));
+                    DOM.pianoRoll.appendChild(whiteKey);
+
+                    if (isBlackKeyPattern[i] !== undefined && isBlackKeyPattern[i] !== null) {
+                        const blackKey = document.createElement('div'); blackKey.className = 'key-black';
+                        const blackSemitone = isBlackKeyPattern[i];
+                        blackKey.style.left = `calc((100% / 14) * ${i + 1})`;
+                        blackKey.addEventListener('mousedown', () => playPitched(blackSemitone, blackKey));
+                        DOM.pianoRoll.appendChild(blackKey);
+                    }
+                }
+            };
+
+            window.addEventListener('keydown', (e) => {
+                if (e.repeat || ['INPUT'].includes(e.target.tagName)) return;
+                const index = KEY_CODES.indexOf(e.code);
+                if (index !== -1) playPad(index);
+            });
+
+            renderPads();
+            drawSequencer();
+            renderPianoRoll();
+
+        })();
+    </script>
+</body>
+</html>
