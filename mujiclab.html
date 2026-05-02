@@ -201,59 +201,71 @@
         <div class="hub-grid">
             
 <!-- СЕТКА ИНСТРУМЕНТОВ -->
-        <div class="hub-grid">
-            
-            <!-- 3. MICRO-DAW (Сэмплер) -->
-            <a href="daw.html" class="hub-card">
-                <div class="card-tag">Запись</div>
+
+        <div class="hub-grid grid grid-cols-1 md:grid-cols-4 gap-6 mt-12">
+           <!-- 3. MICRO-DAW (col-span-4 - ЦЕНТРАЛЬНЫЙ БЛОК) -->
+            <a href="daw.html" class="hub-card col-span-1 md:col-span-4 reveal" style="transition-delay: 0.2s;">
+                <div class="card-tag">Production / Запись</div>
                 <h2 class="card-title">Сэмплер & Секвенсор</h2>
-                <p class="card-desc">Полноценная микро-студия (DAW). Записывай голос с микрофона, режь сэмплы, выставляй их по шагам и меняй тональность в пианоролле.</p>
+                <p class="card-desc">Полноценная микро-студия. Записывай голос, режь сэмплы, выставляй их по шагам и меняй тональность в пианоролле. Твой звук в твоих руках.</p>
                 <div class="arrow-link">Открыть модуль →</div>
                 
-                <!-- Векторная графика -->
                 <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
                     <rect x="10" y="20" width="15" height="10" fill="white" />
                     <rect x="30" y="20" width="15" height="10" opacity="0.3" />
                     <rect x="50" y="20" width="15" height="10" fill="white" />
                     <rect x="70" y="20" width="15" height="10" opacity="0.3" />
-                    
                     <rect x="10" y="40" width="15" height="10" opacity="0.3" />
                     <rect x="30" y="40" width="15" height="10" fill="white" />
                     <rect x="50" y="40" width="15" height="10" opacity="0.3" />
-                    <!-- Правый нижний прямоугольник теперь оранжевый -->
+                    <!-- Оранжевый прямоугольник справа снизу -->
                     <rect x="70" y="40" width="15" height="10" fill="#f97316" stroke="none" class="svg-beat" />
-                    
-                    <path d="M 20 80 L 30 65 L 40 85 L 50 60 L 60 90 L 70 70 L 80 80" stroke-width="2" stroke-linejoin="round" class="svg-slide" />
+                    <path d="M 20 80 L 30 65 L 40 85 L 50 60 L 60 90 L 70 70 L 80 80" stroke-width="2" stroke-linejoin="round" />
                 </svg>
             </a>
 
-            <!-- 4. OBLIQUE STRATEGIES -->
-            <a href="brian.html" class="hub-card">
-                <div class="card-tag">Инсайт</div>
-                <h2 class="card-title">Обходные Стратегии</h2>
-                <p class="card-desc">Цифровые колоды Брайана Ино, авторская «Ножевая» колода и метафорическое Таро для поиска нестандартных решений и взлома ступора.</p>
+            <!-- 4. THEORY LAB (col-span-2) -->
+            <a href="theory.html" class="hub-card col-span-1 md:col-span-2 reveal" style="transition-delay: 0.3s;">
+                <div class="card-tag">Theory Lab / Гармония</div>
+                <h2 class="card-title">Лаборатория Гармонии</h2>
+                <p class="card-desc">Двусторонний определитель аккордов и ладов. Строй сложные созвучия или распознавай их через гриф и клавиши.</p>
                 <div class="arrow-link">Открыть модуль →</div>
                 
-                <!-- Векторная графика -->
+                <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
+                    <polygon points="50,20 80,70 20,70" stroke-width="1.5" opacity="0.3" stroke-dasharray="4 4" />
+                    <circle cx="50" cy="53" r="2" fill="white" class="svg-float" />
+                    <!-- Оранжевая тоника -->
+                    <circle cx="50" cy="20" r="6" fill="#f97316" stroke="none" class="svg-beat" />
+                    <circle cx="80" cy="70" r="5" fill="white" class="svg-beat" style="animation-delay: 0.3s;" />
+                    <circle cx="20" cy="70" r="5" fill="white" class="svg-beat" style="animation-delay: 0.6s;" />
+                </svg>
+            </a>
+
+            <!-- 5. OBLIQUE STRATEGIES (col-span-2) -->
+            <a href="strategies.html" class="hub-card col-span-1 md:col-span-2 reveal" style="transition-delay: 0.4s;">
+                <div class="card-tag">Mind Lab / Инсайт</div>
+                <h2 class="card-title">Обходные Стратегии</h2>
+                <p class="card-desc">Цифровые колоды Брайана Ино, «Ножевая» колода и Таро для поиска нестандартных решений в творчестве.</p>
+                <div class="arrow-link">Открыть модуль →</div>
+                
                 <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
                     <g class="svg-float">
                         <rect x="20" y="15" width="40" height="60" rx="2" transform="rotate(-15 40 45)" opacity="0.4" />
                         <rect x="40" y="25" width="40" height="60" rx="2" transform="rotate(5 60 55)" fill="#111111" />
-                        <!-- Зрачок глаза теперь оранжевый -->
-                        <circle cx="60" cy="50" r="5" fill="#f97316" stroke="none" class="svg-beat" />
+                        <!-- Кривой оранжевый глаз -->
                         <path d="M 50 50 Q 60 35 70 50 Q 60 65 50 50 Z" stroke-width="1.5" />
+                        <circle cx="60" cy="50" r="4" fill="#f97316" stroke="none" class="svg-beat" />
                     </g>
                 </svg>
             </a>
-
-            <!-- 1. ВИЗУАЛИЗАТОР -->
-            <a href="visualizer.html" class="hub-card">
-                <div class="card-tag">Теория</div>
+            
+            <!-- 1. ВИЗУАЛИЗАТОР (col-span-2) -->
+            <a href="visualizer.html" class="hub-card col-span-1 md:col-span-2 reveal">
+                <div class="card-tag">Music Lab / Теория</div>
                 <h2 class="card-title">Генеративный Визуализатор</h2>
-                <p class="card-desc">Интерактивная связь между гитарным грифом, пианино и нотным станом. Изучай теорию и генерируй звук через Web Audio API.</p>
+                <p class="card-desc">Интерактивная связь между гитарным грифом, пианино и нотным станом. Изучай теорию через Web Audio API.</p>
                 <div class="arrow-link">Открыть модуль →</div>
                 
-                <!-- Векторная графика -->
                 <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
                     <path class="svg-wave" d="M 0 50 Q 25 20, 50 50 T 100 50" stroke-dasharray="5 5" />
                     <line x1="10" y1="30" x2="90" y2="30" stroke-width="1" opacity="0.3"/>
@@ -261,47 +273,30 @@
                     <line x1="10" y1="60" x2="90" y2="60" stroke-width="1" opacity="0.3"/>
                     <line x1="10" y1="70" x2="90" y2="70" stroke-width="1" opacity="0.3"/>
                     <circle cx="30" cy="50" r="4" fill="white" />
-                    <!-- Одна из точек теперь оранжевая -->
+                    <!-- Оранжевая точка -->
                     <circle cx="70" cy="40" r="5" fill="#f97316" stroke="none" class="svg-beat" />
                 </svg>
             </a>
 
-            <!-- 5. THEORY LAB -->
-            <a href="theory.html" class="hub-card">
-                <div class="card-tag">Theory Lab / Гармония</div>
-                <h2 class="card-title">Лаборатория Гармонии</h2>
-                <p class="card-desc">Двусторонний переводчик между нотами и музыкальной теорией. Строй сложные аккорды и редкие лады, или определяй их в реальном времени.</p>
-                <div class="arrow-link">Открыть модуль →</div>
-                
-                <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
-                    <polygon points="50,20 80,70 20,70" stroke-width="1.5" opacity="0.3" stroke-dasharray="4 4" />
-                    <circle cx="50" cy="53" r="2" fill="white" class="svg-float" />
-                    <circle cx="50" cy="20" r="5" fill="#f97316" class="svg-beat" stroke="none" />
-                    <circle cx="80" cy="70" r="5" fill="white" class="svg-beat" style="animation-delay: 0.3s;" />
-                    <circle cx="20" cy="70" r="5" fill="white" class="svg-beat" style="animation-delay: 0.6s;" />
-                </svg>
-            </a>
-
-            <!-- 2. RHYTHM LAB -->
-            <a href="rhythm.html" class="hub-card">
-                <div class="card-tag">Пульс</div>
+            <!-- 2. RHYTHM LAB (col-span-2) -->
+            <a href="rhythm.html" class="hub-card col-span-1 md:col-span-2 reveal" style="transition-delay: 0.1s;">
+                <div class="card-tag">Rhythm Lab / Пульс</div>
                 <h2 class="card-title">Генератор Грува & BPM</h2>
-                <p class="card-desc">Продвинутый метроном с функцией Tap Tempo (пробел/клик), сложными размерами такта и встроенными синтетическими барабанами.</p>
+                <p class="card-desc">Продвинутый метроном с функцией Tap Tempo, сложными размерами такта и встроенными барабанами.</p>
                 <div class="arrow-link">Открыть модуль →</div>
                 
-                <!-- Векторная графика -->
                 <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
                     <rect x="20" y="20" width="25" height="25" rx="4" class="svg-beat" style="transform-origin: 32.5px 32.5px;" />
                     <rect x="55" y="20" width="25" height="25" rx="4" opacity="0.5"/>
                     <rect x="20" y="55" width="25" height="25" rx="4" opacity="0.5"/>
                     <rect x="55" y="55" width="25" height="25" rx="4" class="svg-beat" style="transform-origin: 67.5px 67.5px; animation-delay: 0.5s;" />
-                    <!-- Центральная точка теперь оранжевая -->
-                    <circle cx="50" cy="50" r="3" fill="#f97316" stroke="none" class="svg-beat" />
+                    <!-- Оранжевая точка в центре -->
+                    <circle cx="50" cy="50" r="4" fill="#f97316" stroke="none" class="svg-beat" />
                 </svg>
             </a>
 
+ 
         </div>
-
     </main>
 <!-- Всплывашка-нож (Cookie) - Финальная версия -->
     <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
