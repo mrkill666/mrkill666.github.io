@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vinyl Lab | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="theme-color" content="#ffffff">
+
+    <style>
+        :root {
+            --bg-color: #050505; --card-bg: #111111; --accent-color: #ffffff;
+            --border-light: rgba(255, 255, 255, 0.1); --control-bg: #1a1a1a;
+            --active-color: #f97316; --danger-color: #ff3333; --font-main: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        a { color: inherit; text-decoration: none; }
+
+        body {
+            background-color: var(--bg-color); color: var(--accent-color); font-family: var(--font-main);
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            padding: 6rem 2rem 2rem 2rem; overflow-x: hidden; position: relative;
+        }
+
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.05; pointer-events: none; z-index: 9999;
+        }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+            display: flex; justify-content: center; align-items: center; z-index: 10001;
+            transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+        .knife-svg-main { width: 120px; height: 120px; fill: none; stroke: white; stroke-width: 1.2; animation: rotate-knife 1.5s linear infinite; }
+        @keyframes rotate-knife { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loaded #loader { transform: translateY(-100%); }
+
+        .app-container {
+            background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 24px;
+            padding: 2rem; width: 100%; max-width: 1100px; position: relative; z-index: 10;
+            display: flex; flex-direction: column; gap: 2rem; backdrop-filter: blur(10px);
+        }
+
+        .subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: gray; font-weight: 700; margin-bottom: 0.5rem; }
+        .title { font-size: 2rem; font-weight: 900; text-transform: uppercase; line-height: 1.1; letter-spacing: -0.02em; }
+
+        .editor-grid { display: grid; grid-template-columns: 320px 1fr; gap: 2rem; }
+        @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
+
+        .control-panel { background: rgba(5,5,5,0.8); border: 1px solid var(--border-light); border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; height: fit-content; }
+
+        .btn {
+            background: var(--control-bg); color: var(--accent-color); border: 1px solid var(--border-light);
+            border-radius: 8px; padding: 1rem 1rem; font-size: 12px; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.3s ease;
+            text-align: center; width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem;
+        }
+        .btn:hover { background: var(--accent-color); color: #000; }
+        .btn.active { background: var(--active-color); color: #000; border-color: var(--active-color); }
+        
+        .btn-rec { border-color: var(--danger-color); color: var(--danger-color); }
+        .btn-rec:hover { background: var(--danger-color); color: white; }
+        .btn-rec.recording { background: var(--danger-color); color: white; animation: rec-pulse 1.5s infinite; }
+        @keyframes rec-pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); } }
+
+        /* VINYL DISC STYLES */
+        .vinyl-container {
+            width: 100%; aspect-ratio: 1; background: #0a0a0a; border-radius: 16px; border: 1px solid var(--border-light);
+            display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden;
+            touch-action: none; /* Предотвращает скролл на мобилках при драге */
+        }
+        
+        .vinyl-disc {
+            width: 85%; height: 85%; border-radius: 50%; background: #111;
+            position: relative; display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 0 20px rgba(255,255,255,0.05);
+            /* Визуализация дорожек */
+            background-image: repeating-radial-gradient(
+                circle,
+                #111 0px,
+                #111 2px,
+                #1a1a1a 3px,
+                #1a1a1a 4px
+            );
+            cursor: grab;
+            transform: rotate(0deg);
+        }
+        .vinyl-disc:active { cursor: grabbing; }
+
+        .vinyl-label {
+            width: 35%; height: 35%; border-radius: 50%; background: var(--active-color);
+            position: absolute; display: flex; justify-content: center; align-items: center;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            /* Узор для лейбла, чтобы было видно вращение */
+            background-image: conic-gradient(from 0deg, var(--active-color) 0%, #d05b0d 25%, var(--active-color) 50%, #d05b0d 75%, var(--active-color) 100%);
+        }
+
+        .vinyl-hole {
+            width: 12px; height: 12px; border-radius: 50%; background: #000;
+            box-shadow: inset 0 2px 5px rgba(255,255,255,0.2);
+        }
+
+        .vinyl-glare {
+            position: absolute; width: 100%; height: 100%; border-radius: 50%;
+            background: conic-gradient(from 45deg, transparent 0%, rgba(255,255,255,0.08) 10%, transparent 20%, transparent 50%, rgba(255,255,255,0.08) 60%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .tonearm {
+            position: absolute; top: 5%; right: 5%; width: 20px; height: 40%;
+            transform-origin: top center; transform: rotate(15deg);
+            pointer-events: none; transition: transform 0.5s ease;
+        }
+        .tonearm.active { transform: rotate(35deg); }
+        .tonearm-base { position: absolute; top: 0; left: -10px; width: 40px; height: 40px; border-radius: 50%; background: #333; box-shadow: 0 5px 10px rgba(0,0,0,0.5); }
+        .tonearm-rod { position: absolute; top: 20px; left: 8px; width: 4px; height: 100%; background: #555; border-radius: 2px; }
+        .tonearm-head { position: absolute; bottom: -10px; left: -2px; width: 20px; height: 30px; background: #222; border-radius: 4px; transform: rotate(20deg); }
+
+        /* Элементы формы */
+        .toggle-container { display: flex; align-items: center; justify-content: space-between; font-size: 10px; text-transform: uppercase; font-weight: 900; color: white; padding: 0.5rem 0;}
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--active-color); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Оверлей разблокировки */
+        #init-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(17,17,17,0.85); backdrop-filter: blur(8px); z-index: 50;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 24px;
+            transition: opacity 0.3s;
+        }
+        .btn-init { font-size: 1.2rem; padding: 1.5rem 3rem; background: var(--active-color); color: #000; border: none; border-radius: 12px; font-weight: 900; text-transform: uppercase; cursor: pointer; box-shadow: 0 0 30px rgba(249, 115, 22, 0.4);}
+    </style>
+</head>
+<body class="noise">
+
+    <div id="loader">
+        <svg class="knife-svg-main" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
+    </div>
+
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">Владислав Ножиков</a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="index#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="mujiclab" class="hover:opacity-50 transition">Мuжiclab</a>
+        </div>
+    </nav>
+
+    <main class="w-full flex justify-center relative z-10">
+        <div class="app-container">
+            
+            <div id="init-overlay">
+                <button class="btn-init" id="btn-init-audio">Активировать Установку</button>
+                <p class="text-gray-400 text-xs mt-4 uppercase tracking-widest">Требуется разрешение на звук</p>
+            </div>
+
+            <div class="header-section flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 w-full">
+                <div>
+                    <div class="subtitle">Sonic Lab / Интерактив</div>
+                    <h1 class="title">Vinyl Lab</h1>
+                    <p class="text-xs text-gray-500 mt-2 max-w-xl font-medium">Крути пластинку мышкой или поворачивай телефон в пространстве (Гироскоп). Скорость воспроизведения зависит от скорости вращения.</p>
+                </div>
+            </div>
+
+            <div class="editor-grid">
+                
+                <!-- Левая панель: Управление -->
+                <div class="control-panel">
+                    
+                    <div class="flex flex-col gap-2">
+                        <label class="btn" style="border-style: dashed;">
+                            <span>📁 Загрузить Аудио</span>
+                            <input type="file" id="audio-input" accept="audio/*" style="display: none;">
+                        </label>
+                        <button class="btn btn-rec" id="btn-mic-rec">🎤 Записать с микрофона</button>
+                    </div>
+
+                    <div class="h-[1px] w-full bg-white/10 my-1"></div>
+
+                    <div class="toggle-container">
+                        <div class="flex flex-col gap-1">
+                            <span>Мотор (33 RPM)</span>
+                            <span class="text-[8px] text-gray-500 normal-case">Автоматическое вращение</span>
+                        </div>
+                        <label class="switch"><input type="checkbox" id="ctrl-motor"><span class="slider"></span></label>
+                    </div>
+
+                    <button class="btn" id="btn-gyro" style="border-color: #00aaff; color: #00aaff;">📱 Включить Гироскоп</button>
+
+                    <div class="h-[1px] w-full bg-white/10 my-1"></div>
+
+                    <button class="btn btn-rec mt-2" id="btn-rec-mix">⏺ Запись MIX (.webm)</button>
+                    
+                </div>
+
+                <!-- Правая панель: Виниловый проигрыватель -->
+                <div class="vinyl-container" id="vinyl-container">
+                    <div class="vinyl-disc" id="vinyl-disc">
+                        <div class="vinyl-glare"></div>
+                        <div class="vinyl-label">
+                            <div class="vinyl-hole"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Тонарм -->
+                    <div class="tonearm" id="tonearm">
+                        <div class="tonearm-base"></div>
+                        <div class="tonearm-rod"></div>
+                        <div class="tonearm-head"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-12 pt-8 border-t border-white/10 flex flex-col items-center text-center gap-4 relative z-10 w-full max-w-[1100px]">
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">© <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ</p>        
+            <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">Политика конфиденциальности</a>
+        </div>
+    </footer>
+
+    <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
+        <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" style="border-bottom-left-radius: 120px 100%; border-top-left-radius: 0;">
+            <div class="relative z-10 flex items-center justify-end w-full text-right"><p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight">Мы собираем <span class="text-white font-bold">Cookie</span><br><a href="privacy" class="underline hover:text-white transition">Политика</a></p></div>
+        </div>
+        <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm relative z-10 pointer-events-none shadow-sm"></div>
+        <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center relative px-4 md:px-6 hover:bg-white hover:text-black transition-colors cursor-pointer group"><span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap z-20 relative">Принять</span></button>
+    </div>
+
+    <!-- Логика -->
+    <script>
+        window.onload = () => { setTimeout(() => { document.body.classList.add('loaded'); }, 500); };
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const cookieKnife = document.getElementById('cookie-knife');
+            if (!localStorage.getItem('cookieAccepted')) { setTimeout(() => { cookieKnife.classList.remove('translate-y-40', 'opacity-0'); cookieKnife.classList.add('translate-y-0', 'opacity-100'); }, 2500); }
+            document.getElementById('accept-cookie-btn').addEventListener('click', () => { localStorage.setItem('cookieAccepted', 'true'); cookieKnife.classList.remove('translate-y-0', 'opacity-100'); cookieKnife.classList.add('translate-y-40', 'opacity-0'); });
+        });
+
+        const VinylLab = (() => {
+            // DOM Elements
+            const DOM = {
+                audioInput: document.getElementById('audio-input'),
+                btnMicRec: document.getElementById('btn-mic-rec'),
+                btnRecMix: document.getElementById('btn-rec-mix'),
+                ctrlMotor: document.getElementById('ctrl-motor'),
+                btnGyro: document.getElementById('btn-gyro'),
+                vinylDisc: document.getElementById('vinyl-disc'),
+                tonearm: document.getElementById('tonearm'),
+                overlayBtn: document.getElementById('btn-init-audio'),
+                overlay: document.getElementById('init-overlay')
+            };
+
+            // Audio API
+            let audioCtx = null;
+            let masterGain, vinylGain;
+            let streamDest, mixRecorder, mixChunks = [];
+            let currentBuffer = null;
+            let sourceNode = null;
+
+            // Physics Variables
+            let currentRotation = 0;
+            let rpm = 0;
+            const TARGET_RPM = 33.33;
+            const TARGET_DEG_PER_SEC = (TARGET_RPM * 360) / 60; // Около 200 град/сек
+            let lastTime = performance.now();
+            let isMotorOn = false;
+
+            // Interaction Variables
+            let isDragging = false;
+            let lastMouseAngle = 0;
+            let dragVelocities = [];
+
+            // Gyroscope Variables
+            let gyroEnabled = false;
+            let lastGyroAlpha = null;
+
+            // Mic Recording
+            let micRecorder, micChunks = [];
+            let isMicRecording = false;
+            let isRecordingMix = false;
+
+            const initAudio = () => {
+                if(audioCtx) return;
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                masterGain = audioCtx.createGain(); masterGain.gain.value = 0.8;
+                vinylGain = audioCtx.createGain(); vinylGain.gain.value = 0; // Изначально тишина (мотор выкл)
+                
+                streamDest = audioCtx.createMediaStreamDestination();
+
+                vinylGain.connect(masterGain);
+                masterGain.connect(audioCtx.destination);
+                masterGain.connect(streamDest);
+
+                // Загружаем тестовый звук (короткий бип или тишину), чтобы разлочить контекст
+                const emptyBuffer = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+                playBuffer(emptyBuffer);
+
+                requestAnimationFrame(physicsLoop);
+            };
+
+            DOM.overlayBtn.addEventListener('click', () => {
+                initAudio();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                DOM.overlay.style.opacity = '0';
+                setTimeout(() => DOM.overlay.remove(), 300);
+            });
+
+            const playBuffer = (buffer) => {
+                if (sourceNode) { sourceNode.stop(); sourceNode.disconnect(); }
+                currentBuffer = buffer;
+                sourceNode = audioCtx.createBufferSource();
+                sourceNode.buffer = currentBuffer;
+                sourceNode.loop = true;
+                
+                // Фильтр для эффекта винила (срезаем сверхвысокие и самые низкие)
+                const hp = audioCtx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 100;
+                const lp = audioCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 10000;
+                
+                sourceNode.connect(hp).connect(lp).connect(vinylGain);
+                sourceNode.start();
+                
+                // Опускаем тонарм
+                DOM.tonearm.classList.add('active');
+            };
+
+            // --- ОБРАБОТКА ФАЙЛОВ ---
+            DOM.audioInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const arrayBuffer = await file.arrayBuffer();
+                const decodedData = await audioCtx.decodeAudioData(arrayBuffer);
+                playBuffer(decodedData);
+                // Автоматически включаем мотор
+                DOM.ctrlMotor.checked = true;
+                DOM.ctrlMotor.dispatchEvent(new Event('change'));
+            });
+
+            // --- ЗАПИСЬ С МИКРОФОНА ---
+            DOM.btnMicRec.addEventListener('click', async () => {
+                if (!isMicRecording) {
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        micRecorder = new MediaRecorder(stream);
+                        micChunks = [];
+                        micRecorder.ondataavailable = e => micChunks.push(e.data);
+                        micRecorder.onstop = async () => {
+                            const blob = new Blob(micChunks, { type: 'audio/webm' });
+                            const arrayBuffer = await blob.arrayBuffer();
+                            const decodedData = await audioCtx.decodeAudioData(arrayBuffer);
+                            playBuffer(decodedData);
+                            // Включаем мотор после записи
+                            DOM.ctrlMotor.checked = true;
+                            DOM.ctrlMotor.dispatchEvent(new Event('change'));
+                        };
+                        micRecorder.start();
+                        isMicRecording = true;
+                        DOM.btnMicRec.classList.add('recording');
+                        DOM.btnMicRec.textContent = '⏹ ОСТАНОВИТЬ ЗАПИСЬ';
+                        
+                        // Останавливаем мотор на время записи
+                        DOM.ctrlMotor.checked = false; DOM.ctrlMotor.dispatchEvent(new Event('change'));
+                        
+                    } catch (err) { alert('Нет доступа к микрофону!'); }
+                } else {
+                    micRecorder.stop();
+                    micRecorder.stream.getTracks().forEach(t => t.stop()); // Выключаем лампочку микрофона
+                    isMicRecording = false;
+                    DOM.btnMicRec.classList.remove('recording');
+                    DOM.btnMicRec.textContent = '🎤 Записать с микрофона';
+                }
+            });
+
+            // --- ЗАПИСЬ МИКСА ---
+            DOM.btnRecMix.addEventListener('click', () => {
+                if (!isRecordingMix) {
+                    mixChunks = [];
+                    mixRecorder = new MediaRecorder(streamDest.stream);
+                    mixRecorder.ondataavailable = e => { if (e.data.size > 0) mixChunks.push(e.data); };
+                    mixRecorder.onstop = () => {
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(new Blob(mixChunks, { type: 'audio/webm' }));
+                        a.download = `vinyl_mix_${Date.now()}.webm`; a.click();
+                    };
+                    mixRecorder.start();
+                    isRecordingMix = true;
+                    DOM.btnRecMix.classList.add('recording');
+                    DOM.btnRecMix.textContent = '⏹ СТОП ЗАПИСЬ MIX';
+                } else {
+                    mixRecorder.stop();
+                    isRecordingMix = false;
+                    DOM.btnRecMix.classList.remove('recording');
+                    DOM.btnRecMix.textContent = '⏺ Запись MIX (.webm)';
+                }
+            });
+
+            // --- МОТОР ---
+            DOM.ctrlMotor.addEventListener('change', (e) => { isMotorOn = e.target.checked; });
+
+            // --- ГИРОСКОП ---
+            DOM.btnGyro.addEventListener('click', async () => {
+                if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    try {
+                        const permission = await DeviceOrientationEvent.requestPermission();
+                        if (permission === 'granted') enableGyro();
+                        else alert('Доступ отклонен');
+                    } catch (e) { console.error(e); }
+                } else {
+                    enableGyro(); // Не-iOS устройства
+                }
+            });
+
+            const enableGyro = () => {
+                if(gyroEnabled) return;
+                gyroEnabled = true;
+                DOM.btnGyro.textContent = '📱 Гироскоп АКтивен';
+                DOM.btnGyro.classList.add('active');
+                
+                window.addEventListener('deviceorientation', (e) => {
+                    if (isDragging) return; // Приоритет мыши
+                    
+                    let alpha = e.alpha; // Вращение вокруг оси Z (компас)
+                    if (alpha === null) return;
+                    
+                    if (lastGyroAlpha !== null) {
+                        let delta = alpha - lastGyroAlpha;
+                        // Обработка перехода через 0/360
+                        if (delta > 180) delta -= 360;
+                        else if (delta < -180) delta += 360;
+                        
+                        // Конвертируем дельту в "скорость вращения" для физики
+                        // Гироскоп обновляется часто, поэтому мы можем симулировать RPM
+                        // Если дельта большая - скретч. Иначе мотор берет свое.
+                        if (Math.abs(delta) > 1) {
+                            // Отключаем влияние мотора временно
+                            rpm = (delta / 0.016) * (60 / 360); // Грубая оценка RPM (считая 60fps ~16ms)
+                        }
+                    }
+                    lastGyroAlpha = alpha;
+                });
+            };
+
+            // --- УПРАВЛЕНИЕ МЫШКОЙ (DRAG / SCRATCH) ---
+            const getAngle = (e) => {
+                const rect = DOM.vinylDisc.getBoundingClientRect();
+                const cx = rect.left + rect.width / 2;
+                const cy = rect.top + rect.height / 2;
+                const x = e.touches ? e.touches[0].clientX : e.clientX;
+                const y = e.touches ? e.touches[0].clientY : e.clientY;
+                return Math.atan2(y - cy, x - cx) * (180 / Math.PI);
+            };
+
+            const onDragStart = (e) => {
+                isDragging = true;
+                lastMouseAngle = getAngle(e);
+                dragVelocities = [];
+                DOM.vinylDisc.style.transition = 'none'; // Отключаем плавность CSS при драге
+            };
+
+            const onDragMove = (e) => {
+                if (!isDragging) return;
+                e.preventDefault(); // Остановить скролл экрана
+                
+                let currentMouseAngle = getAngle(e);
+                let deltaAngle = currentMouseAngle - lastMouseAngle;
+                
+                // Обработка перехода 180 -> -180 (atan2)
+                if (deltaAngle > 180) deltaAngle -= 360;
+                else if (deltaAngle < -180) deltaAngle += 360;
+                
+                lastMouseAngle = currentMouseAngle;
+
+                // Считаем скорость для аудио (дельта угла / примерное время кадра)
+                let frameRPM = (deltaAngle / 0.016) * (60 / 360); 
+                
+                // Сглаживаем скорость скретча
+                dragVelocities.push(frameRPM);
+                if (dragVelocities.length > 3) dragVelocities.shift();
+                rpm = dragVelocities.reduce((a,b) => a+b, 0) / dragVelocities.length;
+
+                // Мгновенно крутим визуал
+                currentRotation += deltaAngle;
+            };
+
+            const onDragEnd = () => { isDragging = false; };
+
+            DOM.vinylDisc.addEventListener('mousedown', onDragStart);
+            document.addEventListener('mousemove', onDragMove);
+            document.addEventListener('mouseup', onDragEnd);
+            
+            DOM.vinylDisc.addEventListener('touchstart', onDragStart, {passive: false});
+            document.addEventListener('touchmove', onDragMove, {passive: false});
+            document.addEventListener('touchend', onDragEnd);
+
+            // --- ФИЗИКА И АУДИО ЦИКЛ ---
+            const physicsLoop = () => {
+                let now = performance.now();
+                let dt = (now - lastTime) / 1000;
+                lastTime = now;
+
+                if (!isDragging) {
+                    if (isMotorOn) {
+                        // Мотор разгоняет пластинку
+                        rpm += (TARGET_RPM - rpm) * 4.0 * dt;
+                    } else {
+                        // Трение останавливает
+                        rpm *= 0.95;
+                        if (Math.abs(rpm) < 0.1) rpm = 0;
+                    }
+                    
+                    // Обновляем визуальный угол
+                    currentRotation += (rpm * 360 / 60) * dt;
+                }
+
+                // Визуал
+                DOM.vinylDisc.style.transform = `rotate(${currentRotation}deg)`;
+
+                // Аудио: Связываем скорость с pitch (playbackRate)
+                if (sourceNode) {
+                    let speedRatio = Math.abs(rpm / TARGET_RPM);
+                    
+                    // Чтобы избежать глитчей Web Audio при нуле, ставим минимум
+                    let safeRate = Math.max(0.001, speedRatio);
+                    sourceNode.playbackRate.setTargetAtTime(safeRate, audioCtx.currentTime, 0.05);
+
+                    // Если скорость почти 0, глушим звук, чтобы не гудело на одном сэмпле
+                    let targetVol = speedRatio > 0.05 ? 1 : 0;
+                    vinylGain.gain.setTargetAtTime(targetVol, audioCtx.currentTime, 0.05);
+                }
+
+                requestAnimationFrame(physicsLoop);
+            };
+
+        })();
+    </script>
+</body>
+</html>
