@@ -70,6 +70,7 @@
         .subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: gray; font-weight: 700; margin-bottom: 0.5rem; }
         .title { font-size: 2rem; font-weight: 900; text-transform: uppercase; line-height: 1.1; letter-spacing: -0.02em; }
 
+        /* Layout */
         .editor-grid { display: grid; grid-template-columns: 320px 1fr; gap: 2rem; }
         @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
 
@@ -232,6 +233,7 @@
         </div>
     </main>
 
+    <!-- Футер -->
     <footer class="mt-12 pt-8 border-t border-white/10 flex flex-col items-center text-center gap-4 relative z-10 w-full max-w-[1000px]">
         <div class="flex flex-col items-center gap-2">
             <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">© <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ</p>        
@@ -239,17 +241,45 @@
         </div>
     </footer>
 
+    <!-- Всплывашка-нож (Cookie) -->
     <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
-        <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" style="border-bottom-left-radius: 120px 100%;">
-            <div class="relative z-10 flex items-center justify-end w-full text-right"><p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight">Мы собираем <span class="text-white font-bold">Cookie</span><br><a href="privacy" class="underline hover:text-white transition">Политика</a></p></div>
+        <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" 
+             style="border-bottom-left-radius: 120px 100%; border-top-left-radius: 0;">
+            <div class="relative z-10 flex items-center justify-end w-full text-right">
+                <p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight">
+                    Мы собираем <span class="text-white font-bold">Cookie</span><br>
+                    <a href="privacy" class="underline hover:text-white transition">Политика</a>
+                </p>
+            </div>
         </div>
-        <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm"></div>
-        <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center px-4 md:px-6 hover:bg-white hover:text-black transition-colors cursor-pointer group"><span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap">Принять</span></button>
+        <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm relative z-10 pointer-events-none shadow-sm"></div>
+        <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center relative px-4 md:px-6 hover:bg-white hover:text-black transition-colors cursor-pointer group">
+            <span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap z-20 relative">
+                Принять
+            </span>
+        </button>
     </div>
 
+    <!-- Логика -->
     <script>
         window.onload = () => { setTimeout(() => { document.body.classList.add('loaded'); }, 500); };
         document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const cookieKnife = document.getElementById('cookie-knife');
+            const acceptBtn = document.getElementById('accept-cookie-btn');
+            if (!localStorage.getItem('cookieAccepted')) {
+                setTimeout(() => {
+                    cookieKnife.classList.remove('translate-y-40', 'opacity-0');
+                    cookieKnife.classList.add('translate-y-0', 'opacity-100');
+                }, 2500);
+            }
+            acceptBtn.addEventListener('click', () => {
+                localStorage.setItem('cookieAccepted', 'true');
+                cookieKnife.classList.remove('translate-y-0', 'opacity-100');
+                cookieKnife.classList.add('translate-y-40', 'opacity-0');
+            });
+        });
 
         const ChaosLab = (() => {
             const DOM = {
@@ -258,6 +288,7 @@
                 btnRec: document.getElementById('btn-rec'),
                 btnRandom: document.getElementById('btn-random'),
                 btnClear: document.getElementById('btn-clear'),
+                btnEvolve: document.getElementById('btn-evolve'),
                 ctrlSeed: document.getElementById('ctrl-seed'),
                 btnRandSeed: document.getElementById('btn-rand-seed'),
                 ctrlBpm: document.getElementById('ctrl-bpm'),
@@ -353,7 +384,6 @@
                     for (let i = 0; i < length; i++) { impulse.getChannelData(0)[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.5); impulse.getChannelData(1)[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.5); }
                     convolver.buffer = impulse;
 
-                    // Запись
                     streamDest = audioCtx.createMediaStreamDestination();
 
                     synthMasterGain.connect(distortion);
@@ -363,7 +393,6 @@
                     delayWetGain.connect(reverbDryGain); delayWetGain.connect(convolver);
                     convolver.connect(reverbWetGain);
                     
-                    // Выход на колонки + Запись
                     [reverbDryGain, reverbWetGain].forEach(node => {
                         node.connect(audioCtx.destination);
                         node.connect(streamDest);
@@ -414,7 +443,6 @@
                 else { DOM.btnPlay.textContent = '▶ СТАРТ'; DOM.btnPlay.classList.remove('playing'); clearTimeout(timerID); }
             });
 
-            // Логика записи
             DOM.btnRec.addEventListener('click', () => {
                 initAudio();
                 if (!isRecording) {
@@ -448,6 +476,7 @@
             DOM.ctrlAutoEvolve.addEventListener('change', (e) => params.autoEvolve = e.target.checked);
             DOM.btnRandom.addEventListener('click', () => { for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) gridState[r][c] = Math.random() > 0.85; renderGrid(); });
             DOM.btnClear.addEventListener('click', () => { for (let r = 0; r < ROWS; r++) gridState[r].fill(false); renderGrid(); });
+            DOM.btnEvolve.addEventListener('click', evolve);
 
             initGrid();
         })();
