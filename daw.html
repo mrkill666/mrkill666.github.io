@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Audio DAW | Ножиков</title>
+    <!-- Добавлен Tailwind для стилей навигации и футера -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
@@ -38,8 +40,9 @@
         body {
             background-color: var(--bg-color); color: var(--accent-color);
             font-family: var(--font-main); min-height: 100vh;
-            display: flex; justify-content: center; align-items: flex-start;
-            padding: 2rem; overflow-x: hidden;
+            /* Изменено для корректного отображения футера */
+            display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            padding: 8rem 2rem 2rem 2rem; overflow-x: hidden;
         }
 
         body::before {
@@ -153,13 +156,14 @@
 </head>
 <body>
 
+    <!-- Обновленная навигация -->
     <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
         <a href="index" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">
             Владислав Ножиков
         </a>
         <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
-            <a href="#work" class="hover:opacity-50 transition">Работы</a>
-            <a href="#art" class="hover:opacity-50 transition">Арт</a>
+            <a href="index#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="index#art" class="hover:opacity-50 transition">Арт</a>
         </div>
     </nav>
     
@@ -227,6 +231,18 @@
         </div>
     </div>
 
+    <!-- Добавленный футер с кнопкой "Политика конфиденциальности" -->
+    <footer class="mt-24 md:mt-32 pt-12 border-t border-white/10 flex flex-col items-center text-center gap-8 reveal w-full max-w-7xl mx-auto">
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">
+                © <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ
+            </p>        
+            <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">
+                Политика конфиденциальности
+            </a>
+        </div>
+    </footer>
+
     <!-- Всплывашка-нож (Cookie) - Финальная версия -->
     <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
         
@@ -279,9 +295,13 @@
             });
         });
     </script>
+    
+    <!-- Скрипт для обновления года в футере -->
+    <script>
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+    </script>
 
-    
-    
+    <!-- Скрипт логики DAW -->
     <script>
         const App = (() => {
             // === ГЛОБАЛЬНЫЕ НАСТРОЙКИ ===
@@ -692,10 +712,5 @@
 
         })();
     </script>
-
-
-    
 </body>
-
-
 </html>
