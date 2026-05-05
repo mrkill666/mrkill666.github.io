@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synesthesia Lab | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="theme-color" content="#ffffff">
+
+    <style>
+        :root {
+            --bg-color: #050505; --card-bg: #111111; --accent-color: #ffffff;
+            --border-light: rgba(255, 255, 255, 0.1); --control-bg: #1a1a1a;
+            --active-color: #f97316; --danger-color: #ff3333; --font-main: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        a { color: inherit; text-decoration: none; }
+
+        body {
+            background-color: var(--bg-color); color: var(--accent-color); font-family: var(--font-main);
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            padding: 6rem 2rem 2rem 2rem; overflow-x: hidden; position: relative;
+        }
+
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.05; pointer-events: none; z-index: 9999;
+        }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+            display: flex; justify-content: center; align-items: center; z-index: 10001;
+            transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+        .knife-svg-main { width: 120px; height: 120px; fill: none; stroke: white; stroke-width: 1.2; animation: rotate-knife 1.5s linear infinite; }
+        @keyframes rotate-knife { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loaded #loader { transform: translateY(-100%); }
+
+        .app-container {
+            background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 24px;
+            padding: 2rem; width: 100%; max-width: 1100px; position: relative; z-index: 10;
+            display: flex; flex-direction: column; gap: 2rem; backdrop-filter: blur(10px);
+        }
+
+        .subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: gray; font-weight: 700; margin-bottom: 0.5rem; }
+        .title { font-size: 2rem; font-weight: 900; text-transform: uppercase; line-height: 1.1; letter-spacing: -0.02em; }
+
+        .editor-grid { display: grid; grid-template-columns: 320px 1fr; gap: 2rem; }
+        @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
+
+        .control-panel { background: rgba(5,5,5,0.8); border: 1px solid var(--border-light); border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; height: fit-content; }
+
+        .drop-zone {
+            border: 2px dashed var(--border-light); border-radius: 8px; padding: 1.5rem 1rem;
+            text-align: center; font-size: 12px; color: gray; font-weight: 900; text-transform: uppercase;
+            cursor: pointer; transition: all 0.3s; background: var(--bg-color); display: flex; flex-direction: column; justify-content: center;
+        }
+        .drop-zone.dragover { border-color: var(--active-color); background: rgba(249, 115, 22, 0.1); color: var(--active-color); }
+
+        .btn {
+            background: var(--control-bg); color: var(--accent-color); border: 1px solid var(--border-light);
+            border-radius: 8px; padding: 0.75rem 1rem; font-size: 12px; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.3s ease;
+            text-align: center; width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem;
+        }
+        .btn:hover { background: var(--accent-color); color: #000; }
+        .btn.active { background: var(--active-color); color: #000; border-color: var(--active-color); }
+        
+        .btn-play-big { font-size: 1.5rem; padding: 1.5rem; border: 2px solid var(--border-light); }
+        .btn-play-big.playing { background: var(--active-color); color: #000; border-color: var(--active-color); box-shadow: 0 0 30px rgba(249, 115, 22, 0.4);}
+        .btn-rec { border-color: var(--danger-color); color: var(--danger-color); }
+        .btn-rec:hover { background: var(--danger-color); color: white; }
+        .btn-rec.recording { background: var(--danger-color); color: white; animation: rec-pulse 1.5s infinite; }
+        @keyframes rec-pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); } }
+
+        .preview-box { width: 100%; aspect-ratio: 1; background: #0a0a0a; border-radius: 8px; border: 1px solid var(--border-light); display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative; }
+        
+        #img-canvas { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+        #audio-canvas { width: 100%; height: 100%; object-fit: contain; }
+
+        .scanline { position: absolute; top: 0; left: 0; width: 2px; height: 100%; background: var(--active-color); box-shadow: 0 0 10px var(--active-color); opacity: 0; pointer-events: none; }
+        .scanline.active { opacity: 1; }
+
+        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .control-label { display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; font-weight: 900; color: gray; }
+        .control-val { color: var(--active-color); }
+        select { background: var(--control-bg); color: white; border: 1px solid var(--border-light); padding: 0.75rem; border-radius: 8px; font-size: 12px; outline: none; cursor: pointer; text-transform: uppercase; font-weight: 900; width: 100%; }
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--active-color); cursor: pointer; margin-top: -6px; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #333; border-radius: 2px; }
+
+        .mode-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem; }
+        @media (max-width: 768px) { .mode-selector { grid-template-columns: 1fr; } }
+        .mode-card { background: rgba(5,5,5,0.8); border: 1px solid var(--border-light); border-radius: 16px; padding: 3rem 2rem; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .mode-card:hover { border-color: var(--active-color); transform: translateY(-5px); box-shadow: 0 10px 30px rgba(249, 115, 22, 0.1); }
+        .mode-icon { font-size: 3rem; margin-bottom: 1rem; }
+
+        .view-section { display: none; }
+        .view-section.active { display: flex; flex-direction: column; animation: fadeIn 0.5s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .toggle-container { display: flex; align-items: center; justify-content: space-between; font-size: 10px; text-transform: uppercase; font-weight: 900; color: white;}
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--active-color); }
+        input:checked + .slider:before { transform: translateX(20px); }
+    </style>
+</head>
+<body class="noise">
+
+    <div id="loader">
+        <svg class="knife-svg-main" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
+    </div>
+
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">Владислав Ножиков</a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="index#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="index#art" class="hover:opacity-50 transition">Арт</a>
+        </div>
+    </nav>
+
+    <main class="w-full flex justify-center relative z-10">
+        <div class="app-container">
+            
+            <div class="header-section flex justify-between items-end">
+                <div>
+                    <div class="subtitle">Data Lab / Синтез Форм</div>
+                    <h1 class="title">Synesthesia</h1>
+                </div>
+                <!-- Кнопка назад без стрелки -->
+                <button class="btn w-auto px-6 hidden" id="btn-back">Назад</button>
+            </div>
+
+            <!-- VIEW 1: ЭКРАН ВЫБОРА -->
+            <div class="view-section active" id="view-select">
+                <p class="text-xs text-gray-500 max-w-xl font-medium">Выбери инструмент. Сканируй изображения как оптические партитуры или разворачивай звук в геометрические холсты.</p>
+                <div class="mode-selector">
+                    <div class="mode-card" id="card-img2aud">
+                        <div class="mode-icon">👁️ ➔ 🔊</div>
+                        <h2 class="text-xl font-bold uppercase tracking-widest mb-2">Оптический Секвенсор</h2>
+                        <p class="text-xs text-gray-400">Алгоритм читает изображение по вертикальным срезам слева направо. Светлые пиксели генерируют ноты.</p>
+                    </div>
+                    <div class="mode-card" id="card-aud2img">
+                        <div class="mode-icon">🔊 ➔ 👁️</div>
+                        <h2 class="text-xl font-bold uppercase tracking-widest mb-2">Audio Art Generator</h2>
+                        <p class="text-xs text-gray-400">Превращает PCM-данные аудиофайла в абстрактные мандалы (Lissajous) и глитч-паттерны.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 2: IMAGE TO AUDIO (Оптический Секвенсор) -->
+            <div class="view-section" id="view-img2aud">
+                <div class="editor-grid">
+                    <div class="control-panel">
+                        <button class="btn btn-play-big" id="btn-play-img">▶ СТАРТ СЕКВЕНСОР</button>
+                        <button class="btn btn-rec" id="btn-rec-seq">⏺ ЗАПИСЬ MIX (.webm)</button>
+                        
+                        <label class="drop-zone" id="img-drop-zone">
+                            <span>PNG, JPG, WEBP<br><br>ЗАГРУЗИТЬ КАРТИНКУ</span>
+                            <input type="file" id="img-input" accept="image/*" style="display: none;">
+                        </label>
+
+                        <div class="h-[1px] w-full bg-white/10 my-1"></div>
+
+                        <div class="control-group">
+                            <div class="control-label">Тональность</div>
+                            <select id="seq-scale">
+                                <option value="minor">Минорная Пентатоника</option>
+                                <option value="major">Мажорная Пентатоника</option>
+                                <option value="chromatic">Хроматика (Dissonance)</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group mt-2">
+                            <div class="control-label"><span>Скорость (BPM)</span><span class="control-val" id="val-bpm">120</span></div>
+                            <input type="range" id="ctrl-bpm" min="60" max="300" value="120">
+                        </div>
+                        <div class="control-group">
+                            <div class="control-label"><span>Distortion</span><span class="control-val"><span id="val-dist">20</span>%</span></div>
+                            <input type="range" id="ctrl-dist" min="0" max="100" value="20">
+                        </div>
+                        <div class="control-group">
+                            <div class="control-label"><span>Reverb</span><span class="control-val"><span id="val-rev">50</span>%</span></div>
+                            <input type="range" id="ctrl-rev" min="0" max="100" value="50">
+                        </div>
+                    </div>
+
+                    <div class="preview-box">
+                        <canvas id="img-canvas"></canvas>
+                        <div class="scanline" id="img-scanline"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: AUDIO TO IMAGE (Глитч-Арт) -->
+            <div class="view-section" id="view-aud2img">
+                <div class="editor-grid">
+                    <div class="control-panel">
+                        <label class="drop-zone" id="audio-drop-zone">
+                            <span>WAV, MP3, OGG<br><br>ЗАГРУЗИТЬ АУДИО</span>
+                            <input type="file" id="audio-input" accept="audio/*" style="display: none;">
+                        </label>
+
+                        <div class="h-[1px] w-full bg-white/10 my-1"></div>
+
+                        <div class="control-group">
+                            <div class="control-label">Алгоритм Визуализации</div>
+                            <select id="art-mode">
+                                <option value="lissajous" selected>Lissajous (Абстрактные орбиты)</option>
+                                <option value="grid">Glitch Grid (Волна в матрице)</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group mt-2" id="group-wrap">
+                            <div class="control-label"><span>Wrap Width (Ширина сгиба)</span><span class="control-val" id="val-wrap">800</span></div>
+                            <input type="range" id="ctrl-wrap" min="100" max="2000" value="800">
+                        </div>
+
+                        <div class="control-group" id="group-shift">
+                            <div class="control-label"><span>Phase Shift (Фаза)</span><span class="control-val" id="val-shift">0</span></div>
+                            <input type="range" id="ctrl-shift" min="0" max="2000" value="0">
+                        </div>
+
+                        <div class="toggle-container mt-2">
+                            <span>Симметрия (Калейдоскоп)</span>
+                            <label class="switch"><input type="checkbox" id="ctrl-sym"><span class="slider"></span></label>
+                        </div>
+
+                        <button class="btn mt-4" id="btn-export-png" style="border-color: #f97316; color: #f97316;">💾 Сохранить .png</button>
+                    </div>
+
+                    <div class="preview-box">
+                        <canvas id="audio-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="mt-12 pt-8 border-t border-white/10 flex flex-col items-center text-center gap-4 relative z-10 w-full max-w-[1100px]">
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">© <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ</p>        
+            <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">Политика конфиденциальности</a>
+        </div>
+    </footer>
+
+    <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
+        <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" style="border-bottom-left-radius: 120px 100%; border-top-left-radius: 0;">
+            <div class="relative z-10 flex items-center justify-end w-full text-right"><p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight">Мы собираем <span class="text-white font-bold">Cookie</span><br><a href="privacy" class="underline hover:text-white transition">Политика</a></p></div>
+        </div>
+        <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm relative z-10 pointer-events-none shadow-sm"></div>
+        <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center relative px-4 md:px-6 hover:bg-white hover:text-black transition-colors cursor-pointer group"><span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap z-20 relative">Принять</span></button>
+    </div>
+
+    <!-- Логика -->
+    <script>
+        window.onload = () => { setTimeout(() => { document.body.classList.add('loaded'); }, 500); };
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const cookieKnife = document.getElementById('cookie-knife');
+            if (!localStorage.getItem('cookieAccepted')) { setTimeout(() => { cookieKnife.classList.remove('translate-y-40', 'opacity-0'); cookieKnife.classList.add('translate-y-0', 'opacity-100'); }, 2500); }
+            document.getElementById('accept-cookie-btn').addEventListener('click', () => { localStorage.setItem('cookieAccepted', 'true'); cookieKnife.classList.remove('translate-y-0', 'opacity-100'); cookieKnife.classList.add('translate-y-40', 'opacity-0'); });
+        });
+
+        const SynesthesiaLab = (() => {
+            // VIEWS
+            const views = {
+                select: document.getElementById('view-select'),
+                img2aud: document.getElementById('view-img2aud'),
+                aud2img: document.getElementById('view-aud2img'),
+                btnBack: document.getElementById('btn-back')
+            };
+
+            const switchView = (viewName) => {
+                Object.values(views).forEach(v => { if(v && v.classList) v.classList.remove('active'); });
+                if(viewName === 'select') {
+                    views.select.classList.add('active');
+                    views.btnBack.classList.add('hidden');
+                } else {
+                    views[viewName].classList.add('active');
+                    views.btnBack.classList.remove('hidden');
+                }
+            };
+
+            document.getElementById('card-img2aud').addEventListener('click', () => switchView('img2aud'));
+            document.getElementById('card-aud2img').addEventListener('click', () => switchView('aud2img'));
+            views.btnBack.addEventListener('click', () => {
+                stopSequencer();
+                switchView('select');
+            });
+
+            // COMMON AUDIO CONTEXT
+            let audioCtx = null;
+            const initAudio = () => { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); };
+
+            // ==========================================
+            // MODULE 1: IMAGE TO AUDIO (OPTICAL SEQUENCER)
+            // ==========================================
+            const SDOM = {
+                imgDrop: document.getElementById('img-drop-zone'), imgInput: document.getElementById('img-input'),
+                imgCanvas: document.getElementById('img-canvas'), btnPlay: document.getElementById('btn-play-img'),
+                btnRec: document.getElementById('btn-rec-seq'), scanline: document.getElementById('img-scanline'),
+                scale: document.getElementById('seq-scale'), bpm: document.getElementById('ctrl-bpm'), valBpm: document.getElementById('val-bpm'),
+                dist: document.getElementById('ctrl-dist'), valDist: document.getElementById('val-dist'),
+                rev: document.getElementById('ctrl-rev'), valRev: document.getElementById('val-rev')
+            };
+            const sCtx = SDOM.imgCanvas.getContext('2d', { willReadFrequently: true });
+            
+            // Musical Scales
+            const scales = {
+                minor: [36, 39, 41, 43, 46, 48, 51, 53, 55, 58, 60, 63, 65, 67, 70, 72, 75, 77, 79, 82, 84].reverse(),
+                major: [36, 38, 40, 43, 45, 48, 50, 52, 55, 57, 60, 62, 64, 67, 69, 72, 74, 76, 79, 81, 84].reverse(),
+                chromatic: Array.from({length: 21}, (_, i) => 84 - i)
+            };
+
+            let imgDataArray = null; 
+            let imgW = 0, imgH = 0; // Для логики секвенсора (массив 21xWidth)
+            let isPlaying = false, isRecording = false;
+            let currentCol = 0, nextNoteTime = 0, timerID = null;
+            let synthMasterGain, streamDest, mixRecorder, chunks = [];
+            let distortion, convolver, revGain;
+
+            const processImageFile = (file) => {
+                if (!file.type.startsWith('image/')) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        // 1. Отрисовка на холсте (через Cover)
+                        const canvasSize = 600; // Визуальный квадрат
+                        SDOM.imgCanvas.width = canvasSize; 
+                        SDOM.imgCanvas.height = canvasSize;
+                        
+                        // Математика Cover: обрезаем картинку по центру
+                        const scaleVis = Math.max(canvasSize / img.width, canvasSize / img.height);
+                        const xVis = (canvasSize / 2) - (img.width / 2) * scaleVis;
+                        const yVis = (canvasSize / 2) - (img.height / 2) * scaleVis;
+                        
+                        // Очистка и отрисовка визуального квадрата
+                        sCtx.fillStyle = '#0a0a0a'; sCtx.fillRect(0,0,canvasSize,canvasSize);
+                        sCtx.drawImage(img, xVis, yVis, img.width * scaleVis, img.height * scaleVis);
+
+                        // 2. Скрытый рендер для Секвенсора (строго 21 строка высоты)
+                        const hiddenCanvas = document.createElement('canvas');
+                        const hCtx = hiddenCanvas.getContext('2d');
+                        imgH = 21; // 21 нота
+                        const scaleLogic = imgH / img.height; 
+                        imgW = Math.min(Math.floor(img.width * scaleLogic * 4), 600); // Ограничим длину до 600 шагов
+                        
+                        hiddenCanvas.width = imgW; hiddenCanvas.height = imgH;
+                        hCtx.drawImage(img, 0, 0, imgW, imgH);
+                        
+                        const rawData = hCtx.getImageData(0, 0, imgW, imgH).data;
+                        imgDataArray = [];
+                        
+                        for (let x = 0; x < imgW; x++) {
+                            let col = [];
+                            for (let y = 0; y < imgH; y++) {
+                                const idx = (y * imgW + x) * 4;
+                                const brightness = (rawData[idx] + rawData[idx+1] + rawData[idx+2]) / 3;
+                                col.push(brightness > 128); // Threshold
+                            }
+                            imgDataArray.push(col);
+                        }
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            };
+
+            SDOM.imgInput.addEventListener('change', (e) => { if (e.target.files.length) processImageFile(e.target.files[0]); });
+            SDOM.imgDrop.addEventListener('dragover', (e) => { e.preventDefault(); SDOM.imgDrop.classList.add('dragover'); });
+            SDOM.imgDrop.addEventListener('dragleave', () => SDOM.imgDrop.classList.remove('dragover'));
+            SDOM.imgDrop.addEventListener('drop', (e) => { e.preventDefault(); SDOM.imgDrop.classList.remove('dragover'); if (e.dataTransfer.files.length) processImageFile(e.dataTransfer.files[0]); });
+
+            // Синтез
+            function makeDistCurve(amount) {
+                if(amount === 0) return new Float32Array([-1,0,1]);
+                const k = amount * 2, n = 44100, curve = new Float32Array(n), deg = Math.PI / 180;
+                for (let i = 0; i < n; ++i) { const x = i * 2 / n - 1; curve[i] = (3 + k) * x * 20 * deg / (Math.PI + k * Math.abs(x)); }
+                return curve;
+            }
+
+            const setupAudioGraph = () => {
+                initAudio();
+                if(synthMasterGain) return; 
+                
+                synthMasterGain = audioCtx.createGain(); synthMasterGain.gain.value = 0.2;
+                streamDest = audioCtx.createMediaStreamDestination();
+
+                distortion = audioCtx.createWaveShaper(); distortion.oversample = '4x';
+                
+                convolver = audioCtx.createConvolver(); revGain = audioCtx.createGain();
+                const len = audioCtx.sampleRate * 3.0, imp = audioCtx.createBuffer(2, len, audioCtx.sampleRate);
+                for (let i = 0; i < len; i++) { imp.getChannelData(0)[i] = (Math.random()*2-1)*Math.pow(1-i/len, 2.5); imp.getChannelData(1)[i] = (Math.random()*2-1)*Math.pow(1-i/len, 2.5); }
+                convolver.buffer = imp;
+
+                synthMasterGain.connect(distortion);
+                distortion.connect(audioCtx.destination);
+                distortion.connect(streamDest);
+                
+                distortion.connect(convolver).connect(revGain);
+                revGain.connect(audioCtx.destination);
+                revGain.connect(streamDest);
+
+                updateSeqFX();
+            };
+
+            const updateSeqFX = () => {
+                if(!distortion) return;
+                distortion.curve = makeDistCurve(parseInt(SDOM.dist.value));
+                revGain.gain.value = parseInt(SDOM.rev.value) / 100;
+            };
+
+            SDOM.bpm.addEventListener('input', e => SDOM.valBpm.textContent = e.target.value);
+            SDOM.dist.addEventListener('input', e => { SDOM.valDist.textContent = e.target.value; updateSeqFX(); });
+            SDOM.rev.addEventListener('input', e => { SDOM.valRev.textContent = e.target.value; updateSeqFX(); });
+
+            const playNote = (midiNote, time) => {
+                const osc = audioCtx.createOscillator(), gain = audioCtx.createGain(), filter = audioCtx.createBiquadFilter();
+                osc.type = 'triangle';
+                osc.frequency.value = 440 * Math.pow(2, (midiNote - 69) / 12);
+                filter.type = 'lowpass'; filter.frequency.setValueAtTime(1000, time); filter.frequency.exponentialRampToValueAtTime(100, time + 0.3);
+                gain.gain.setValueAtTime(0, time); gain.gain.linearRampToValueAtTime(0.5, time + 0.05); gain.gain.exponentialRampToValueAtTime(0.001, time + 0.3);
+                osc.connect(filter).connect(gain).connect(synthMasterGain);
+                osc.start(time); osc.stop(time + 0.4);
+            };
+
+            const scheduleStep = (colIndex, time) => {
+                const delay = (time - audioCtx.currentTime) * 1000;
+                setTimeout(() => { SDOM.scanline.style.left = `${(colIndex / imgW) * 100}%`; }, delay > 0 ? delay : 0);
+
+                const currentScale = scales[SDOM.scale.value];
+                const colData = imgDataArray[colIndex];
+                
+                let activeNotes = [];
+                for (let y = 0; y < imgH; y++) { if(colData[y]) activeNotes.push(currentScale[y]); }
+                
+                if (activeNotes.length > 0) {
+                    activeNotes.sort(() => 0.5 - Math.random()).slice(0, 3).forEach(note => playNote(note, time));
+                }
+            };
+
+            const sequencer = () => {
+                while (nextNoteTime < audioCtx.currentTime + 0.1) {
+                    scheduleStep(currentCol, nextNoteTime);
+                    nextNoteTime += 0.25 * (60.0 / parseInt(SDOM.bpm.value));
+                    currentCol = (currentCol + 1) % imgW;
+                }
+                timerID = setTimeout(sequencer, 25);
+            };
+
+            const stopSequencer = () => {
+                isPlaying = false; clearTimeout(timerID);
+                SDOM.btnPlay.textContent = '▶ СТАРТ СЕКВЕНСОР'; SDOM.btnPlay.classList.remove('playing');
+                SDOM.scanline.classList.remove('active');
+            };
+
+            SDOM.btnPlay.addEventListener('click', () => {
+                if (!imgDataArray) return alert("Загрузите картинку!");
+                setupAudioGraph();
+                if (isPlaying) { stopSequencer(); } 
+                else {
+                    isPlaying = true; currentCol = 0; nextNoteTime = audioCtx.currentTime + 0.05; sequencer();
+                    SDOM.btnPlay.textContent = '⏹ СТОП'; SDOM.btnPlay.classList.add('playing'); SDOM.scanline.classList.add('active');
+                }
+            });
+
+            SDOM.btnRec.addEventListener('click', () => {
+                if (!audioCtx) return alert("Сначала запустите секвенсор!");
+                if (!isRecording) {
+                    chunks = []; mixRecorder = new MediaRecorder(streamDest.stream);
+                    mixRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+                    mixRecorder.onstop = () => {
+                        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(chunks, { type: 'audio/webm' }));
+                        a.download = `syn_seq_${Date.now()}.webm`; a.click();
+                    };
+                    mixRecorder.start(); isRecording = true;
+                    SDOM.btnRec.classList.add('recording'); SDOM.btnRec.textContent = '⏹ СТОП ЗАПИСЬ';
+                } else {
+                    mixRecorder.stop(); isRecording = false;
+                    SDOM.btnRec.classList.remove('recording'); SDOM.btnRec.textContent = '⏺ ЗАПИСЬ MIX (.webm)';
+                }
+            });
+
+            // ==========================================
+            // MODULE 2: AUDIO TO IMAGE (ART GENERATOR)
+            // ==========================================
+            const ADOM = {
+                drop: document.getElementById('audio-drop-zone'), input: document.getElementById('audio-input'),
+                canvas: document.getElementById('audio-canvas'), btnExport: document.getElementById('btn-export-png'),
+                mode: document.getElementById('art-mode'), wrap: document.getElementById('ctrl-wrap'), valWrap: document.getElementById('val-wrap'),
+                shift: document.getElementById('ctrl-shift'), valShift: document.getElementById('val-shift'),
+                sym: document.getElementById('ctrl-sym')
+            };
+            const aCtxCanvas = ADOM.canvas.getContext('2d');
+            let rawAudioData = null, rawAudioRight = null;
+
+            const processAudioFile = async (file) => {
+                if (!file.type.startsWith('audio/')) return;
+                initAudio();
+                const arrayBuffer = await file.arrayBuffer();
+                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                rawAudioData = audioBuffer.getChannelData(0);
+                rawAudioRight = audioBuffer.numberOfChannels > 1 ? audioBuffer.getChannelData(1) : rawAudioData; 
+                renderArt();
+            };
+
+            ADOM.input.addEventListener('change', (e) => { if (e.target.files.length) processAudioFile(e.target.files[0]); });
+            ADOM.drop.addEventListener('dragover', (e) => { e.preventDefault(); ADOM.drop.classList.add('dragover'); });
+            ADOM.drop.addEventListener('dragleave', () => ADOM.drop.classList.remove('dragover'));
+            ADOM.drop.addEventListener('drop', (e) => { e.preventDefault(); ADOM.drop.classList.remove('dragover'); if (e.dataTransfer.files.length) processAudioFile(e.dataTransfer.files[0]); });
+
+            const renderArt = () => {
+                if (!rawAudioData) return;
+                const mode = ADOM.mode.value, wrap = parseInt(ADOM.wrap.value), shift = parseInt(ADOM.shift.value), sym = ADOM.sym.checked;
+                const size = 800; ADOM.canvas.width = size; ADOM.canvas.height = size;
+                aCtxCanvas.fillStyle = "#050505"; aCtxCanvas.fillRect(0, 0, size, size);
+                const samplesToRead = Math.min(rawAudioData.length, 1000000);
+
+                if (mode === 'grid') {
+                    const imgD = aCtxCanvas.createImageData(size, size); const d = imgD.data;
+                    for (let i = 0; i < samplesToRead; i++) {
+                        let x = i % wrap, y = Math.floor(i / wrap);
+                        let cx = Math.floor((x / wrap) * size), cy = Math.floor((y / (samplesToRead / wrap)) * size);
+                        if (cx >= size || cy >= size) continue; 
+                        const valR = (rawAudioData[i] + 1) * 127.5;
+                        const valG = (rawAudioData[(i + shift) % rawAudioData.length] + 1) * 127.5;
+                        const valB = (rawAudioData[(i + shift*2) % rawAudioData.length] + 1) * 127.5;
+                        const drawPixel = (px, py) => { const idx = (py * size + px) * 4; d[idx] = valR; d[idx+1] = valG; d[idx+2] = valB; d[idx+3] = 255; };
+                        drawPixel(cx, cy); if (sym) drawPixel(size - 1 - cx, cy); 
+                    }
+                    aCtxCanvas.putImageData(imgD, 0, 0);
+
+                } else if (mode === 'lissajous') {
+                    aCtxCanvas.strokeStyle = 'rgba(249, 115, 22, 0.1)'; aCtxCanvas.lineWidth = 1; aCtxCanvas.beginPath();
+                    const center = size / 2, radius = size / 2.5;
+                    for (let i = 0; i < samplesToRead; i += 2) { 
+                        const x = center + (rawAudioData[i] * radius);
+                        const y = center + (rawAudioRight[(i + shift) % rawAudioRight.length] * radius);
+                        if (i === 0) aCtxCanvas.moveTo(x, y); else aCtxCanvas.lineTo(x, y);
+                    }
+                    aCtxCanvas.stroke();
+                    if (sym) {
+                        aCtxCanvas.strokeStyle = 'rgba(255, 255, 255, 0.05)'; aCtxCanvas.beginPath();
+                        for (let i = 0; i < samplesToRead; i += 2) {
+                            const x = center - (rawAudioData[i] * radius); 
+                            const y = center + (rawAudioRight[(i + shift) % rawAudioRight.length] * radius);
+                            if (i === 0) aCtxCanvas.moveTo(x, y); else aCtxCanvas.lineTo(x, y);
+                        }
+                        aCtxCanvas.stroke();
+                    }
+                }
+            };
+
+            ADOM.mode.addEventListener('change', (e) => {
+                const mode = e.target.value;
+                document.getElementById('group-wrap').style.display = mode === 'grid' ? 'flex' : 'none';
+                document.getElementById('group-shift').querySelector('.control-label span:first-child').textContent = mode === 'grid' ? 'RGB Shift (Хроматика)' : 'Phase Shift (Фаза)';
+                renderArt();
+            });
+
+            // Инициализация правильного отображения контролов при загрузке (для Lissajous)
+            ADOM.mode.dispatchEvent(new Event('change'));
+
+            ADOM.wrap.addEventListener('input', (e) => { ADOM.valWrap.textContent = e.target.value; renderArt(); });
+            ADOM.shift.addEventListener('input', (e) => { ADOM.valShift.textContent = e.target.value; renderArt(); });
+            ADOM.sym.addEventListener('change', renderArt);
+
+            ADOM.btnExport.addEventListener('click', () => {
+                if (ADOM.canvas.width === 0) return alert("Загрузите аудио!");
+                const a = document.createElement('a'); a.href = ADOM.canvas.toDataURL("image/png"); a.download = `syn_art_${Date.now()}.png`; a.click();
+            });
+
+            // Init Canvas placeholders
+            sCtx.fillStyle = "#111"; sCtx.fillRect(0, 0, 300, 300);
+            aCtxCanvas.fillStyle = "#111"; aCtxCanvas.fillRect(0, 0, 800, 800);
+
+        })();
+    </script>
+</body>
+</html>
