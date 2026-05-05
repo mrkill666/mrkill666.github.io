@@ -131,20 +131,21 @@
         <a href="index" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">Владислав Ножиков</a>
         <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
             <a href="index#work" class="hover:opacity-50 transition">Работы</a>
-            <a href="index#art" class="hover:opacity-50 transition">Арт</a>
+            <a href="mujiclab" class="hover:opacity-50 transition">Мuжiclab</a>
         </div>
     </nav>
 
     <main class="w-full flex justify-center relative z-10">
         <div class="app-container">
             
-            <div class="header-section flex justify-between items-end">
+            <!-- ИСПРАВЛЕННАЯ СЕКЦИЯ ШАПКИ (Адаптивность для мобильных) -->
+            <div class="header-section flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 w-full">
                 <div>
                     <div class="subtitle">Data Lab / Синтез Форм</div>
                     <h1 class="title">Synesthesia</h1>
                 </div>
-                <!-- Кнопка назад без стрелки -->
-                <button class="btn w-auto px-6 hidden" id="btn-back">Назад</button>
+                <!-- Кнопка назад -->
+                <button class="btn w-full sm:w-auto px-6 hidden flex-shrink-0" id="btn-back">Назад</button>
             </div>
 
             <!-- VIEW 1: ЭКРАН ВЫБОРА -->
@@ -578,7 +579,7 @@
                 renderArt();
             });
 
-            // Инициализация правильного отображения контролов при загрузке (для Lissajous)
+            // Инициализация правильного отображения контролов при загрузке
             ADOM.mode.dispatchEvent(new Event('change'));
 
             ADOM.wrap.addEventListener('input', (e) => { ADOM.valWrap.textContent = e.target.value; renderArt(); });
