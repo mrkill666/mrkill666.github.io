@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chaos Lab | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* =========================================
+           ОБЩИЕ СТИЛИ (Mujic Lab System)
+           ========================================= */
+        :root {
+            --bg-color: #050505;
+            --card-bg: #111111;
+            --accent-color: #ffffff;
+            --border-light: rgba(255, 255, 255, 0.1);
+            --control-bg: #1a1a1a;
+            --active-color: #f97316; /* Фирменный оранжевый */
+            --danger-color: #ff3333;
+            --font-main: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        a { color: inherit; text-decoration: none; }
+
+        body {
+            background-color: var(--bg-color); color: var(--accent-color);
+            font-family: var(--font-main); min-height: 100vh;
+            display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            padding: 6rem 2rem 2rem 2rem; overflow-x: hidden;
+        }
+
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05; pointer-events: none; z-index: 9999;
+        }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; display: flex; justify-content: center; align-items: center;
+            z-index: 10001; transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+        .knife-svg-main {
+            width: 120px; height: 120px; fill: none; stroke: white; stroke-width: 1.2;
+            animation: rotate-knife 1.5s linear infinite;
+        }
+        @keyframes rotate-knife { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loaded #loader { transform: translateY(-100%); }
+
+        .app-container {
+            background: var(--card-bg); border: 1px solid var(--border-light);
+            border-radius: 24px; padding: 2rem; width: 100%; max-width: 1100px;
+            position: relative; z-index: 10; display: flex; flex-direction: column; gap: 2rem;
+        }
+
+        .subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: gray; font-weight: 700; margin-bottom: 0.5rem; }
+        .title { font-size: 2rem; font-weight: 900; text-transform: uppercase; line-height: 1.1; letter-spacing: -0.02em; }
+
+        .editor-grid { display: grid; grid-template-columns: 320px 1fr; gap: 2rem; }
+        @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
+
+        .control-panel {
+            background: var(--bg-color); border: 1px solid var(--border-light);
+            border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; height: fit-content;
+        }
+
+        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .control-label { display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; font-weight: 900; color: gray; }
+        .control-val { color: var(--active-color); }
+
+        .btn {
+            background: var(--control-bg); color: var(--accent-color); border: 1px solid var(--border-light);
+            border-radius: 8px; padding: 0.75rem 1rem; font-size: 12px; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.3s ease;
+            text-align: center;
+        }
+        .btn:hover { background: var(--accent-color); color: #000; }
+        .btn.active { background: var(--active-color); color: #000; border-color: var(--active-color); }
+        
+        .btn-play-big { font-size: 1.5rem; padding: 1.5rem; width: 100%; border: 2px solid var(--border-light); }
+        .btn-play-big.playing { background: var(--active-color); color: #000; border-color: var(--active-color); box-shadow: 0 0 30px rgba(249, 115, 22, 0.4);}
+
+        /* Кнопка записи */
+        .btn-rec {
+            background: var(--control-bg); border: 1px solid var(--danger-color); color: var(--danger-color);
+        }
+        .btn-rec:hover { background: var(--danger-color); color: white; }
+        .btn-rec.recording { background: var(--danger-color); color: white; animation: rec-pulse 1.5s infinite; }
+
+        @keyframes rec-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); }
+        }
+
+        .seed-input-wrapper { display: flex; gap: 0.5rem; }
+        .seed-input {
+            background: #000; color: var(--active-color); border: 1px solid var(--border-light);
+            border-radius: 8px; padding: 0.75rem; font-size: 14px; font-weight: 900; text-transform: uppercase;
+            width: 100%; outline: none; text-align: center; letter-spacing: 0.1em;
+        }
+
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { 
+            -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; 
+            background: var(--active-color); cursor: pointer; margin-top: -8px; 
+        }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #333; border-radius: 2px; }
+
+        .seq-container {
+            background: var(--bg-color); border: 1px solid var(--border-light);
+            border-radius: 16px; padding: 1rem; display: flex; justify-content: center; align-items: center; overflow: hidden;
+        }
+
+        .matrix-grid {
+            display: grid; grid-template-columns: repeat(16, 1fr); gap: 2px;
+            width: 100%; aspect-ratio: 1; background: #222; border: 1px solid #333;
+        }
+
+        .matrix-cell { background: #0a0a0a; border-radius: 2px; cursor: pointer; transition: background 0.1s, transform 0.1s; }
+        .matrix-cell.alive { background: var(--accent-color); box-shadow: 0 0 8px rgba(255,255,255,0.3); }
+        .matrix-cell.playhead { border: 1px solid var(--active-color); }
+        .matrix-cell.alive.playhead { background: var(--active-color); box-shadow: 0 0 15px var(--active-color); transform: scale(1.1); z-index: 2; position: relative;}
+
+        .toggle-container { display: flex; align-items: center; justify-content: space-between; font-size: 10px; text-transform: uppercase; font-weight: 900; color: white;}
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--active-color); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+    </style>
+</head>
+<body class="noise">
+
+    <div id="loader">
+        <svg class="knife-svg-main" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
+    </div>
+
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">
+            Владислав Ножиков
+        </a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="index#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="index#art" class="hover:opacity-50 transition">Арт</a>
+        </div>
+    </nav>
+
+    <main class="w-full flex justify-center relative z-10">
+        <div class="app-container">
+            
+            <div class="header-section">
+                <div class="subtitle">Chaos Lab / Алгоритмы</div>
+                <h1 class="title">Клеточный Секвенсор</h1>
+                <p class="text-xs text-gray-500 mt-2 max-w-xl font-medium">Генеративный MIDI-модуль. Рисуй, мутируй, записывай результат в .webm.</p>
+            </div>
+
+            <div class="editor-grid">
+                
+                <div class="control-panel">
+                    <button class="btn btn-play-big" id="btn-play">▶ СТАРТ</button>
+                    <button class="btn btn-rec" id="btn-rec">⏺ ЗАПИСЬ MIX</button>
+
+                    <div class="control-group mt-2">
+                        <div class="control-label"><span>Тембр (Seed)</span></div>
+                        <div class="seed-input-wrapper">
+                            <input type="text" id="ctrl-seed" class="seed-input" value="CHAOS" maxlength="8">
+                            <button class="btn" id="btn-rand-seed" style="padding: 0.75rem; flex: 0;">🎲</button>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <div class="control-label"><span>Темп (BPM)</span><span class="control-val" id="val-bpm">120</span></div>
+                        <input type="range" id="ctrl-bpm" min="60" max="240" value="120">
+                    </div>
+
+                    <div class="h-[1px] w-full bg-white/10 my-1"></div>
+                    
+                    <div class="control-group">
+                        <div class="control-label"><span>Distortion</span><span class="control-val"><span id="val-dist">0</span>%</span></div>
+                        <input type="range" id="ctrl-dist" min="0" max="100" value="0">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label"><span>Delay</span><span class="control-val"><span id="val-delay">20</span>%</span></div>
+                        <input type="range" id="ctrl-delay" min="0" max="100" value="20">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label"><span>Reverb</span><span class="control-val"><span id="val-reverb">50</span>%</span></div>
+                        <input type="range" id="ctrl-reverb" min="0" max="200" value="50">
+                    </div>
+
+                    <div class="h-[1px] w-full bg-white/10 my-1"></div>
+
+                    <div class="toggle-container">
+                        <span>Мутация (Эволюция)</span>
+                        <label class="switch"><input type="checkbox" id="ctrl-auto-evolve" checked><span class="slider"></span></label>
+                    </div>
+
+                    <div class="flex gap-2 mt-2">
+                        <button class="btn" id="btn-random">Random</button>
+                        <button class="btn" id="btn-clear" style="border-color: #333; color: gray;">Clear</button>
+                    </div>
+                </div>
+
+                <div class="seq-container">
+                    <div class="matrix-grid" id="matrix-grid"></div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-12 pt-8 border-t border-white/10 flex flex-col items-center text-center gap-4 relative z-10 w-full max-w-[1000px]">
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">© <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ</p>        
+            <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">Политика конфиденциальности</a>
+        </div>
+    </footer>
+
+    <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
+        <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" style="border-bottom-left-radius: 120px 100%;">
+            <div class="relative z-10 flex items-center justify-end w-full text-right"><p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight">Мы собираем <span class="text-white font-bold">Cookie</span><br><a href="privacy" class="underline hover:text-white transition">Политика</a></p></div>
+        </div>
+        <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm"></div>
+        <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center px-4 md:px-6 hover:bg-white hover:text-black transition-colors cursor-pointer group"><span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap">Принять</span></button>
+    </div>
+
+    <script>
+        window.onload = () => { setTimeout(() => { document.body.classList.add('loaded'); }, 500); };
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        const ChaosLab = (() => {
+            const DOM = {
+                grid: document.getElementById('matrix-grid'),
+                btnPlay: document.getElementById('btn-play'),
+                btnRec: document.getElementById('btn-rec'),
+                btnRandom: document.getElementById('btn-random'),
+                btnClear: document.getElementById('btn-clear'),
+                ctrlSeed: document.getElementById('ctrl-seed'),
+                btnRandSeed: document.getElementById('btn-rand-seed'),
+                ctrlBpm: document.getElementById('ctrl-bpm'),
+                valBpm: document.getElementById('val-bpm'),
+                ctrlDist: document.getElementById('ctrl-dist'),
+                valDist: document.getElementById('val-dist'),
+                ctrlDelay: document.getElementById('ctrl-delay'),
+                valDelay: document.getElementById('val-delay'),
+                ctrlReverb: document.getElementById('ctrl-reverb'),
+                valReverb: document.getElementById('val-reverb'),
+                ctrlAutoEvolve: document.getElementById('ctrl-auto-evolve')
+            };
+
+            const ROWS = 16, COLS = 16;
+            const SCALE = [36, 39, 41, 43, 46, 48, 51, 53, 55, 58, 60, 63, 65, 67, 70, 72].reverse(); 
+            let gridState = Array(ROWS).fill().map(() => Array(COLS).fill(false)), cellElements = [];
+
+            let audioCtx = null, synthMasterGain, distortion, delayNode, delayFeedback, delayWetGain, delayDryGain, convolver, reverbWetGain, reverbDryGain;
+            let isPlaying = false, currentStep = 0, nextNoteTime = 0.0, timerID = null;
+            
+            // Запись
+            let streamDest, recorder, chunks = [], isRecording = false;
+
+            const params = { bpm: 120, seed: "CHAOS", distortion: 0, delay: 0.2, reverb: 0.5, autoEvolve: true };
+
+            function cyrb128(str) {
+                let h1 = 1779033703, h2 = 3144134277, h3 = 1013904242, h4 = 2773480762;
+                for (let i = 0, k; i < str.length; i++) {
+                    k = str.charCodeAt(i);
+                    h1 = h2 ^ Math.imul(h1 ^ k, 597399067); h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+                    h3 = h4 ^ Math.imul(h3 ^ k, 951274213); h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+                }
+                h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067); h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+                h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213); h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+                return [(h1^h2^h3^h4)>>>0, (h2^h1)>>>0, (h3^h1)>>>0, (h4^h1)>>>0];
+            }
+            function sfc32(a, b, c, d) { return function() { a >>>= 0; b >>>= 0; c >>>= 0; d >>>= 0; var t = (a + b) | 0; a = b ^ b >>> 9; b = c + (c << 3) | 0; c = (c << 21 | c >>> 11); d = d + 1 | 0; t = t + d | 0; c = c + t | 0; return (t >>> 0) / 4294967296; } }
+
+            const getSeedParams = (seedStr) => {
+                const seed = cyrb128(seedStr), rand = sfc32(seed[0], seed[1], seed[2], seed[3]);
+                const waves = ['sine', 'square', 'sawtooth', 'triangle'];
+                return { osc1: waves[Math.floor(rand() * 4)], osc2: waves[Math.floor(rand() * 4)], detune: (rand() * 24) - 12, filterFreq: 400 + rand() * 4000, attack: 0.005 + rand() * 0.1, release: 0.1 + rand() * 0.8 };
+            };
+
+            const initGrid = () => {
+                DOM.grid.innerHTML = ''; cellElements = [];
+                for (let r = 0; r < ROWS; r++) {
+                    let rowElements = [];
+                    for (let c = 0; c < COLS; c++) {
+                        const cell = document.createElement('div'); cell.className = 'matrix-cell';
+                        cell.addEventListener('mousedown', (e) => { e.preventDefault(); toggleCell(r, c); });
+                        cell.addEventListener('mouseenter', (e) => { if (e.buttons === 1) toggleCell(r, c, true); });
+                        DOM.grid.appendChild(cell); rowElements.push(cell);
+                    }
+                    cellElements.push(rowElements);
+                }
+            };
+            const toggleCell = (r, c, forceState = null) => { gridState[r][c] = forceState !== null ? forceState : !gridState[r][c]; cellElements[r][c].classList.toggle('alive', gridState[r][c]); };
+            const renderGrid = () => { for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) cellElements[r][c].classList.toggle('alive', gridState[r][c]); };
+            const evolve = () => {
+                let newGrid = Array(ROWS).fill().map(() => Array(COLS).fill(false));
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        let neighbors = 0;
+                        for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+                            if (i === 0 && j === 0) continue;
+                            if (gridState[(r + i + ROWS) % ROWS][(c + j + COLS) % COLS]) neighbors++;
+                        }
+                        if (gridState[r][c] && (neighbors === 2 || neighbors === 3)) newGrid[r][c] = true;
+                        else if (!gridState[r][c] && neighbors === 3) newGrid[r][c] = true;
+                    }
+                }
+                gridState = newGrid; renderGrid();
+            };
+
+            function makeDistortionCurve(amount) {
+                if (amount === 0) return null;
+                const k = amount, n = 44100, curve = new Float32Array(n), deg = Math.PI / 180;
+                for (let i = 0; i < n; ++i) { const x = i * 2 / n - 1; curve[i] = (3 + k) * x * 20 * deg / (Math.PI + k * Math.abs(x)); }
+                return curve;
+            }
+
+            const initAudio = () => {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    synthMasterGain = audioCtx.createGain(); synthMasterGain.gain.value = 0.2;
+                    distortion = audioCtx.createWaveShaper(); distortion.oversample = '4x';
+                    delayNode = audioCtx.createDelay(2.0); delayFeedback = audioCtx.createGain();
+                    delayWetGain = audioCtx.createGain(); delayDryGain = audioCtx.createGain();
+                    delayFeedback.gain.value = 0.4;
+                    convolver = audioCtx.createConvolver(); reverbWetGain = audioCtx.createGain(); reverbDryGain = audioCtx.createGain();
+                    const length = audioCtx.sampleRate * 4.0, impulse = audioCtx.createBuffer(2, length, audioCtx.sampleRate);
+                    for (let i = 0; i < length; i++) { impulse.getChannelData(0)[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.5); impulse.getChannelData(1)[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.5); }
+                    convolver.buffer = impulse;
+
+                    // Запись
+                    streamDest = audioCtx.createMediaStreamDestination();
+
+                    synthMasterGain.connect(distortion);
+                    distortion.connect(delayDryGain); distortion.connect(delayNode);
+                    delayNode.connect(delayFeedback); delayFeedback.connect(delayNode); delayNode.connect(delayWetGain);
+                    delayDryGain.connect(reverbDryGain); delayDryGain.connect(convolver);
+                    delayWetGain.connect(reverbDryGain); delayWetGain.connect(convolver);
+                    convolver.connect(reverbWetGain);
+                    
+                    // Выход на колонки + Запись
+                    [reverbDryGain, reverbWetGain].forEach(node => {
+                        node.connect(audioCtx.destination);
+                        node.connect(streamDest);
+                    });
+                    updateFX();
+                }
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+            };
+
+            const updateFX = () => {
+                if(!audioCtx) return;
+                distortion.curve = makeDistortionCurve(params.distortion);
+                delayNode.delayTime.value = (60 / params.bpm) * 0.75; 
+                delayWetGain.gain.value = params.delay;
+                reverbWetGain.gain.value = params.reverb;
+            };
+
+            const playNote = (midiNote, time) => {
+                const s = getSeedParams(params.seed), osc1 = audioCtx.createOscillator(), osc2 = audioCtx.createOscillator(), gain = audioCtx.createGain(), filter = audioCtx.createBiquadFilter();
+                osc1.type = s.osc1; osc2.type = s.osc2;
+                const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
+                osc1.frequency.value = freq; osc2.frequency.value = freq * Math.pow(2, s.detune / 12);
+                filter.type = 'lowpass'; filter.frequency.setValueAtTime(s.filterFreq, time); filter.frequency.exponentialRampToValueAtTime(100, time + s.release);
+                gain.gain.setValueAtTime(0, time); gain.gain.linearRampToValueAtTime(0.4, time + s.attack); gain.gain.exponentialRampToValueAtTime(0.001, time + s.attack + s.release);
+                osc1.connect(filter); osc2.connect(filter); filter.connect(gain); gain.connect(synthMasterGain);
+                osc1.start(time); osc2.start(time); osc1.stop(time + s.attack + s.release + 0.1); osc2.stop(time + s.attack + s.release + 0.1);
+            };
+
+            const scheduler = () => {
+                while (nextNoteTime < audioCtx.currentTime + 0.1) {
+                    const step = currentStep;
+                    const time = nextNoteTime;
+                    const delay = (time - audioCtx.currentTime) * 1000;
+                    setTimeout(() => {
+                        for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) cellElements[r][c].classList.remove('playhead');
+                        for (let r = 0; r < ROWS; r++) cellElements[r][step].classList.add('playhead');
+                    }, delay > 0 ? delay : 0);
+                    if (step === 0 && params.autoEvolve && delay > 0) setTimeout(evolve, delay);
+                    for (let r = 0; r < ROWS; r++) if (gridState[r][step]) playNote(SCALE[r], time);
+                    nextNoteTime += 0.25 * (60.0 / params.bpm); currentStep = (currentStep + 1) % COLS;
+                }
+                timerID = setTimeout(scheduler, 25);
+            };
+
+            DOM.btnPlay.addEventListener('click', () => {
+                initAudio(); isPlaying = !isPlaying;
+                if (isPlaying) { DOM.btnPlay.textContent = '⏹ СТОП'; DOM.btnPlay.classList.add('playing'); currentStep = 0; nextNoteTime = audioCtx.currentTime + 0.05; scheduler(); }
+                else { DOM.btnPlay.textContent = '▶ СТАРТ'; DOM.btnPlay.classList.remove('playing'); clearTimeout(timerID); }
+            });
+
+            // Логика записи
+            DOM.btnRec.addEventListener('click', () => {
+                initAudio();
+                if (!isRecording) {
+                    chunks = [];
+                    recorder = new MediaRecorder(streamDest.stream);
+                    recorder.ondataavailable = e => chunks.push(e.data);
+                    recorder.onstop = () => {
+                        const blob = new Blob(chunks, { type: 'audio/webm' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url; a.download = `chaos_lab_${Date.now()}.webm`; a.click();
+                    };
+                    recorder.start();
+                    isRecording = true;
+                    DOM.btnRec.classList.add('recording');
+                    DOM.btnRec.textContent = '⏹ СТОП ЗАПИСЬ';
+                } else {
+                    recorder.stop();
+                    isRecording = false;
+                    DOM.btnRec.classList.remove('recording');
+                    DOM.btnRec.textContent = '⏺ ЗАПИСЬ MIX';
+                }
+            });
+
+            DOM.ctrlSeed.addEventListener('input', (e) => params.seed = e.target.value.toUpperCase());
+            DOM.btnRandSeed.addEventListener('click', () => { params.seed = Math.random().toString(36).substring(2, 7).toUpperCase(); DOM.ctrlSeed.value = params.seed; });
+            DOM.ctrlBpm.addEventListener('input', (e) => { params.bpm = e.target.value; DOM.valBpm.textContent = params.bpm; updateFX(); });
+            DOM.ctrlDist.addEventListener('input', (e) => { params.distortion = parseInt(e.target.value); DOM.valDist.textContent = params.distortion; updateFX(); });
+            DOM.ctrlDelay.addEventListener('input', (e) => { params.delay = e.target.value / 100; DOM.valDelay.textContent = e.target.value; updateFX(); });
+            DOM.ctrlReverb.addEventListener('input', (e) => { params.reverb = e.target.value / 100; DOM.valReverb.textContent = e.target.value; updateFX(); });
+            DOM.ctrlAutoEvolve.addEventListener('change', (e) => params.autoEvolve = e.target.checked);
+            DOM.btnRandom.addEventListener('click', () => { for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) gridState[r][c] = Math.random() > 0.85; renderGrid(); });
+            DOM.btnClear.addEventListener('click', () => { for (let r = 0; r < ROWS; r++) gridState[r].fill(false); renderGrid(); });
+
+            initGrid();
+        })();
+    </script>
+</body>
+</html>
