@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Lab | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="theme-color" content="#ffffff">
+
+    <style>
+        /* =========================================
+           ОБЩИЕ СТИЛИ (Mujic Lab System)
+           ========================================= */
+        :root {
+            --bg-color: #050505;
+            --card-bg: #111111;
+            --accent-color: #ffffff;
+            --border-light: rgba(255, 255, 255, 0.1);
+            --control-bg: #1a1a1a;
+            --active-color: #f97316; /* Фирменный оранжевый */
+            --danger-color: #ff3333;
+            --font-main: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        a { color: inherit; text-decoration: none; }
+
+        body {
+            background-color: var(--bg-color); color: var(--accent-color);
+            font-family: var(--font-main); min-height: 100vh;
+            display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            padding: 6rem 2rem 2rem 2rem; overflow-x: hidden;
+        }
+
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05; pointer-events: none; z-index: 9999;
+        }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; display: flex; justify-content: center; align-items: center;
+            z-index: 10001; transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+        .knife-svg-main { width: 120px; height: 120px; fill: none; stroke: white; stroke-width: 1.2; animation: rotate-knife 1.5s linear infinite; }
+        @keyframes rotate-knife { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loaded #loader { transform: translateY(-100%); }
+
+        .app-container {
+            background: var(--card-bg); border: 1px solid var(--border-light);
+            border-radius: 24px; padding: 2rem; width: 100%; max-width: 1100px;
+            position: relative; z-index: 10; display: flex; flex-direction: column; gap: 2rem;
+        }
+
+        .subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: gray; font-weight: 700; margin-bottom: 0.5rem; }
+        .title { font-size: 2rem; font-weight: 900; text-transform: uppercase; line-height: 1.1; letter-spacing: -0.02em; }
+
+        .editor-grid { display: grid; grid-template-columns: 320px 1fr; gap: 2rem; }
+        @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
+
+        .control-panel {
+            background: var(--bg-color); border: 1px solid var(--border-light);
+            border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; height: fit-content;
+        }
+
+        .btn {
+            background: var(--control-bg); color: var(--accent-color); border: 1px solid var(--border-light);
+            border-radius: 8px; padding: 0.75rem 1rem; font-size: 12px; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.3s ease;
+            text-align: center; flex: 1;
+        }
+        .btn:hover { background: var(--accent-color); color: #000; }
+        .btn.active { background: var(--active-color); color: #000; border-color: var(--active-color); }
+
+        /* Стили для кнопки записи */
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); } }
+        .btn.recording { 
+            background: rgba(255,51,51,0.1); 
+            border-color: var(--danger-color); 
+            color: var(--danger-color); 
+            animation: pulse-red 2s infinite; 
+        }
+        .btn.recording:hover { background: var(--danger-color); color: #fff; }
+
+        /* Микшер */
+        .mixer-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+        @media (max-width: 600px) { .mixer-grid { grid-template-columns: 1fr; } }
+
+        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .control-label { display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; font-weight: 900; color: gray; }
+        .control-val { color: var(--active-color); }
+
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { 
+            -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; 
+            background: var(--active-color); cursor: pointer; margin-top: -6px; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #333; border-radius: 2px; cursor: pointer;}
+        
+        /* Специфично для бинауралок */
+        .binaural-panel { background: rgba(249, 115, 22, 0.05); border-color: rgba(249, 115, 22, 0.2); }
+        .binaural-panel .control-label { color: var(--active-color); }
+
+        /* Оверлей разблокировки Web Audio API */
+        #init-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(17,17,17,0.8); backdrop-filter: blur(4px); z-index: 50;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 24px;
+            transition: opacity 0.3s;
+        }
+        .btn-init { font-size: 1.2rem; padding: 1.5rem 3rem; background: var(--active-color); color: #000; border: none; border-radius: 12px; font-weight: 900; text-transform: uppercase; cursor: pointer; box-shadow: 0 0 30px rgba(249, 115, 22, 0.4);}
+        .overlay-desc { font-size: 12px; color: gray; text-transform: uppercase; font-weight: 700; margin-top: 1rem; letter-spacing: 0.1em; text-align: center;}
+    </style>
+</head>
+<body class="noise">
+
+    <div id="loader">
+        <svg class="knife-svg-main" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
+    </div>
+
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">
+            Владислав Ножиков
+        </a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="index#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="index#art" class="hover:opacity-50 transition">Арт</a>
+        </div>
+    </nav>
+
+    <main class="w-full flex justify-center relative z-10">
+        <div class="app-container">
+            
+            <div id="init-overlay">
+                <button class="btn-init" id="btn-init-audio">ЗАПУСТИТЬ ДВИЖОК</button>
+                <div class="overlay-desc">Генеративный звук готов к компиляции</div>
+            </div>
+
+            <div class="header-section">
+                <div class="subtitle">Mind Lab / Фокус</div>
+                <h1 class="title">Vibe Lab</h1>
+                <p class="text-xs text-gray-500 mt-2 max-w-xl font-medium">100% процедурный синтез атмосфер. Никаких аудиофайлов, только математика, осцилляторы и шум. Идеальная среда для глубокой работы.</p>
+            </div>
+
+            <div class="editor-grid">
+                
+                <!-- Левая колонка: Управление и Бинауральные ритмы -->
+                <div class="flex flex-col gap-6">
+                    
+                    <div class="control-panel">
+                        <div class="subtitle text-center">Глобальное управление</div>
+                        <div class="flex flex-col gap-3 mt-2">
+                            <button class="btn" id="btn-stop-all">🛑 Остановить все звуки</button>
+                            <button class="btn" id="btn-record-toggle" style="color: var(--danger-color); border-color: var(--danger-color);">⏺ Начать запись (WebM)</button>
+                        </div>
+                    </div>
+
+                    <div class="control-panel binaural-panel">
+                        <div class="subtitle text-[#f97316]">Бинауральные ритмы</div>
+                        <p class="text-[10px] text-gray-400 mb-2">Надень наушники. Левое ухо: 200 Гц, Правое: 210 Гц. Мозг генерирует фантомную пульсацию 10 Гц (Альфа-волны), стимулируя фокус.</p>
+                        <div class="control-group">
+                            <div class="control-label"><span>Громкость</span><span class="control-val"><span id="val-bin">0</span>%</span></div>
+                            <input type="range" id="ctrl-bin" class="mixer-slider" data-target="synth-binaural" min="0" max="100" value="0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Правая колонка: Процедурный Микшер -->
+                <div class="control-panel">
+                    <div class="subtitle mb-2">Генеративный Микшер (Procedural Sound)</div>
+                    <div class="mixer-grid">
+                        
+                        <div class="control-group"><div class="control-label"><span>Дождь</span><span class="control-val"><span id="val-mix-1">0</span>%</span></div><input type="range" class="mixer-slider" data-target="synth-rain" min="0" max="100" value="0"></div>
+                        <div class="control-group"><div class="control-label"><span>Костёр</span><span class="control-val"><span id="val-mix-2">0</span>%</span></div><input type="range" class="mixer-slider" data-target="synth-fire" min="0" max="100" value="0"></div>
+                        <div class="control-group"><div class="control-label"><span>Океан</span><span class="control-val"><span id="val-mix-3">0</span>%</span></div><input type="range" class="mixer-slider" data-target="synth-ocean" min="0" max="100" value="0"></div>
+                        <div class="control-group"><div class="control-label"><span>Лес (Ветер)</span><span class="control-val"><span id="val-mix-4">0</span>%</span></div><input type="range" class="mixer-slider" data-target="synth-forest" min="0" max="100" value="0"></div>
+                        <div class="control-group"><div class="control-label"><span>Гул Толпы</span><span class="control-val"><span id="val-mix-5">0</span>%</span></div><input type="range" class="mixer-slider" data-target="synth-cafe" min="0" max="100" value="0"></div>
+                        <div class="control-group"><div class="control-label"><span>Поезд</span><span class="control-val"><span id="val-mix-6">0</span>%</span></div><input type="range" class="mixer-slider" data-target="synth-train" min="0" max="100" value="0"></div>
+                        <div class="control-group"><div class="control-label"><span>Сверчки</span><span class="control-val"><span id="val-mix-7">0</span>%</span></div><input type="range" class="mixer-slider" data-target="synth-crickets" min="0" max="100" value="0"></div>
+                        <div class="control-group"><div class="control-label"><span>Винил (Треск)</span><span class="control-val"><span id="val-mix-8">0</span>%</span></div><input type="range" class="mixer-slider" data-target="synth-vinyl" min="0" max="100" value="0"></div>
+                        <div class="control-group"><div class="control-label"><span>Вентилятор</span><span class="control-val"><span id="val-mix-9">0</span>%</span></div><input type="range" class="mixer-slider" data-target="synth-fan" min="0" max="100" value="0"></div>
+                        <div class="control-group"><div class="control-label"><span>Плёнка (Шипение)</span><span class="control-val"><span id="val-mix-10">0</span>%</span></div><input type="range" class="mixer-slider" data-target="synth-tape" min="0" max="100" value="0"></div>
+                        
+                        <!-- Чистые шумы -->
+                        <div class="control-group"><div class="control-label"><span>Белый шум</span><span class="control-val"><span id="val-mix-11">0</span>%</span></div><input type="range" class="mixer-slider" data-target="synth-white" min="0" max="100" value="0"></div>
+                        <div class="control-group"><div class="control-label"><span>Розовый шум</span><span class="control-val"><span id="val-mix-12">0</span>%</span></div><input type="range" class="mixer-slider" data-target="synth-pink" min="0" max="100" value="0"></div>
+                        
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Футер -->
+    <footer class="mt-12 pt-8 border-t border-white/10 flex flex-col items-center text-center gap-4 relative z-10 w-full max-w-[1000px]">
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">© <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ</p>        
+            <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">Политика конфиденциальности</a>
+        </div>
+    </footer>
+
+    <!-- Cookie Knife -->
+    <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
+        <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" style="border-bottom-left-radius: 120px 100%;">
+            <div class="relative z-10 flex items-center justify-end w-full text-right"><p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight">Мы собираем <span class="text-white font-bold">Cookie</span><br><a href="privacy" class="underline hover:text-white transition">Политика</a></p></div>
+        </div>
+        <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm relative z-10 pointer-events-none shadow-sm"></div>
+        <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center relative px-4 md:px-6 hover:bg-white hover:text-black transition-colors cursor-pointer group"><span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap z-20 relative">Принять</span></button>
+    </div>
+
+    <!-- Логика -->
+    <script>
+        window.onload = () => { setTimeout(() => { document.body.classList.add('loaded'); }, 500); };
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const cookieKnife = document.getElementById('cookie-knife');
+            const acceptBtn = document.getElementById('accept-cookie-btn');
+            if (!localStorage.getItem('cookieAccepted')) {
+                setTimeout(() => {
+                    cookieKnife.classList.remove('translate-y-40', 'opacity-0');
+                    cookieKnife.classList.add('translate-y-0', 'opacity-100');
+                }, 2500);
+            }
+            acceptBtn.addEventListener('click', () => {
+                localStorage.setItem('cookieAccepted', 'true');
+                cookieKnife.classList.remove('translate-y-0', 'opacity-100');
+                cookieKnife.classList.add('translate-y-40', 'opacity-0');
+            });
+        });
+
+        // --- CORE MODULE LOGIC ---
+        const VibeLab = (() => {
+            let audioCtx = null;
+            let masterGain = null;
+            let mediaStreamDest = null;
+            let mediaRecorder = null;
+            let recordedChunks = [];
+            let isRecording = false;
+            let tracks = {}; // Хранит гейны для каждого звука
+
+            const initAudio = () => {
+                if (audioCtx) return;
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Создаем Мастер Гейн для вывода звука и записи
+                masterGain = audioCtx.createGain();
+                masterGain.connect(audioCtx.destination);
+                
+                // Создаем стрим для WebM записи
+                mediaStreamDest = audioCtx.createMediaStreamDestination();
+                masterGain.connect(mediaStreamDest);
+
+                // Создаем единый бесконечный буфер белого шума для всех генераторов
+                const bufferSize = audioCtx.sampleRate * 5; // 5 секунд
+                const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = Math.random() * 2 - 1;
+                }
+
+                const createNoise = () => {
+                    const node = audioCtx.createBufferSource();
+                    node.buffer = noiseBuffer;
+                    node.loop = true;
+                    node.start();
+                    return node;
+                };
+
+                // Теперь все треки идут в masterGain, а не напрямую в destination
+                const createTrack = (id) => {
+                    const gain = audioCtx.createGain();
+                    gain.gain.value = 0;
+                    gain.connect(masterGain);
+                    tracks[id] = gain;
+                    return gain;
+                };
+
+                // --- БИНАУРАЛЬНЫЕ РИТМЫ ---
+                const binGain = createTrack('synth-binaural');
+                const oscL = audioCtx.createOscillator(); oscL.type = 'sine'; oscL.frequency.value = 200;
+                const oscR = audioCtx.createOscillator(); oscR.type = 'sine'; oscR.frequency.value = 210;
+                const panL = audioCtx.createStereoPanner(); panL.pan.value = -1;
+                const panR = audioCtx.createStereoPanner(); panR.pan.value = 1;
+                oscL.connect(panL).connect(binGain); oscR.connect(panR).connect(binGain);
+                oscL.start(); oscR.start();
+
+                // --- 1. ДОЖДЬ ---
+                const rainGain = createTrack('synth-rain');
+                const rainFilter = audioCtx.createBiquadFilter();
+                rainFilter.type = 'lowpass'; rainFilter.frequency.value = 400; 
+                createNoise().connect(rainFilter).connect(rainGain);
+
+                // --- 2. КОСТЕР ---
+                const fireGain = createTrack('synth-fire');
+                const fireBase = audioCtx.createBiquadFilter(); fireBase.type = 'lowpass'; fireBase.frequency.value = 150;
+                const crackle = audioCtx.createBiquadFilter(); crackle.type = 'highpass'; crackle.frequency.value = 5000;
+                const crackleAmp = audioCtx.createGain(); crackleAmp.gain.value = 0;
+                const crackleLfo = audioCtx.createOscillator(); crackleLfo.type = 'sawtooth'; crackleLfo.frequency.value = 1.5;
+                crackleLfo.connect(crackleAmp.gain); crackleLfo.start();
+                createNoise().connect(fireBase).connect(fireGain);
+                createNoise().connect(crackle).connect(crackleAmp).connect(fireGain);
+
+                // --- 3. ОКЕАН ---
+                const oceanGain = createTrack('synth-ocean');
+                const oceanFilter = audioCtx.createBiquadFilter(); oceanFilter.type = 'lowpass';
+                const oceanLfo = audioCtx.createOscillator(); oceanLfo.type = 'sine'; oceanLfo.frequency.value = 0.08; 
+                const oceanLfoAmp = audioCtx.createGain(); oceanLfoAmp.gain.value = 600;
+                oceanFilter.frequency.value = 200; 
+                oceanLfo.connect(oceanLfoAmp).connect(oceanFilter.frequency); oceanLfo.start();
+                createNoise().connect(oceanFilter).connect(oceanGain);
+
+                // --- 4. ЛЕС (Ветер в кронах) ---
+                const forestGain = createTrack('synth-forest');
+                const forestFilter = audioCtx.createBiquadFilter(); forestFilter.type = 'bandpass'; 
+                forestFilter.frequency.value = 350; forestFilter.Q.value = 0.5;
+                createNoise().connect(forestFilter).connect(forestGain);
+
+                // --- 5. ГУЛ ТОЛПЫ ---
+                const cafeGain = createTrack('synth-cafe');
+                const cafeFilter = audioCtx.createBiquadFilter(); cafeFilter.type = 'bandpass';
+                cafeFilter.frequency.value = 400; cafeFilter.Q.value = 0.8;
+                const cafeLfo = audioCtx.createOscillator(); cafeLfo.frequency.value = 3; 
+                const cafeLfoAmp = audioCtx.createGain(); cafeLfoAmp.gain.value = 150;
+                cafeLfo.connect(cafeLfoAmp).connect(cafeFilter.frequency); cafeLfo.start();
+                createNoise().connect(cafeFilter).connect(cafeGain);
+
+                // --- 6. ПОЕЗД ---
+                const trainGain = createTrack('synth-train');
+                const trainFilter = audioCtx.createBiquadFilter(); trainFilter.type = 'lowpass'; trainFilter.frequency.value = 800;
+                const trainAmp = audioCtx.createGain(); trainAmp.gain.value = 0.5;
+                const trainLfo = audioCtx.createOscillator(); trainLfo.type = 'square'; trainLfo.frequency.value = 4.5; 
+                trainLfo.connect(trainAmp.gain); trainLfo.start();
+                createNoise().connect(trainFilter).connect(trainAmp).connect(trainGain);
+
+                // --- 7. СВЕРЧКИ ---
+                const cricketGain = createTrack('synth-crickets');
+                const cricketOsc = audioCtx.createOscillator(); cricketOsc.type = 'sine'; cricketOsc.frequency.value = 4500;
+                const cricketAmp = audioCtx.createGain(); cricketAmp.gain.value = 0;
+                const cricketLfo = audioCtx.createOscillator(); cricketLfo.type = 'square'; cricketLfo.frequency.value = 25; 
+                cricketLfo.connect(cricketAmp.gain); cricketOsc.start(); cricketLfo.start();
+                cricketOsc.connect(cricketAmp).connect(cricketGain);
+
+                // --- 8. ВИНИЛ ---
+                const vinylGain = createTrack('synth-vinyl');
+                const hum = audioCtx.createOscillator(); hum.type = 'sine'; hum.frequency.value = 50; 
+                const humAmp = audioCtx.createGain(); humAmp.gain.value = 0.1;
+                const vinylCrackle = audioCtx.createBiquadFilter(); vinylCrackle.type = 'highpass'; vinylCrackle.frequency.value = 6000;
+                hum.connect(humAmp).connect(vinylGain); hum.start();
+                createNoise().connect(vinylCrackle).connect(vinylGain);
+
+                // --- 9. ВЕНТИЛЯТОР ---
+                const fanGain = createTrack('synth-fan');
+                const fanFilter = audioCtx.createBiquadFilter(); fanFilter.type = 'lowpass'; fanFilter.frequency.value = 200;
+                const fanOsc = audioCtx.createOscillator(); fanOsc.type = 'sawtooth'; fanOsc.frequency.value = 40;
+                const fanOscAmp = audioCtx.createGain(); fanOscAmp.gain.value = 0.2;
+                fanOsc.connect(fanOscAmp).connect(fanGain); fanOsc.start();
+                createNoise().connect(fanFilter).connect(fanGain);
+
+                // --- 10. ПЛЕНКА ---
+                const tapeGain = createTrack('synth-tape');
+                const tapeFilter = audioCtx.createBiquadFilter(); tapeFilter.type = 'highpass'; tapeFilter.frequency.value = 1500;
+                createNoise().connect(tapeFilter).connect(tapeGain);
+
+                // --- 11. БЕЛЫЙ ШУМ ---
+                const whiteGain = createTrack('synth-white');
+                createNoise().connect(whiteGain);
+
+                // --- 12. РОЗОВЫЙ ШУМ ---
+                const pinkGain = createTrack('synth-pink');
+                const pinkFilter = audioCtx.createBiquadFilter(); pinkFilter.type = 'lowpass'; pinkFilter.frequency.value = 800; 
+                createNoise().connect(pinkFilter).connect(pinkGain);
+            };
+
+            // Overlay Unlocking
+            document.getElementById('btn-init-audio').addEventListener('click', () => {
+                initAudio();
+                const overlay = document.getElementById('init-overlay');
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.remove(), 300);
+            });
+
+            // --- МИКШЕР CONTROL ---
+            const sliders = document.querySelectorAll('.mixer-slider');
+            sliders.forEach(slider => {
+                slider.addEventListener('input', (e) => {
+                    if(!audioCtx) return;
+                    const val = e.target.value;
+                    const targetId = e.target.dataset.target;
+                    
+                    e.target.parentElement.querySelector('.control-val span').textContent = val;
+
+                    if (tracks[targetId]) {
+                        tracks[targetId].gain.setValueAtTime((val / 100) * 0.3, audioCtx.currentTime);
+                    }
+                });
+            });
+
+            // --- ГЛОБАЛЬНАЯ ОСТАНОВКА ЗВУКОВ ---
+            document.getElementById('btn-stop-all').addEventListener('click', () => {
+                if(!audioCtx) return;
+                sliders.forEach(slider => {
+                    slider.value = 0;
+                    slider.parentElement.querySelector('.control-val span').textContent = '0';
+                    const targetId = slider.dataset.target;
+                    if (tracks[targetId]) {
+                        tracks[targetId].gain.setValueAtTime(0, audioCtx.currentTime);
+                    }
+                });
+            });
+
+            // --- ЗАПИСЬ WEBM ---
+            const btnRecord = document.getElementById('btn-record-toggle');
+            btnRecord.addEventListener('click', () => {
+                if(!audioCtx) {
+                    alert('Сначала запустите движок!');
+                    return;
+                }
+
+                if (!isRecording) {
+                    // Старт записи
+                    recordedChunks = [];
+                    const options = { mimeType: 'audio/webm' };
+                    try {
+                        mediaRecorder = new MediaRecorder(mediaStreamDest.stream, options);
+                    } catch (e) {
+                        alert('Формат WebM не поддерживается в вашем браузере');
+                        return;
+                    }
+
+                    mediaRecorder.ondataavailable = (e) => {
+                        if (e.data.size > 0) recordedChunks.push(e.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'vibe-lab-mix.webm';
+                        document.body.appendChild(a);
+                        a.click();
+                        setTimeout(() => {
+                            document.body.removeChild(a);
+                            window.URL.revokeObjectURL(url);
+                        }, 0);
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    btnRecord.textContent = '⏹ Остановить запись';
+                    btnRecord.classList.add('recording');
+
+                } else {
+                    // Остановка записи
+                    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                        mediaRecorder.stop();
+                    }
+                    isRecording = false;
+                    btnRecord.textContent = '⏺ Начать запись (WebM)';
+                    btnRecord.classList.remove('recording');
+                }
+            });
+
+        })();
+    </script>
+</body>
+</html>
