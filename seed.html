@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seed Loop Lab | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="theme-color" content="#ffffff">
+
+    <style>
+        :root {
+            --bg-color: #050505; --card-bg: #111111; --accent-color: #ffffff;
+            --border-light: rgba(255, 255, 255, 0.1); --control-bg: #1a1a1a;
+            --active-color: #f97316; --danger-color: #ff3333; --font-main: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        a { color: inherit; text-decoration: none; }
+
+        body {
+            background-color: var(--bg-color); color: var(--accent-color); font-family: var(--font-main);
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            padding: 6rem 2rem 2rem 2rem; overflow-x: hidden; position: relative;
+        }
+
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.05; pointer-events: none; z-index: 9999;
+        }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+            display: flex; justify-content: center; align-items: center; z-index: 10001;
+            transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+        .knife-svg-main { width: 120px; height: 120px; fill: none; stroke: white; stroke-width: 1.2; animation: rotate-knife 1.5s linear infinite; }
+        @keyframes rotate-knife { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loaded #loader { transform: translateY(-100%); }
+
+        .app-container {
+            background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 24px;
+            padding: 2rem; width: 100%; max-width: 1100px; position: relative; z-index: 10;
+            display: flex; flex-direction: column; gap: 2rem; backdrop-filter: blur(10px);
+        }
+
+        .subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: gray; font-weight: 700; margin-bottom: 0.5rem; }
+        .title { font-size: 2rem; font-weight: 900; text-transform: uppercase; line-height: 1.1; letter-spacing: -0.02em; }
+
+        .editor-grid { display: grid; grid-template-columns: 350px 1fr; gap: 2rem; }
+        @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
+
+        .control-panel { background: rgba(5,5,5,0.8); border: 1px solid var(--border-light); border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; height: fit-content; }
+
+        .btn {
+            background: var(--control-bg); color: var(--accent-color); border: 1px solid var(--border-light);
+            border-radius: 8px; padding: 0.75rem 1rem; font-size: 12px; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.3s ease;
+            text-align: center; width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem;
+        }
+        .btn:hover { background: var(--accent-color); color: #000; }
+        .btn.active { background: var(--active-color); color: #000; border-color: var(--active-color); }
+        
+        .btn-play-big { font-size: 1.5rem; padding: 1.5rem; border: 2px solid var(--border-light); }
+        .btn-play-big.playing { background: var(--active-color); color: #000; border-color: var(--active-color); box-shadow: 0 0 30px rgba(249, 115, 22, 0.4);}
+        .btn-rec { border-color: var(--danger-color); color: var(--danger-color); }
+        .btn-rec:hover { background: var(--danger-color); color: white; }
+        .btn-rec.recording { background: var(--danger-color); color: white; animation: rec-pulse 1.5s infinite; }
+        @keyframes rec-pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); } }
+
+        /* Ввод SEED */
+        .seed-input-wrapper { display: flex; flex-direction: column; gap: 0.5rem; }
+        .seed-input {
+            background: #000; color: var(--active-color); border: 1px solid var(--border-light);
+            border-radius: 8px; padding: 1rem; font-size: 1.2rem; font-weight: 900; text-transform: uppercase;
+            width: 100%; outline: none; text-align: center; letter-spacing: 0.1em;
+        }
+        .seed-input:focus { border-color: var(--active-color); box-shadow: 0 0 15px rgba(249, 115, 22, 0.2); }
+
+        /* Элементы формы */
+        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .control-label { display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; font-weight: 900; color: gray; }
+        .control-val { color: var(--active-color); }
+        select { background: var(--control-bg); color: white; border: 1px solid var(--border-light); padding: 0.75rem; border-radius: 8px; font-size: 12px; outline: none; cursor: pointer; text-transform: uppercase; font-weight: 900; width: 100%; }
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--active-color); cursor: pointer; margin-top: -6px; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #333; border-radius: 2px; }
+
+        /* Visualizer Grid */
+        .seq-grid {
+            display: grid; grid-template-columns: repeat(16, 1fr); gap: 4px;
+            width: 100%; background: #0a0a0a; border: 1px solid var(--border-light);
+            border-radius: 12px; padding: 1rem;
+        }
+        .seq-step {
+            aspect-ratio: 1; background: #1a1a1a; border-radius: 4px;
+            transition: all 0.1s ease;
+        }
+        .seq-step.active-note { background: #444; }
+        .seq-step.playhead { border: 2px solid var(--active-color); transform: scale(1.1); box-shadow: 0 0 10px var(--active-color); z-index: 2;}
+        .seq-step.active-note.playhead { background: var(--active-color); }
+
+        /* Оверлей разблокировки */
+        #init-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(17,17,17,0.85); backdrop-filter: blur(8px); z-index: 50;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 24px;
+            transition: opacity 0.3s;
+        }
+        .btn-init { font-size: 1.2rem; padding: 1.5rem 3rem; background: var(--active-color); color: #000; border: none; border-radius: 12px; font-weight: 900; text-transform: uppercase; cursor: pointer; box-shadow: 0 0 30px rgba(249, 115, 22, 0.4);}
+    </style>
+</head>
+<body class="noise">
+
+    <div id="loader">
+        <svg class="knife-svg-main" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
+    </div>
+
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">Владислав Ножиков</a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="index#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="mujiclab" class="hover:opacity-50 transition">Мuжiclab</a>
+        </div>
+    </nav>
+
+    <main class="w-full flex justify-center relative z-10">
+        <div class="app-container">
+            
+            <div id="init-overlay">
+                <button class="btn-init" id="btn-init-audio">Активировать Генератор</button>
+                <p class="text-gray-400 text-xs mt-4 uppercase tracking-widest">Требуется разрешение на запуск Audio API</p>
+            </div>
+
+            <div class="header-section flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 w-full">
+                <div>
+                    <div class="subtitle">Audio Lab / Синтез</div>
+                    <h1 class="title">Seed Loop Lab</h1>
+                    <p class="text-xs text-gray-500 mt-2 max-w-xl font-medium">Любое слово таит в себе ритм. Введи текст, и алгоритм хеширования превратит его в 16-шаговый музыкальный паттерн. Настрой синтез и запиши результат.</p>
+                </div>
+            </div>
+
+            <div class="editor-grid">
+                
+                <!-- Левая панель: СИД и Эффекты -->
+                <div class="control-panel">
+                    
+                    <button class="btn btn-play-big" id="btn-play">▶ СТАРТ ЛУП</button>
+                    <button class="btn btn-rec" id="btn-rec-mix">⏺ ЗАПИСЬ MIX (.webm)</button>
+
+                    <div class="h-[1px] w-full bg-white/10 my-1"></div>
+
+                    <!-- SEED INPUT -->
+                    <div class="seed-input-wrapper">
+                        <div class="control-label">Паттерн-генератор (Текст)</div>
+                        <input type="text" id="ctrl-seed" class="seed-input" value="NOZHIKOV" placeholder="ВВЕДИ ФРАЗУ...">
+                        <button class="btn" id="btn-rand-seed">🎲 Случайный Сид</button>
+                    </div>
+
+                    <div class="h-[1px] w-full bg-white/10 my-1"></div>
+
+                    <div class="control-group">
+                        <div class="control-label">Тип Синтезатора</div>
+                        <select id="ctrl-synth">
+                            <option value="square">8-Bit (Square)</option>
+                            <option value="sawtooth" selected>Acid (Sawtooth)</option>
+                            <option value="triangle">Pluck (Triangle)</option>
+                            <option value="sine">Deep (Sine)</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group mt-2">
+                        <div class="control-label"><span>Скорость Воспроизведения</span><span class="control-val" id="val-speed">1x</span></div>
+                        <input type="range" id="ctrl-speed" min="0" max="3" step="1" value="1">
+                        <p class="text-[9px] text-gray-500 mt-1">0.5x | 1x | 1.5x | 2x</p>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label"><span>Темп (BPM)</span><span class="control-val" id="val-bpm">120</span></div>
+                        <input type="range" id="ctrl-bpm" min="60" max="240" value="120">
+                    </div>
+
+                    <div class="h-[1px] w-full bg-white/10 my-1"></div>
+
+                    <div class="control-group">
+                        <div class="control-label"><span>Pitch Shifter (Sub/Октава)</span><span class="control-val"><span id="val-pitch-mix">50</span>%</span></div>
+                        <input type="range" id="ctrl-pitch-mix" min="0" max="100" value="50">
+                        <p class="text-[9px] text-gray-500 mt-1">Подмешивает гармонику на октаву ниже</p>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label"><span>Distortion</span><span class="control-val"><span id="val-dist">30</span>%</span></div>
+                        <input type="range" id="ctrl-dist" min="0" max="100" value="30">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label"><span>Delay (Эхо)</span><span class="control-val"><span id="val-delay">20</span>%</span></div>
+                        <input type="range" id="ctrl-delay" min="0" max="100" value="20">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label"><span>Reverb</span><span class="control-val"><span id="val-rev">40</span>%</span></div>
+                        <input type="range" id="ctrl-rev" min="0" max="100" value="40">
+                    </div>
+
+                </div>
+
+                <!-- Правая панель: Музыкальные настройки и Визуализатор -->
+                <div class="flex flex-col gap-6">
+                    
+                    <div class="control-panel">
+                        <div class="subtitle">Музыкальная теория</div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="control-group">
+                                <div class="control-label">Нота (Root)</div>
+                                <select id="ctrl-root">
+                                    <option value="36">C (До)</option>
+                                    <option value="37">C# (До-диез)</option>
+                                    <option value="38">D (Ре)</option>
+                                    <option value="39">D# (Ре-диез)</option>
+                                    <option value="40">E (Ми)</option>
+                                    <option value="41">F (Фа)</option>
+                                    <option value="42">F# (Фа-диез)</option>
+                                    <option value="43">G (Соль)</option>
+                                    <option value="44">G# (Соль-диез)</option>
+                                    <option value="45" selected>A (Ля)</option>
+                                    <option value="46">A# (Ля-диез)</option>
+                                    <option value="47">B (Си)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="control-group">
+                                <div class="control-label">Лад (Scale)</div>
+                                <select id="ctrl-scale">
+                                    <option value="minor" selected>Минор (Natural)</option>
+                                    <option value="major">Мажор (Natural)</option>
+                                    <option value="pentatonic">Пентатоника</option>
+                                    <option value="phrygian">Фригийский (Dark)</option>
+                                    <option value="harmonic">Гармонический Минор</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="control-group mt-4">
+                            <div class="control-label"><span>Глобальный Питч (Transpose)</span><span class="control-val"><span id="val-trans">0</span> ST</span></div>
+                            <input type="range" id="ctrl-trans" min="-12" max="12" value="0">
+                        </div>
+
+                    </div>
+
+                    <div class="control-panel">
+                        <div class="subtitle">Step Visualizer</div>
+                        <div class="seq-grid" id="seq-grid">
+                            <!-- 16 шагов сгенерируются через JS -->
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-12 pt-8 border-t border-white/10 flex flex-col items-center text-center gap-4 relative z-10 w-full max-w-[1100px]">
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">© <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ</p>        
+            <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">Политика конфиденциальности</a>
+        </div>
+    </footer>
+
+    <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
+        <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" style="border-bottom-left-radius: 120px 100%; border-top-left-radius: 0;">
+            <div class="relative z-10 flex items-center justify-end w-full text-right"><p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight">Мы собираем <span class="text-white font-bold">Cookie</span><br><a href="privacy" class="underline hover:text-white transition">Политика</a></p></div>
+        </div>
+        <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm relative z-10 pointer-events-none shadow-sm"></div>
+        <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center relative px-4 md:px-6 hover:bg-white hover:text-black transition-colors cursor-pointer group"><span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap z-20 relative">Принять</span></button>
+    </div>
+
+    <!-- Логика -->
+    <script>
+        window.onload = () => { setTimeout(() => { document.body.classList.add('loaded'); }, 500); };
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const cookieKnife = document.getElementById('cookie-knife');
+            if (!localStorage.getItem('cookieAccepted')) { setTimeout(() => { cookieKnife.classList.remove('translate-y-40', 'opacity-0'); cookieKnife.classList.add('translate-y-0', 'opacity-100'); }, 2500); }
+            document.getElementById('accept-cookie-btn').addEventListener('click', () => { localStorage.setItem('cookieAccepted', 'true'); cookieKnife.classList.remove('translate-y-0', 'opacity-100'); cookieKnife.classList.add('translate-y-40', 'opacity-0'); });
+        });
+
+        const SeedLab = (() => {
+            // --- DOM Elements ---
+            const DOM = {
+                btnPlay: document.getElementById('btn-play'), btnRec: document.getElementById('btn-rec-mix'),
+                seedInput: document.getElementById('ctrl-seed'), btnRandSeed: document.getElementById('btn-rand-seed'),
+                synth: document.getElementById('ctrl-synth'), root: document.getElementById('ctrl-root'),
+                scale: document.getElementById('ctrl-scale'), speed: document.getElementById('ctrl-speed'), valSpeed: document.getElementById('val-speed'),
+                bpm: document.getElementById('ctrl-bpm'), valBpm: document.getElementById('val-bpm'),
+                trans: document.getElementById('ctrl-trans'), valTrans: document.getElementById('val-trans'),
+                pitchMix: document.getElementById('ctrl-pitch-mix'), valPitchMix: document.getElementById('val-pitch-mix'),
+                dist: document.getElementById('ctrl-dist'), valDist: document.getElementById('val-dist'),
+                delay: document.getElementById('ctrl-delay'), valDelay: document.getElementById('val-delay'),
+                rev: document.getElementById('ctrl-rev'), valRev: document.getElementById('val-rev'),
+                grid: document.getElementById('seq-grid')
+            };
+
+            const STEPS = 16;
+            let stepElements = [];
+            
+            // Build Grid UI
+            for(let i=0; i<STEPS; i++) {
+                const el = document.createElement('div');
+                el.className = 'seq-step';
+                DOM.grid.appendChild(el);
+                stepElements.push(el);
+            }
+
+            // --- Scales (Intervals from root) ---
+            const SCALES = {
+                minor: [0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 17, 19, 20, 22],
+                major: [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23],
+                pentatonic: [0, 3, 5, 7, 10, 12, 15, 17, 19, 22],
+                phrygian: [0, 1, 3, 5, 7, 8, 10, 12, 13, 15, 17, 19, 20, 22],
+                harmonic: [0, 2, 3, 5, 7, 8, 11, 12, 14, 15, 17, 19, 20, 23]
+            };
+
+            // --- PRNG (Hash functions) ---
+            function cyrb128(str) {
+                let h1 = 1779033703, h2 = 3144134277, h3 = 1013904242, h4 = 2773480762;
+                for (let i = 0, k; i < str.length; i++) {
+                    k = str.charCodeAt(i);
+                    h1 = h2 ^ Math.imul(h1 ^ k, 597399067); h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+                    h3 = h4 ^ Math.imul(h3 ^ k, 951274213); h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+                }
+                h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067); h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+                h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213); h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+                return [(h1^h2^h3^h4)>>>0, (h2^h1)>>>0, (h3^h1)>>>0, (h4^h1)>>>0];
+            }
+            function sfc32(a, b, c, d) { return function() { a >>>= 0; b >>>= 0; c >>>= 0; d >>>= 0; var t = (a + b) | 0; a = b ^ b >>> 9; b = c + (c << 3) | 0; c = (c << 21 | c >>> 11); d = d + 1 | 0; t = t + d | 0; c = c + t | 0; return (t >>> 0) / 4294967296; } }
+
+            let sequence = [];
+
+            const generateSequence = () => {
+                const seedStr = DOM.seedInput.value || "VOID";
+                const seed = cyrb128(seedStr);
+                const rand = sfc32(seed[0], seed[1], seed[2], seed[3]);
+                
+                sequence = [];
+                const currentScale = SCALES[DOM.scale.value];
+                
+                for(let i=0; i<STEPS; i++) {
+                    const isActive = (i === 0) || (rand() > 0.4);
+                    const noteIndex = Math.floor(rand() * currentScale.length);
+                    sequence.push({ active: isActive, noteIndex: noteIndex });
+                    
+                    if(isActive) stepElements[i].classList.add('active-note');
+                    else stepElements[i].classList.remove('active-note');
+                }
+            };
+
+            DOM.seedInput.addEventListener('input', generateSequence);
+            DOM.scale.addEventListener('change', generateSequence);
+            DOM.btnRandSeed.addEventListener('click', () => {
+                DOM.seedInput.value = Math.random().toString(36).substring(2, 8).toUpperCase();
+                generateSequence();
+            });
+
+            // --- Audio Engine ---
+            let audioCtx = null;
+            let isPlaying = false, isRecording = false;
+            let currentStep = 0, nextNoteTime = 0.0, timerID = null;
+            
+            let synthMasterGain, streamDest, mixRecorder, chunks = [];
+            let fx = {}; 
+
+            function makeDistCurve(amount) {
+                if(amount === 0) return new Float32Array([-1,0,1]);
+                const k = amount * 2, n = 44100, curve = new Float32Array(n), deg = Math.PI / 180;
+                for (let i = 0; i < n; ++i) { const x = i * 2 / n - 1; curve[i] = (3 + k) * x * 20 * deg / (Math.PI + k * Math.abs(x)); }
+                return curve;
+            }
+
+            const initAudio = () => {
+                if(audioCtx) return;
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                
+                synthMasterGain = audioCtx.createGain(); synthMasterGain.gain.value = 0.25;
+                streamDest = audioCtx.createMediaStreamDestination();
+
+                fx.dist = audioCtx.createWaveShaper(); fx.dist.oversample = '4x';
+                
+                fx.delay = audioCtx.createDelay(2.0);
+                fx.delayFB = audioCtx.createGain(); fx.delayFB.gain.value = 0.4;
+                fx.delayWet = audioCtx.createGain(); fx.delayDry = audioCtx.createGain();
+                
+                fx.rev = audioCtx.createConvolver();
+                fx.revWet = audioCtx.createGain(); fx.revDry = audioCtx.createGain();
+                const len = audioCtx.sampleRate * 2.5, imp = audioCtx.createBuffer(2, len, audioCtx.sampleRate);
+                for (let i = 0; i < len; i++) { imp.getChannelData(0)[i] = (Math.random()*2-1)*Math.pow(1-i/len, 2); imp.getChannelData(1)[i] = (Math.random()*2-1)*Math.pow(1-i/len, 2); }
+                fx.rev.buffer = imp;
+
+                synthMasterGain.connect(fx.dist);
+                fx.dist.connect(fx.delayDry);
+                fx.dist.connect(fx.delay);
+                fx.delay.connect(fx.delayFB).connect(fx.delay);
+                fx.delay.connect(fx.delayWet);
+
+                fx.delayDry.connect(fx.revDry); fx.delayDry.connect(fx.rev);
+                fx.delayWet.connect(fx.revDry); fx.delayWet.connect(fx.rev);
+
+                fx.rev.connect(fx.revWet);
+                
+                [fx.revDry, fx.revWet].forEach(node => {
+                    node.connect(audioCtx.destination);
+                    node.connect(streamDest);
+                });
+
+                updateFX();
+            };
+
+            const updateFX = () => {
+                if(!fx.dist) return;
+                fx.dist.curve = makeDistCurve(parseInt(DOM.dist.value));
+                fx.delay.delayTime.value = (60 / parseInt(DOM.bpm.value)) * 0.75;
+                fx.delayWet.gain.value = parseInt(DOM.delay.value) / 100;
+                fx.revWet.gain.value = parseInt(DOM.rev.value) / 100;
+            };
+
+            DOM.bpm.addEventListener('input', e => { DOM.valBpm.textContent = e.target.value; updateFX(); });
+            DOM.dist.addEventListener('input', e => { DOM.valDist.textContent = e.target.value; updateFX(); });
+            DOM.delay.addEventListener('input', e => { DOM.valDelay.textContent = e.target.value; updateFX(); });
+            DOM.rev.addEventListener('input', e => { DOM.valRev.textContent = e.target.value; updateFX(); });
+            DOM.trans.addEventListener('input', e => { DOM.valTrans.textContent = e.target.value; });
+            DOM.pitchMix.addEventListener('input', e => { DOM.valPitchMix.textContent = e.target.value; });
+            
+            const speedMultipliers = [0.5, 1, 1.5, 2];
+            DOM.speed.addEventListener('input', e => { DOM.valSpeed.textContent = `${speedMultipliers[e.target.value]}x`; });
+
+            const playSynthVoice = (midiNote, time) => {
+                const synthType = DOM.synth.value;
+                const filter = audioCtx.createBiquadFilter();
+                const masterVoiceGain = audioCtx.createGain();
+                
+                const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
+                
+                const osc1 = audioCtx.createOscillator();
+                osc1.type = synthType;
+                osc1.frequency.value = freq;
+
+                const osc2 = audioCtx.createOscillator();
+                osc2.type = synthType === 'sine' ? 'sine' : 'triangle'; 
+                osc2.frequency.value = freq * 0.5; 
+
+                const subGain = audioCtx.createGain();
+                subGain.gain.value = parseInt(DOM.pitchMix.value) / 100;
+
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(6000, time);
+                filter.frequency.exponentialRampToValueAtTime(100, time + 0.3);
+
+                masterVoiceGain.gain.setValueAtTime(0, time);
+                masterVoiceGain.gain.linearRampToValueAtTime(0.6, time + 0.02); 
+                masterVoiceGain.gain.exponentialRampToValueAtTime(0.001, time + 0.4); 
+
+                osc1.connect(filter);
+                osc2.connect(subGain).connect(filter);
+                
+                filter.connect(masterVoiceGain).connect(synthMasterGain);
+
+                osc1.start(time); osc2.start(time);
+                osc1.stop(time + 0.5); osc2.stop(time + 0.5);
+            };
+
+            const scheduleStep = (stepIdx, time) => {
+                const delay = (time - audioCtx.currentTime) * 1000;
+                setTimeout(() => {
+                    stepElements.forEach(el => el.classList.remove('playhead'));
+                    stepElements[stepIdx].classList.add('playhead');
+                }, delay > 0 ? delay : 0);
+
+                const stepData = sequence[stepIdx];
+                if (stepData.active) {
+                    const currentScale = SCALES[DOM.scale.value];
+                    const rootNote = parseInt(DOM.root.value);
+                    const globalTranspose = parseInt(DOM.trans.value);
+                    
+                    const interval = currentScale[stepData.noteIndex];
+                    const finalMidiNote = rootNote + interval + globalTranspose;
+                    
+                    playSynthVoice(finalMidiNote, time);
+                }
+            };
+
+            const scheduler = () => {
+                while (nextNoteTime < audioCtx.currentTime + 0.1) {
+                    scheduleStep(currentStep, nextNoteTime);
+                    
+                    const speedIndex = parseInt(DOM.speed.value);
+                    const multiplier = speedMultipliers[speedIndex];
+                    const stepDuration = (0.25 * (60.0 / parseInt(DOM.bpm.value))) / multiplier;
+                    
+                    nextNoteTime += stepDuration;
+                    currentStep = (currentStep + 1) % STEPS;
+                }
+                timerID = setTimeout(scheduler, 25);
+            };
+
+            const stopSequencer = () => {
+                isPlaying = false; clearTimeout(timerID);
+                DOM.btnPlay.textContent = '▶ СТАРТ ЛУП'; DOM.btnPlay.classList.remove('playing');
+                stepElements.forEach(el => el.classList.remove('playhead'));
+            };
+
+            // ФИКС ОШИБКИ NULL ПРИ УДАЛЕНИИ OVERLAY
+            DOM.btnPlay.addEventListener('click', () => {
+                initAudio();
+                if (sequence.length === 0) generateSequence();
+
+                if (isPlaying) { stopSequencer(); } 
+                else {
+                    document.getElementById('init-overlay')?.remove(); 
+                    isPlaying = true; currentStep = 0; nextNoteTime = audioCtx.currentTime + 0.05; scheduler();
+                    DOM.btnPlay.textContent = '⏹ СТОП'; DOM.btnPlay.classList.add('playing');
+                }
+            });
+
+            DOM.btnRec.addEventListener('click', () => {
+                if (!audioCtx) return alert("Сначала запустите генератор!");
+                if (!isRecording) {
+                    chunks = []; mixRecorder = new MediaRecorder(streamDest.stream);
+                    mixRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+                    mixRecorder.onstop = () => {
+                        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(chunks, { type: 'audio/webm' }));
+                        a.download = `seed_lab_${Date.now()}.webm`; a.click();
+                    };
+                    mixRecorder.start(); isRecording = true;
+                    DOM.btnRec.classList.add('recording'); DOM.btnRec.textContent = '⏹ СТОП ЗАПИСЬ';
+                } else {
+                    mixRecorder.stop(); isRecording = false;
+                    DOM.btnRec.classList.remove('recording'); DOM.btnRec.textContent = '⏺ ЗАПИСЬ MIX (.webm)';
+                }
+            });
+
+            // ФИКС ОШИБКИ NULL ПРИ УДАЛЕНИИ OVERLAY
+            document.getElementById('btn-init-audio').addEventListener('click', () => {
+                initAudio();
+                document.getElementById('init-overlay')?.remove();
+            });
+
+            generateSequence();
+
+        })();
+    </script>
+</body>
+</html>
