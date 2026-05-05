@@ -35,7 +35,6 @@
         body {
             background-color: var(--bg-color); color: var(--accent-color);
             font-family: var(--font-main); min-height: 100vh;
-            /* Изменено на колонку для корректного отображения футера */
             display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
             overflow-x: hidden;
         }
@@ -151,7 +150,6 @@
         </div>
     </nav>
 
-    <!-- Изменен main для выстраивания элементов в колонку -->
     <main class="pt-24 md:pt-32 px-6 md:px-12 pb-24 w-full max-w-7xl flex flex-col items-center relative">
         <div class="app-container w-full">
             
@@ -218,7 +216,7 @@
 
                 <!-- Холст -->
                 <div class="preview-container">
-                    <canvas id="canvas"></canvas>
+                    <canvas id="canvas" width="600" height="400"></canvas>
                 </div>
             </div>
 
@@ -246,7 +244,6 @@
              style="border-bottom-left-radius: 120px 100%; border-top-left-radius: 0;">
             
             <div class="relative z-10 flex items-center justify-end w-full">
-                <!-- Убрана точка после Cookie -->
                 <p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight text-right">
                     Мы собираем <span class="text-white font-bold">Cookie</span><br>
                     <a href="privacy" class="underline hover:text-white transition">Политика</a>
@@ -255,22 +252,18 @@
         </div>
 
         <!-- "Палочка" (Гарда) -->
-        <!-- Заменили прозрачный белый (bg-white/20) на плотный серый (bg-neutral-600) -->
         <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm relative z-10 pointer-events-none shadow-sm"></div>
 
         <!-- Рукоять, которая и является кнопкой "Принять" -->
         <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center relative px-4 md:px-6 hover:bg-white hover:text-black hover:border-white transition-colors cursor-pointer group">
-            
-            <!-- Текст ПРИНЯТЬ на самой рукояти (без лишних элементов) -->
             <span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap z-20 relative">
                 Принять
             </span>
-            
         </button>
 
     </div>
 
-    <!-- Скрипт логики всплывашки -->
+    <!-- Скрипты логики -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const cookieKnife = document.getElementById('cookie-knife');
@@ -292,7 +285,6 @@
     </script>
 
     <script>
-        // Установка текущего года в футере
         document.getElementById('current-year').textContent = new Date().getFullYear();
     </script>
 
@@ -516,7 +508,6 @@
             DOM.modeBtns.color.addEventListener('click', () => setMode(DOM.modeBtns.color, 'color'));
             DOM.modeBtns.scramble.addEventListener('click', () => setMode(DOM.modeBtns.scramble, 'scramble'));
             
-            // Random можно нажимать много раз для генерации новых палитр
             DOM.modeBtns.random.addEventListener('click', () => setMode(DOM.modeBtns.random, 'random'));
 
             DOM.btnDownload.addEventListener('click', () => {
@@ -527,10 +518,19 @@
                 link.click();
             });
 
-            // Исходная заглушка
-            ctx.fillStyle = "#111111"; ctx.fillRect(0, 0, DOM.canvas.width, DOM.canvas.height);
-            ctx.fillStyle = "#333333"; ctx.font = "14px Inter"; ctx.textAlign = "center";
-            ctx.fillText("ЗАГРУЗИТЕ ФОТОГРАФИЮ", DOM.canvas.width / 2, DOM.canvas.height / 2);
+            // Предзагрузка изображения hero.jpg
+            const initImg = new Image();
+            initImg.onload = () => {
+                originalImage = initImg;
+                applyFilters();
+            };
+            initImg.onerror = () => {
+                // Если картинка не найдена, показываем стандартный текст
+                ctx.fillStyle = "#111111"; ctx.fillRect(0, 0, DOM.canvas.width, DOM.canvas.height);
+                ctx.fillStyle = "#333333"; ctx.font = "14px Inter"; ctx.textAlign = "center";
+                ctx.fillText("ЗАГРУЗИТЕ ФОТОГРАФИЮ", DOM.canvas.width / 2, DOM.canvas.height / 2);
+            };
+            initImg.src = 'hero.jpg';
 
         })();
     </script>
