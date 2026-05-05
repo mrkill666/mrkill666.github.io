@@ -153,6 +153,17 @@
 </head>
 <body>
 
+    <!-- ВЕРХНЯЯ НАВИГАЦИЯ -->
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">
+            Владислав Ножиков
+        </a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="index#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="index#art" class="hover:opacity-50 transition">Арт</a>
+        </div>
+    </nav>
+    
     <div class="app-container">
         <!-- HEADER -->
         <div>
@@ -632,8 +643,6 @@
         })();
     </script>
 
-    
-</body>
     <!-- Всплывашка-нож (Cookie) - Финальная версия -->
     <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
         
@@ -686,5 +695,8 @@
             });
         });
     </script>
+    
+</body>
+
 
 </html>
