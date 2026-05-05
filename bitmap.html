@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitmap Editor | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="theme-color" content="#ffffff">
+
+    <style>
+        /* =========================================
+           ОБЩИЕ СТИЛИ
+           ========================================= */
+        :root {
+            --bg-color: #050505;
+            --card-bg: #111111;
+            --accent-color: #ffffff;
+            --border-light: rgba(255, 255, 255, 0.1);
+            --control-bg: #1a1a1a;
+            --active-color: #f97316; /* Оранжевый акцент */
+            --font-main: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-color); color: var(--accent-color);
+            font-family: var(--font-main); min-height: 100vh;
+            display: flex; justify-content: center; align-items: flex-start;
+            padding: 2rem; overflow-x: hidden;
+        }
+
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05; pointer-events: none; z-index: 9999;
+        }
+
+        /* Загрузка */
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; display: flex; justify-content: center; align-items: center;
+            z-index: 10001; transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+        .knife-svg-main {
+            width: 120px; height: 120px; fill: none; stroke: white; stroke-width: 1.2;
+            animation: rotate-knife 1.5s linear infinite;
+        }
+        @keyframes rotate-knife { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loaded #loader { transform: translateY(-100%); }
+
+        .app-container {
+            background: var(--card-bg); border: 1px solid var(--border-light);
+            border-radius: 24px; padding: 2rem; width: 100%; max-width: 1200px;
+            position: relative; z-index: 10; display: flex; flex-direction: column; gap: 2rem;
+        }
+
+        .subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: gray; font-weight: 700; margin-bottom: 0.5rem; }
+        .title { font-size: 2rem; font-weight: 900; text-transform: uppercase; line-height: 1.1; letter-spacing: -0.02em; }
+
+        .editor-grid { display: grid; grid-template-columns: 320px 1fr; gap: 2rem; }
+        @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
+
+        .control-panel {
+            background: var(--bg-color); border: 1px solid var(--border-light);
+            border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;
+            height: fit-content;
+        }
+
+        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .control-label { display: flex; justify-content: space-between; font-size: 12px; text-transform: uppercase; font-weight: 900; color: #fff; }
+
+        .btn {
+            background: var(--control-bg); color: var(--accent-color); border: 1px solid var(--border-light);
+            border-radius: 8px; padding: 0.6rem 0.5rem; font-size: 10px; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.3s ease;
+            text-align: center; flex: 1; min-width: 30%;
+        }
+        .btn:hover { background: var(--accent-color); color: #000; }
+        .btn.active { background: var(--active-color); color: #000; border-color: var(--active-color); }
+        .btn-download { background: var(--active-color); color: #000; border-color: var(--active-color); margin-top: 0.5rem; width: 100%; font-size: 12px; padding: 1rem;}
+        .btn-download:hover { background: #fff; border-color: #fff; }
+
+        select { 
+            background: var(--control-bg); color: white; border: 1px solid var(--border-light); 
+            padding: 0.75rem; border-radius: 8px; font-size: 12px; outline: none; cursor: pointer; 
+            text-transform: uppercase; font-weight: 900; width: 100%;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border-light); border-radius: 8px; padding: 1.5rem 1rem;
+            text-align: center; font-size: 12px; color: white; font-weight: 900; text-transform: uppercase;
+            cursor: pointer; transition: all 0.3s; background: var(--control-bg);
+        }
+        .drop-zone.dragover { border-color: var(--active-color); background: rgba(249, 115, 22, 0.1); color: var(--active-color); }
+
+        .slider-container {
+            border: 2px solid var(--border-light); border-radius: 8px; padding: 0.75rem 1rem;
+            background: var(--control-bg); display: flex; align-items: center; gap: 1rem;
+        }
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { 
+            -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; 
+            background: var(--active-color); cursor: pointer; margin-top: -8px; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #444; border-radius: 2px; }
+        .slider-val { font-size: 16px; font-weight: 900; min-width: 30px; text-align: right; }
+
+        .preview-container {
+            background: var(--bg-color); border: 1px solid var(--border-light);
+            border-radius: 16px; padding: 1rem; display: flex; justify-content: center; align-items: center;
+            overflow: hidden; min-height: 500px;
+        }
+        canvas {
+            max-width: 100%; max-height: 75vh; object-fit: contain;
+            background: #111; border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            image-rendering: pixelated; 
+        }
+    </style>
+</head>
+<body class="noise">
+
+    <div id="loader">
+        <svg class="knife-svg-main" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
+    </div>
+
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index.html" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">
+            Владислав Ножиков
+        </a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="index.html#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="index.html#art" class="hover:opacity-50 transition">Арт</a>
+        </div>
+    </nav>
+
+    <main class="pt-24 md:pt-32 px-6 md:px-12 pb-24 w-full flex justify-center relative">
+        <div class="app-container">
+            
+            <div class="header-section">
+                <div class="subtitle">Visual Lab / Изображения</div>
+                <h1 class="title">Bitmap Editor</h1>
+            </div>
+
+            <div class="editor-grid">
+                <!-- Панель управления -->
+                <div class="control-panel">
+                    
+                    <div class="control-group">
+                        <div class="control-label">Цветовой Режим</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                            <button class="btn active" id="mode-bw">B/W</button>
+                            <button class="btn" id="mode-brand">Brand</button>
+                            <button class="btn" id="mode-color">Color</button>
+                            <button class="btn" id="mode-scramble">Scramble</button>
+                            <button class="btn" id="mode-random">Random</button>
+                        </div>
+                    </div>
+
+                    <label class="drop-zone" id="drop-zone">
+                        <span>PNG, JPG, WEBP: <br><br> UPLOAD ▲</span>
+                        <input type="file" id="file-input" accept="image/*" style="display: none;">
+                    </label>
+
+                    <div class="control-group">
+                        <div class="control-label">Size (Размер Пикселя):</div>
+                        <div class="slider-container">
+                            <input type="range" id="ctrl-size" min="1" max="30" value="4">
+                            <span class="slider-val" id="size-val">4</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label">Threshold (Яркость):</div>
+                        <div class="slider-container">
+                            <input type="range" id="ctrl-thresh" min="-128" max="127" value="0">
+                            <span class="slider-val" id="thresh-val">0</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label">Dithering Method:</div>
+                        <select id="ctrl-algo">
+                            <option value="bitmap">BITMAP</option>
+                            <option value="stretch">STRETCH</option>
+                            <option value="floyd" selected>FLOYD-STEINBERG</option>
+                            <option value="atkinson">ATKINSON</option>
+                            <option value="jjn">JARVIS-JUDICE-NINKE</option>
+                            <option value="stucki">STUCKI</option>
+                            <option value="bayer2">BAYER 2X2</option>
+                            <option value="bayer4">BAYER 4X4</option>
+                            <option value="bayer8">BAYER 8X8</option>
+                            <option value="clustered">CLUSTERED 4X4</option>
+                            <option value="random">RANDOM</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-download" id="btn-download">Сохранить PNG</button>
+                </div>
+
+                <!-- Холст -->
+                <div class="preview-container">
+                    <canvas id="canvas"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        window.onload = () => { setTimeout(() => { document.body.classList.add('loaded'); }, 500); };
+
+        const BitmapEditor = (() => {
+            const DOM = {
+                dropZone: document.getElementById('drop-zone'),
+                fileInput: document.getElementById('file-input'),
+                canvas: document.getElementById('canvas'),
+                ctrlAlgo: document.getElementById('ctrl-algo'),
+                ctrlSize: document.getElementById('ctrl-size'),
+                sizeVal: document.getElementById('size-val'),
+                ctrlThresh: document.getElementById('ctrl-thresh'),
+                threshVal: document.getElementById('thresh-val'),
+                btnDownload: document.getElementById('btn-download'),
+                modeBtns: {
+                    bw: document.getElementById('mode-bw'),
+                    brand: document.getElementById('mode-brand'),
+                    color: document.getElementById('mode-color'),
+                    scramble: document.getElementById('mode-scramble'),
+                    random: document.getElementById('mode-random')
+                }
+            };
+
+            const ctx = DOM.canvas.getContext('2d');
+            let originalImage = null;
+
+            // Состояние
+            const state = {
+                size: 4,
+                threshold: 0,
+                algo: 'floyd',
+                palette: 'bw',
+                randColors: { dark: [0,0,0], light: [255,255,255] }
+            };
+
+            // Матрицы Байера и Clustered
+            const matrices = {
+                bayer2: { dim: 2, div: 4, data: [0, 2, 3, 1] },
+                bayer4: { dim: 4, div: 16, data: [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5] },
+                bayer8: { dim: 8, div: 64, data: [0, 32, 8, 40, 2, 34, 10, 42, 48, 16, 56, 24, 50, 18, 58, 26, 12, 44, 4, 36, 14, 46, 6, 38, 60, 28, 52, 20, 62, 30, 54, 22, 3, 35, 11, 43, 1, 33, 9, 41, 51, 19, 59, 27, 49, 17, 57, 25, 15, 47, 7, 39, 13, 45, 5, 37, 63, 31, 55, 23, 61, 29, 53, 21] },
+                clustered: { dim: 4, div: 16, data: [12, 5, 6, 13, 4, 0, 1, 7, 11, 3, 2, 8, 15, 10, 9, 14] }
+            };
+
+            // Матрицы Error Diffusion (x, y, weight)
+            const errDist = {
+                floyd: [[1, 0, 7/16], [-1, 1, 3/16], [0, 1, 5/16], [1, 1, 1/16]],
+                atkinson: [[1, 0, 1/8], [2, 0, 1/8], [-1, 1, 1/8], [0, 1, 1/8], [1, 1, 1/8], [0, 2, 1/8]],
+                jjn: [[1, 0, 7/48], [2, 0, 5/48], [-2, 1, 3/48], [-1, 1, 5/48], [0, 1, 7/48], [1, 1, 5/48], [2, 1, 3/48], [-2, 2, 1/48], [-1, 2, 3/48], [0, 2, 5/48], [1, 2, 3/48], [2, 2, 1/48]],
+                stucki: [[1, 0, 8/42], [2, 0, 4/42], [-2, 1, 2/42], [-1, 1, 4/42], [0, 1, 8/42], [1, 1, 4/42], [2, 1, 2/42], [-2, 2, 1/42], [-1, 2, 2/42], [0, 2, 4/42], [1, 2, 2/42], [2, 2, 1/42]]
+            };
+
+            const processFile = (file) => {
+                if (!file.type.startsWith('image/')) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => { originalImage = img; applyFilters(); };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            };
+
+            DOM.fileInput.addEventListener('change', (e) => { if (e.target.files.length > 0) processFile(e.target.files[0]); });
+            DOM.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); DOM.dropZone.classList.add('dragover'); });
+            DOM.dropZone.addEventListener('dragleave', () => DOM.dropZone.classList.remove('dragover'));
+            DOM.dropZone.addEventListener('drop', (e) => { e.preventDefault(); DOM.dropZone.classList.remove('dragover'); if (e.dataTransfer.files.length > 0) processFile(e.dataTransfer.files[0]); });
+
+            // Универсальная функция применения алгоритма к одному каналу (массиву)
+            const processChannel = (buf, w, h) => {
+                // Пре-обработка: Сдвиг яркости (Threshold Bias)
+                for (let i = 0; i < buf.length; i++) {
+                    let val = buf[i] + state.threshold;
+                    buf[i] = val < 0 ? 0 : (val > 255 ? 255 : val);
+                }
+
+                if (state.algo === 'stretch') {
+                    let min = 255, max = 0;
+                    for (let i = 0; i < buf.length; i++) {
+                        if (buf[i] < min) min = buf[i];
+                        if (buf[i] > max) max = buf[i];
+                    }
+                    for (let i = 0; i < buf.length; i++) {
+                        buf[i] = max === min ? 0 : ((buf[i] - min) / (max - min)) * 255;
+                        buf[i] = buf[i] >= 128 ? 255 : 0;
+                    }
+                } else if (state.algo === 'bitmap') {
+                    for (let i = 0; i < buf.length; i++) buf[i] = buf[i] >= 128 ? 255 : 0;
+                } else if (state.algo === 'random') {
+                    for (let i = 0; i < buf.length; i++) buf[i] = buf[i] > (Math.random() * 255) ? 255 : 0;
+                } else if (matrices[state.algo]) {
+                    const m = matrices[state.algo];
+                    for (let y = 0; y < h; y++) {
+                        for (let x = 0; x < w; x++) {
+                            const i = y * w + x;
+                            const thresh = (m.data[(y % m.dim) * m.dim + (x % m.dim)] / m.div) * 255;
+                            buf[i] = buf[i] > thresh ? 255 : 0;
+                        }
+                    }
+                } else if (errDist[state.algo]) {
+                    const dist = errDist[state.algo];
+                    for (let y = 0; y < h; y++) {
+                        for (let x = 0; x < w; x++) {
+                            const i = y * w + x;
+                            const oldP = buf[i];
+                            const newP = oldP < 128 ? 0 : 255;
+                            buf[i] = newP;
+                            const err = oldP - newP;
+                            for (let d = 0; d < dist.length; d++) {
+                                const nx = x + dist[d][0], ny = y + dist[d][1];
+                                if (nx >= 0 && nx < w && ny < h) buf[ny * w + nx] += err * dist[d][2];
+                            }
+                        }
+                    }
+                }
+            };
+
+            const applyFilters = () => {
+                if (!originalImage) return;
+
+                const MAX_DIM = 1920;
+                let origW = originalImage.width, origH = originalImage.height, scale = 1;
+                if (origW > MAX_DIM || origH > MAX_DIM) scale = MAX_DIM / Math.max(origW, origH);
+                
+                const targetW = Math.floor(origW * scale);
+                const targetH = Math.floor(origH * scale);
+                const smallW = Math.max(1, Math.floor(targetW / state.size));
+                const smallH = Math.max(1, Math.floor(targetH / state.size));
+                
+                const offCanvas = document.createElement('canvas');
+                offCanvas.width = smallW; offCanvas.height = smallH;
+                const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
+                offCtx.drawImage(originalImage, 0, 0, smallW, smallH);
+                
+                const imgData = offCtx.getImageData(0, 0, smallW, smallH);
+                const data = imgData.data;
+
+                // ЦВЕТОВЫЕ РЕЖИМЫ
+                if (state.palette === 'color' || state.palette === 'scramble') {
+                    // Разделяем на 3 канала
+                    const rBuf = new Float32Array(smallW * smallH);
+                    const gBuf = new Float32Array(smallW * smallH);
+                    const bBuf = new Float32Array(smallW * smallH);
+
+                    for (let i = 0; i < smallW * smallH; i++) {
+                        let idx = i * 4;
+                        if (state.palette === 'scramble') {
+                            rBuf[i] = data[idx+1];          // R становится G
+                            gBuf[i] = data[idx+2];          // G становится B
+                            bBuf[i] = 255 - data[idx];      // B становится инвертированным R
+                        } else {
+                            rBuf[i] = data[idx];
+                            gBuf[i] = data[idx+1];
+                            bBuf[i] = data[idx+2];
+                        }
+                    }
+
+                    // Обрабатываем каждый цвет отдельно (дает трушные 8 цветов 1-bit RGB)
+                    processChannel(rBuf, smallW, smallH);
+                    processChannel(gBuf, smallW, smallH);
+                    processChannel(bBuf, smallW, smallH);
+
+                    for (let i = 0; i < smallW * smallH; i++) {
+                        let idx = i * 4;
+                        data[idx] = rBuf[i];
+                        data[idx+1] = gBuf[i];
+                        data[idx+2] = bBuf[i];
+                        data[idx+3] = 255;
+                    }
+                } else {
+                    // Черно-белые или Дуотон-режимы (Brand, BW, Random)
+                    const grayBuf = new Float32Array(smallW * smallH);
+                    for (let i = 0; i < smallW * smallH; i++) {
+                        let idx = i * 4;
+                        grayBuf[i] = 0.299 * data[idx] + 0.587 * data[idx+1] + 0.114 * data[idx+2];
+                    }
+
+                    processChannel(grayBuf, smallW, smallH);
+
+                    let dark = [0,0,0], light = [255,255,255];
+                    if (state.palette === 'brand') { dark = [5,5,5]; light = [249,115,22]; }
+                    if (state.palette === 'random') { dark = state.randColors.dark; light = state.randColors.light; }
+
+                    for (let i = 0; i < smallW * smallH; i++) {
+                        let isLight = grayBuf[i] > 127;
+                        let color = isLight ? light : dark;
+                        let idx = i * 4;
+                        data[idx] = color[0]; data[idx+1] = color[1]; data[idx+2] = color[2]; data[idx+3] = 255;
+                    }
+                }
+
+                offCtx.putImageData(imgData, 0, 0);
+
+                DOM.canvas.width = targetW;
+                DOM.canvas.height = targetH;
+                ctx.imageSmoothingEnabled = false; // Сохраняем пиксели острыми
+                ctx.drawImage(offCanvas, 0, 0, targetW, targetH);
+            };
+
+            // Слушатели контролов
+            DOM.ctrlSize.addEventListener('input', (e) => { state.size = parseInt(e.target.value); DOM.sizeVal.textContent = state.size; applyFilters(); });
+            DOM.ctrlThresh.addEventListener('input', (e) => { state.threshold = parseInt(e.target.value); DOM.threshVal.textContent = state.threshold > 0 ? '+' + state.threshold : state.threshold; applyFilters(); });
+            DOM.ctrlAlgo.addEventListener('change', (e) => { state.algo = e.target.value; applyFilters(); });
+
+            // Логика кнопок цветовых режимов
+            const setMode = (modeBtn, modeName) => {
+                Object.values(DOM.modeBtns).forEach(btn => btn.classList.remove('active'));
+                modeBtn.classList.add('active');
+                state.palette = modeName;
+                if (modeName === 'random') {
+                    state.randColors.dark = [Math.random()*255|0, Math.random()*255|0, Math.random()*255|0];
+                    state.randColors.light = [Math.random()*255|0, Math.random()*255|0, Math.random()*255|0];
+                }
+                applyFilters();
+            };
+
+            DOM.modeBtns.bw.addEventListener('click', () => setMode(DOM.modeBtns.bw, 'bw'));
+            DOM.modeBtns.brand.addEventListener('click', () => setMode(DOM.modeBtns.brand, 'brand'));
+            DOM.modeBtns.color.addEventListener('click', () => setMode(DOM.modeBtns.color, 'color'));
+            DOM.modeBtns.scramble.addEventListener('click', () => setMode(DOM.modeBtns.scramble, 'scramble'));
+            
+            // Random можно нажимать много раз для генерации новых палитр
+            DOM.modeBtns.random.addEventListener('click', () => setMode(DOM.modeBtns.random, 'random'));
+
+            DOM.btnDownload.addEventListener('click', () => {
+                if (!originalImage) return alert('Сначала загрузите изображение!');
+                const link = document.createElement('a');
+                link.download = `bitmap_${state.algo}_${Date.now()}.png`;
+                link.href = DOM.canvas.toDataURL('image/png');
+                link.click();
+            });
+
+            // Исходная заглушка
+            ctx.fillStyle = "#111111"; ctx.fillRect(0, 0, DOM.canvas.width, DOM.canvas.height);
+            ctx.fillStyle = "#333333"; ctx.font = "14px Inter"; ctx.textAlign = "center";
+            ctx.fillText("ЗАГРУЗИТЕ ФОТОГРАФИЮ", DOM.canvas.width / 2, DOM.canvas.height / 2);
+
+        })();
+    </script>
+</body>
+</html>
