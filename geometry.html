@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometry & Physics | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="theme-color" content="#ffffff">
+
+    <style>
+        :root {
+            --bg-color: #050505; --card-bg: #111111; --accent-color: #ffffff;
+            --border-light: rgba(255, 255, 255, 0.1); --control-bg: #1a1a1a;
+            --active-color: #f97316; --danger-color: #ff3333; --font-main: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        a { color: inherit; text-decoration: none; }
+
+        body {
+            background-color: var(--bg-color); color: var(--accent-color); font-family: var(--font-main);
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            padding: 6rem 2rem 2rem 2rem; overflow-x: hidden; position: relative;
+        }
+
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.05; pointer-events: none; z-index: 9999;
+        }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+            display: flex; justify-content: center; align-items: center; z-index: 10001;
+            transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+        .knife-svg-main { width: 120px; height: 120px; fill: none; stroke: white; stroke-width: 1.2; animation: rotate-knife 1.5s linear infinite; }
+        @keyframes rotate-knife { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loaded #loader { transform: translateY(-100%); }
+
+        .app-container {
+            background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 24px;
+            padding: 2rem; width: 100%; max-width: 1100px; position: relative; z-index: 10;
+            display: flex; flex-direction: column; gap: 2rem; backdrop-filter: blur(10px);
+        }
+
+        .subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: gray; font-weight: 700; margin-bottom: 0.5rem; }
+        .title { font-size: 2rem; font-weight: 900; text-transform: uppercase; line-height: 1.1; letter-spacing: -0.02em; }
+
+        .editor-grid { display: grid; grid-template-columns: 350px 1fr; gap: 2rem; }
+        @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
+
+        .control-panel { background: rgba(5,5,5,0.8); border: 1px solid var(--border-light); border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; height: fit-content; }
+
+        .btn {
+            background: var(--control-bg); color: var(--accent-color); border: 1px solid var(--border-light);
+            border-radius: 8px; padding: 0.75rem 1rem; font-size: 12px; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.3s ease;
+            text-align: center; width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem;
+        }
+        .btn:hover { background: var(--accent-color); color: #000; }
+        .btn.active { background: var(--active-color); color: #000; border-color: var(--active-color); box-shadow: 0 0 15px rgba(249, 115, 22, 0.4);}
+        
+        .btn-hit { font-size: 1.5rem; padding: 2rem; border-color: var(--active-color); color: var(--active-color); }
+        .btn-hit:active { background: var(--active-color); color: #000; transform: scale(0.95); }
+
+        .btn-rec { border-color: var(--danger-color); color: var(--danger-color); }
+        .btn-rec:hover { background: var(--danger-color); color: white; }
+        .btn-rec.recording { background: var(--danger-color); color: white; animation: rec-pulse 1.5s infinite; }
+        @keyframes rec-pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); } }
+
+        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .control-label { display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; font-weight: 900; color: gray; }
+        .control-val { color: var(--active-color); font-family: monospace; }
+        
+        select { background: var(--control-bg); color: white; border: 1px solid var(--border-light); padding: 0.75rem; border-radius: 8px; font-size: 12px; outline: none; cursor: pointer; text-transform: uppercase; font-weight: 900; width: 100%; }
+        
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--active-color); cursor: pointer; margin-top: -6px; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #333; border-radius: 2px; }
+
+        /* Вкладки */
+        .tab-content { display: none; }
+        .tab-content.active { display: flex; flex-direction: column; gap: 1.2rem; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Canvas */
+        .visualizer-container {
+            width: 100%; aspect-ratio: 1; background: #0a0a0a; border-radius: 12px; border: 1px solid var(--border-light);
+            display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+        }
+        canvas { width: 100%; height: 100%; filter: drop-shadow(0 0 5px var(--active-color)); }
+
+        /* Оверлей разблокировки */
+        #init-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(17,17,17,0.85); backdrop-filter: blur(8px); z-index: 50;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 24px;
+            transition: opacity 0.3s;
+        }
+        .btn-init { font-size: 1.2rem; padding: 1.5rem 3rem; background: var(--active-color); color: #000; border: none; border-radius: 12px; font-weight: 900; text-transform: uppercase; cursor: pointer; box-shadow: 0 0 30px rgba(249, 115, 22, 0.4);}
+    </style>
+</head>
+<body class="noise">
+
+    <div id="loader">
+        <svg class="knife-svg-main" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
+    </div>
+
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">Владислав Ножиков</a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="index#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="mujiclab" class="hover:opacity-50 transition">Мuжiclab</a>
+        </div>
+    </nav>
+
+    <main class="w-full flex justify-center relative z-10">
+        <div class="app-container">
+            
+            <div id="init-overlay">
+                <button class="btn-init" id="btn-init-audio">Активировать Звук</button>
+            </div>
+
+            <div class="header-section">
+                <div class="subtitle">Acoustics / Геометрия и Физика</div>
+                <h1 class="title">Geometry & Physics</h1>
+                <p class="text-xs text-gray-500 mt-2 max-w-xl font-medium">Рисуй звуком сложные паттерны (Лиссажу) или синтезируй материалы физическим моделированием. В обоих режимах поддерживается игра на клавиатуре (A, W, S, E...).</p>
+            </div>
+
+            <div class="editor-grid">
+                
+                <div class="control-panel">
+                    
+                    <div class="flex gap-2">
+                        <button class="btn active" id="tab-btn-lissajous">Лиссажу</button>
+                        <button class="btn" id="tab-btn-physics">Материалы</button>
+                    </div>
+
+                    <div class="h-[1px] w-full bg-white/10 my-1"></div>
+
+                    <div class="tab-content active" id="tab-lissajous">
+                        <button class="btn btn-play-big" id="btn-play-lissajous" style="font-size: 1rem; padding: 1rem;">▶ РЕЖИМ DRONE (БЕЗ ОСТАНОВКИ)</button>
+                        
+                        <div class="control-group mt-2">
+                            <div class="control-label">Форма волны</div>
+                            <select id="ctrl-lis-wave">
+                                <option value="sine" selected>Sine (Плавные кривые)</option>
+                                <option value="triangle">Triangle (Резкие углы)</option>
+                                <option value="sawtooth">Sawtooth (Сложная сетка)</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label"><span>Базовая Частота (X)</span><span class="control-val" id="val-lis-freq">100 Hz</span></div>
+                            <input type="range" id="ctrl-lis-freq" min="20" max="1500" value="100">
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label"><span>Множитель Y (Гармоника)</span><span class="control-val" id="val-lis-ratio">1.0</span></div>
+                            <input type="range" id="ctrl-lis-ratio" min="0.5" max="5" step="0.5" value="1">
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label"><span>Расстройка Y (Detune)</span><span class="control-val" id="val-lis-detune">0.0 Hz</span></div>
+                            <input type="range" id="ctrl-lis-detune" min="-2" max="2" step="0.01" value="0.5">
+                            <p class="text-[9px] text-gray-500 mt-1">Минимальная расстройка заставляет фигуру вращаться в пространстве.</p>
+                        </div>
+                        
+                        <div class="text-center mt-2">
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">🎹 Играйте на клавиатуре (A, W, S, E...)</p>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="tab-physics">
+                        
+                        <div class="control-group">
+                            <div class="control-label">Материал (Модель)</div>
+                            <select id="ctrl-phys-mat">
+                                <option value="metal" selected>Металл (Колокол / Струна)</option>
+                                <option value="wood">Дерево (Маримба / Блок)</option>
+                                <option value="glass">Стекло (Бокал / Трубка)</option>
+                                <option value="nylon">Нейлон (Струна гитары)</option>
+                                <option value="plastic">Пластик (Труба)</option>
+                                <option value="drum">Мембрана (Барабан)</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group mt-2">
+                            <div class="control-label"><span>Размер (Частота резонанса)</span><span class="control-val" id="val-phys-size">50%</span></div>
+                            <input type="range" id="ctrl-phys-size" min="0" max="100" value="50">
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label"><span>Вязкость (Damping / Затухание)</span><span class="control-val" id="val-phys-damp">30%</span></div>
+                            <input type="range" id="ctrl-phys-damp" min="0" max="100" value="30">
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label"><span>Плотность (Твердость удара)</span><span class="control-val" id="val-phys-hard">70%</span></div>
+                            <input type="range" id="ctrl-phys-hard" min="0" max="100" value="70">
+                        </div>
+
+                        <button class="btn btn-hit mt-4" id="btn-hit">УДАРИТЬ ПО МАТЕРИАЛУ</button>
+                        
+                        <div class="text-center mt-2">
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">🎹 Играйте на клавиатуре (A, W, S, E...)</p>
+                        </div>
+                    </div>
+
+                    <div class="h-[1px] w-full bg-white/10 my-2"></div>
+                    <button class="btn btn-rec" id="btn-rec-mix">⏺ ЗАПИСЬ MIX (.webm)</button>
+
+                </div>
+
+                <div class="control-panel p-2">
+                    <div class="visualizer-container">
+                        <canvas id="vis-canvas"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-12 pt-8 border-t border-white/10 flex flex-col items-center text-center gap-4 relative z-10 w-full max-w-[1100px]">
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">© <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ</p>        
+            <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">Политика конфиденциальности</a>
+        </div>
+    </footer>
+
+    <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
+        <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" style="border-bottom-left-radius: 120px 100%; border-top-left-radius: 0;">
+            <div class="relative z-10 flex items-center justify-end w-full text-right"><p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight">Мы собираем <span class="text-white font-bold">Cookie</span><br><a href="privacy" class="underline hover:text-white transition">Политика</a></p></div>
+        </div>
+        <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm relative z-10 pointer-events-none shadow-sm"></div>
+        <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center relative px-4 md:px-6 hover:bg-white hover:text-black transition-colors cursor-pointer group"><span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap z-20 relative">Принять</span></button>
+    </div>
+
+    <script>
+        window.onload = () => { setTimeout(() => { document.body.classList.add('loaded'); }, 500); };
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const cookieKnife = document.getElementById('cookie-knife');
+            if (!localStorage.getItem('cookieAccepted')) { setTimeout(() => { cookieKnife.classList.remove('translate-y-40', 'opacity-0'); cookieKnife.classList.add('translate-y-0', 'opacity-100'); }, 2500); }
+            document.getElementById('accept-cookie-btn').addEventListener('click', () => { localStorage.setItem('cookieAccepted', 'true'); cookieKnife.classList.remove('translate-y-0', 'opacity-100'); cookieKnife.classList.add('translate-y-40', 'opacity-0'); });
+        });
+
+        const LabEngine = (() => {
+            const DOM = {
+                btnLis: document.getElementById('tab-btn-lissajous'),
+                btnPhys: document.getElementById('tab-btn-physics'),
+                tabLis: document.getElementById('tab-lissajous'),
+                tabPhys: document.getElementById('tab-physics'),
+                
+                // Lissajous
+                btnPlayLis: document.getElementById('btn-play-lissajous'),
+                lisWave: document.getElementById('ctrl-lis-wave'),
+                lisFreq: document.getElementById('ctrl-lis-freq'), valLisFreq: document.getElementById('val-lis-freq'),
+                lisRatio: document.getElementById('ctrl-lis-ratio'), valLisRatio: document.getElementById('val-lis-ratio'),
+                lisDetune: document.getElementById('ctrl-lis-detune'), valLisDetune: document.getElementById('val-lis-detune'),
+                
+                // Physics
+                btnHit: document.getElementById('btn-hit'),
+                physMat: document.getElementById('ctrl-phys-mat'),
+                physSize: document.getElementById('ctrl-phys-size'), valPhysSize: document.getElementById('val-phys-size'),
+                physDamp: document.getElementById('ctrl-phys-damp'), valPhysDamp: document.getElementById('val-phys-damp'),
+                physHard: document.getElementById('ctrl-phys-hard'), valPhysHard: document.getElementById('val-phys-hard'),
+                
+                // Global
+                canvas: document.getElementById('vis-canvas'),
+                overlayBtn: document.getElementById('btn-init-audio'),
+                overlay: document.getElementById('init-overlay'),
+                btnRecMix: document.getElementById('btn-rec-mix')
+            };
+
+            const ctx = DOM.canvas.getContext('2d');
+            let currentMode = 'lissajous';
+            
+            let audioCtx = null;
+            let masterGain = null;
+
+            // REC STATE
+            let streamDest = null;
+            let mixRecorder = null;
+            let chunks = [];
+            let isRecording = false;
+
+            // LISSAJOUS STATE
+            let isLisDrone = false;
+            let lisKeysHeld = 0;
+            let oscX = null, oscY = null;
+            let analyserX = null, analyserY = null;
+            let merger = null;
+            let dataX = new Float32Array(2048);
+            let dataY = new Float32Array(2048);
+
+            // PHYSICS STATE
+            let physAnalyser = null;
+            let physData = new Float32Array(2048);
+
+            // Вкладки
+            const switchTab = (mode) => {
+                currentMode = mode;
+                if (mode === 'lissajous') {
+                    DOM.btnLis.classList.add('active'); DOM.btnPhys.classList.remove('active');
+                    DOM.tabLis.classList.add('active'); DOM.tabPhys.classList.remove('active');
+                    if(physAnalyser) ctx.clearRect(0,0,DOM.canvas.width, DOM.canvas.height);
+                } else {
+                    DOM.btnPhys.classList.add('active'); DOM.btnLis.classList.remove('active');
+                    DOM.tabPhys.classList.add('active'); DOM.tabLis.classList.remove('active');
+                    
+                    isLisDrone = false;
+                    lisKeysHeld = 0;
+                    DOM.btnPlayLis.textContent = "▶ РЕЖИМ DRONE (БЕЗ ОСТАНОВКИ)";
+                    DOM.btnPlayLis.classList.remove('active');
+                    stopLissajousAudio();
+                    
+                    ctx.clearRect(0,0,DOM.canvas.width, DOM.canvas.height);
+                }
+            };
+            DOM.btnLis.addEventListener('click', () => switchTab('lissajous'));
+            DOM.btnPhys.addEventListener('click', () => switchTab('physics'));
+
+            // Инит Аудио
+            DOM.overlayBtn.addEventListener('click', () => {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                
+                masterGain = audioCtx.createGain();
+                masterGain.gain.value = 0.5;
+                masterGain.connect(audioCtx.destination);
+
+                streamDest = audioCtx.createMediaStreamDestination();
+                masterGain.connect(streamDest);
+
+                DOM.overlay.style.opacity = '0';
+                setTimeout(() => DOM.overlay.remove(), 300);
+                
+                drawVisualizer(); 
+            });
+
+            // ==========================================
+            // RECORDING MODULE
+            // ==========================================
+            DOM.btnRecMix.addEventListener('click', () => {
+                if (!audioCtx) return alert("Сначала активируйте звук!");
+                if (!isRecording) {
+                    chunks = []; 
+                    mixRecorder = new MediaRecorder(streamDest.stream);
+                    mixRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+                    mixRecorder.onstop = () => {
+                        const a = document.createElement('a'); 
+                        a.href = URL.createObjectURL(new Blob(chunks, { type: 'audio/webm' }));
+                        a.download = `geometry_physics_lab_${Date.now()}.webm`; 
+                        a.click();
+                    };
+                    mixRecorder.start(); 
+                    isRecording = true;
+                    DOM.btnRecMix.classList.add('recording'); 
+                    DOM.btnRecMix.textContent = '⏹ СТОП ЗАПИСЬ';
+                } else {
+                    mixRecorder.stop(); 
+                    isRecording = false;
+                    DOM.btnRecMix.classList.remove('recording'); 
+                    DOM.btnRecMix.textContent = '⏺ ЗАПИСЬ MIX (.webm)';
+                }
+            });
+
+            // ==========================================
+            // MODULE 1: LISSAJOUS (Стерео Осциллограф)
+            // ==========================================
+            const playLissajousAudio = () => {
+                if (!audioCtx || oscX) return; 
+                
+                oscX = audioCtx.createOscillator();
+                oscY = audioCtx.createOscillator();
+                
+                analyserX = audioCtx.createAnalyser(); analyserX.fftSize = 2048;
+                analyserY = audioCtx.createAnalyser(); analyserY.fftSize = 2048;
+                
+                merger = audioCtx.createChannelMerger(2);
+                const lGain = audioCtx.createGain(); lGain.gain.value = 0.5;
+                const rGain = audioCtx.createGain(); rGain.gain.value = 0.5;
+
+                oscX.connect(analyserX).connect(lGain).connect(merger, 0, 0);
+                oscY.connect(analyserY).connect(rGain).connect(merger, 0, 1);
+                
+                merger.connect(masterGain);
+
+                updateLissajousParams();
+                oscX.start(); oscY.start();
+            };
+
+            const stopLissajousAudio = () => {
+                if (oscX) { oscX.stop(); oscX.disconnect(); oscX = null; }
+                if (oscY) { oscY.stop(); oscY.disconnect(); oscY = null; }
+                ctx.clearRect(0,0,DOM.canvas.width, DOM.canvas.height);
+            };
+
+            const updateLissajousParams = () => {
+                if (!oscX || !oscY) return;
+                const type = DOM.lisWave.value;
+                const baseF = parseFloat(DOM.lisFreq.value);
+                const ratio = parseFloat(DOM.lisRatio.value);
+                const detune = parseFloat(DOM.lisDetune.value);
+
+                oscX.type = type; oscY.type = type;
+                oscX.frequency.setTargetAtTime(baseF, audioCtx.currentTime, 0.05);
+                oscY.frequency.setTargetAtTime((baseF * ratio) + detune, audioCtx.currentTime, 0.05);
+            };
+
+            DOM.btnPlayLis.addEventListener('click', () => {
+                isLisDrone = !isLisDrone;
+                if (isLisDrone) {
+                    DOM.btnPlayLis.textContent = "⏹ СТОП DRONE";
+                    DOM.btnPlayLis.classList.add('active');
+                    playLissajousAudio();
+                } else {
+                    DOM.btnPlayLis.textContent = "▶ РЕЖИМ DRONE (БЕЗ ОСТАНОВКИ)";
+                    DOM.btnPlayLis.classList.remove('active');
+                    if (lisKeysHeld === 0) stopLissajousAudio();
+                }
+            });
+
+            DOM.lisWave.addEventListener('change', updateLissajousParams);
+            DOM.lisFreq.addEventListener('input', e => { DOM.valLisFreq.textContent = `${e.target.value} Hz`; updateLissajousParams(); });
+            DOM.lisRatio.addEventListener('input', e => { DOM.valLisRatio.textContent = e.target.value; updateLissajousParams(); });
+            DOM.lisDetune.addEventListener('input', e => { DOM.valLisDetune.textContent = `${e.target.value} Hz`; updateLissajousParams(); });
+
+
+            // ==========================================
+            // MODULE 2: PHYSICS (Karplus-Strong)
+            // ==========================================
+            const triggerPhysicalHit = (freqOverride = null) => {
+                if (!audioCtx) return;
+
+                const mat = DOM.physMat.value;
+                const sizeVal = parseInt(DOM.physSize.value); 
+                const dampVal = parseInt(DOM.physDamp.value); 
+                const hardVal = parseInt(DOM.physHard.value); 
+
+                // 1. Exciter (Удар / Шум)
+                let burstLenSec = 0.05;
+                if (mat === 'glass') burstLenSec = 0.01;
+                if (mat === 'drum') burstLenSec = 0.1;
+
+                const burstLen = Math.floor(audioCtx.sampleRate * burstLenSec);
+                const noiseBuf = audioCtx.createBuffer(1, burstLen, audioCtx.sampleRate);
+                const output = noiseBuf.getChannelData(0);
+                for (let i = 0; i < burstLen; i++) output[i] = Math.random() * 2 - 1;
+
+                const exciter = audioCtx.createBufferSource();
+                exciter.buffer = noiseBuf;
+
+                const exciterFilter = audioCtx.createBiquadFilter();
+                exciterFilter.type = 'lowpass';
+                exciterFilter.frequency.value = 500 + (hardVal * 100); 
+
+                // 2. Resonator (Delay Line / Waveguide)
+                const delay = audioCtx.createDelay(1.0);
+                
+                let freq = 440;
+                if (freqOverride) {
+                    freq = freqOverride;
+                } else {
+                    if (mat === 'glass') freq = 2000 - sizeVal * 15;
+                    else if (mat === 'metal') freq = 1000 - sizeVal * 8;
+                    else if (mat === 'wood') freq = 500 - sizeVal * 4;
+                    else if (mat === 'nylon') freq = 400 - sizeVal * 3;
+                    else if (mat === 'plastic') freq = 300 - sizeVal * 2;
+                    else if (mat === 'drum') freq = 150 - sizeVal * 1;
+                }
+                delay.delayTime.value = 1.0 / freq;
+
+                // Feedback loop
+                const feedback = audioCtx.createGain();
+                
+                let maxFb = 0.95;
+                if (mat === 'glass') maxFb = 0.995;
+                else if (mat === 'metal') maxFb = 0.99;
+                else if (mat === 'nylon') maxFb = 0.98;
+                else if (mat === 'plastic') maxFb = 0.92;
+                else if (mat === 'drum') maxFb = 0.85;
+
+                feedback.gain.value = 0.5 + (dampVal / 100) * (maxFb - 0.5);
+
+                // Body Filter 
+                const bodyFilter = audioCtx.createBiquadFilter();
+                if (mat === 'wood') {
+                    bodyFilter.type = 'lowpass'; bodyFilter.frequency.value = 800 + (hardVal * 20);
+                } else if (mat === 'metal') {
+                    bodyFilter.type = 'bandpass'; bodyFilter.frequency.value = 1000 + (hardVal * 30); bodyFilter.Q.value = 5;
+                } else if (mat === 'glass') {
+                    bodyFilter.type = 'highpass'; bodyFilter.frequency.value = 2000 + (hardVal * 50);
+                } else if (mat === 'nylon') {
+                    bodyFilter.type = 'lowpass'; bodyFilter.frequency.value = 2000 + (hardVal * 40);
+                } else if (mat === 'plastic') {
+                    bodyFilter.type = 'lowpass'; bodyFilter.frequency.value = 400 + (hardVal * 15); bodyFilter.Q.value = 2;
+                } else if (mat === 'drum') {
+                    bodyFilter.type = 'lowpass'; bodyFilter.frequency.value = 200 + (hardVal * 10); bodyFilter.Q.value = 1;
+                }
+
+                // Routing
+                exciter.connect(exciterFilter);
+                exciterFilter.connect(delay);
+                
+                delay.connect(bodyFilter);
+                bodyFilter.connect(feedback);
+                feedback.connect(delay); 
+
+                // Analysis & Output
+                if (!physAnalyser) {
+                    physAnalyser = audioCtx.createAnalyser();
+                    physAnalyser.fftSize = 2048;
+                }
+                
+                bodyFilter.connect(physAnalyser);
+                physAnalyser.connect(masterGain);
+
+                exciter.start();
+                
+                // Visual Button feedback
+                DOM.btnHit.style.transform = 'scale(0.9)';
+                DOM.btnHit.style.background = 'var(--active-color)';
+                DOM.btnHit.style.color = '#000';
+                setTimeout(() => {
+                    DOM.btnHit.style.transform = 'none';
+                    DOM.btnHit.style.background = 'transparent';
+                    DOM.btnHit.style.color = 'var(--active-color)';
+                }, 100);
+            };
+
+            DOM.btnHit.addEventListener('click', () => triggerPhysicalHit());
+            DOM.physSize.addEventListener('input', e => DOM.valPhysSize.textContent = `${e.target.value}%`);
+            DOM.physDamp.addEventListener('input', e => DOM.valPhysDamp.textContent = `${e.target.value}%`);
+            DOM.physHard.addEventListener('input', e => DOM.valPhysHard.textContent = `${e.target.value}%`);
+
+
+            // ==========================================
+            // KEYBOARD MAPPING (Piano Keys) 
+            // ==========================================
+            const keyMap = {
+                'a': 60, 'w': 61, 's': 62, 'e': 63, 'd': 64, 'f': 65, 't': 66, 'g': 67, 'y': 68, 'h': 69, 'u': 70, 'j': 71, 'k': 72
+            };
+            
+            document.addEventListener('keydown', (e) => {
+                if (e.repeat) return;
+                const note = keyMap[e.key.toLowerCase()];
+                if (note) {
+                    const freq = 440 * Math.pow(2, (note - 69) / 12);
+                    
+                    if (currentMode === 'physics') {
+                        triggerPhysicalHit(freq);
+                    } 
+                    else if (currentMode === 'lissajous') {
+                        lisKeysHeld++;
+                        DOM.lisFreq.value = freq;
+                        DOM.valLisFreq.textContent = `${Math.round(freq)} Hz`;
+                        
+                        if (lisKeysHeld === 1 && !isLisDrone) {
+                            playLissajousAudio();
+                        }
+                        updateLissajousParams();
+                    }
+                }
+            });
+
+            document.addEventListener('keyup', (e) => {
+                const note = keyMap[e.key.toLowerCase()];
+                if (note && currentMode === 'lissajous') {
+                    lisKeysHeld--;
+                    if (lisKeysHeld <= 0) {
+                        lisKeysHeld = 0;
+                        if (!isLisDrone) {
+                            stopLissajousAudio();
+                        }
+                    }
+                }
+            });
+
+            // ==========================================
+            // VISUALIZATION LOOP
+            // ==========================================
+            const drawVisualizer = () => {
+                requestAnimationFrame(drawVisualizer);
+                
+                DOM.canvas.width = DOM.canvas.parentElement.clientWidth;
+                DOM.canvas.height = DOM.canvas.parentElement.clientHeight;
+
+                ctx.fillStyle = currentMode === 'lissajous' ? 'rgba(10, 10, 10, 0.2)' : '#0a0a0a';
+                ctx.fillRect(0, 0, DOM.canvas.width, DOM.canvas.height);
+
+                if (currentMode === 'lissajous' && oscX && analyserX && analyserY) {
+                    analyserX.getFloatTimeDomainData(dataX);
+                    analyserY.getFloatTimeDomainData(dataY);
+
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#f97316';
+                    ctx.lineWidth = 2;
+
+                    const cx = DOM.canvas.width / 2;
+                    const cy = DOM.canvas.height / 2;
+                    const amp = Math.min(cx, cy) - 20;
+
+                    for (let i = 0; i < 2048; i++) {
+                        const x = cx + (dataX[i] * amp);
+                        const y = cy + (dataY[i] * amp);
+                        if (i === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.stroke();
+                } 
+                else if (currentMode === 'physics' && physAnalyser) {
+                    physAnalyser.getFloatTimeDomainData(physData);
+
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#f97316'; // Все материалы оранжевые
+                    ctx.lineWidth = 2;
+                    
+                    const step = DOM.canvas.width / 2048;
+                    const cy = DOM.canvas.height / 2;
+
+                    let px = 0;
+                    for (let i = 0; i < 2048; i++) {
+                        const py = cy + (physData[i] * cy * 0.8);
+                        if (i === 0) ctx.moveTo(px, py);
+                        else ctx.lineTo(px, py);
+                        px += step;
+                    }
+                    ctx.stroke();
+                }
+            };
+
+        })();
+    </script>
+</body>
+</html>
