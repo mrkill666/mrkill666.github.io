@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Точный Тюнер | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="theme-color" content="#ffffff">
+
+    <style>
+        :root {
+            --bg-color: #050505; --card-bg: #111111; --accent-color: #ffffff;
+            --border-light: rgba(255, 255, 255, 0.1); --control-bg: #1a1a1a;
+            --active-color: #f97316; --danger-color: #ff3333; --font-main: 'Inter', sans-serif;
+            --tuned-color: #f97316;
+            --off-color: #555555;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        a { color: inherit; text-decoration: none; }
+
+        body {
+            background-color: var(--bg-color); color: var(--accent-color); font-family: var(--font-main);
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            padding: 6rem 2rem 2rem 2rem; overflow-x: hidden; position: relative;
+        }
+
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.05; pointer-events: none; z-index: 9999;
+        }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+            display: flex; justify-content: center; align-items: center; z-index: 10001;
+            transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+        .knife-svg-main { width: 120px; height: 120px; fill: none; stroke: white; stroke-width: 1.2; animation: rotate-knife 1.5s linear infinite; }
+        @keyframes rotate-knife { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loaded #loader { transform: translateY(-100%); }
+
+        .app-container {
+            background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 24px;
+            padding: 2rem; width: 100%; max-width: 900px; position: relative; z-index: 10;
+            display: flex; flex-direction: column; gap: 2rem; backdrop-filter: blur(10px);
+        }
+
+        .subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: gray; font-weight: 700; margin-bottom: 0.5rem; }
+        .title { font-size: 2rem; font-weight: 900; text-transform: uppercase; line-height: 1.1; letter-spacing: -0.02em; }
+
+        .editor-grid { display: grid; grid-template-columns: 300px 1fr; gap: 2rem; }
+        @media (max-width: 800px) { .editor-grid { grid-template-columns: 1fr; } }
+
+        .control-panel { background: rgba(5,5,5,0.8); border: 1px solid var(--border-light); border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; height: fit-content; }
+
+        .btn {
+            background: var(--control-bg); color: var(--accent-color); border: 1px solid var(--border-light);
+            border-radius: 8px; padding: 1rem 1rem; font-size: 12px; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.3s ease;
+            text-align: center; width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem;
+        }
+        .btn:hover { background: var(--accent-color); color: #000; }
+        .btn.active { background: var(--active-color); color: #000; border-color: var(--active-color); box-shadow: 0 0 15px rgba(249, 115, 22, 0.4);}
+        
+        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .control-label { display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; font-weight: 900; color: gray; }
+        select { background: var(--control-bg); color: white; border: 1px solid var(--border-light); padding: 0.75rem; border-radius: 8px; font-size: 12px; outline: none; cursor: pointer; text-transform: uppercase; font-weight: 900; width: 100%; }
+
+        /* Tuner Display */
+        .tuner-display {
+            width: 100%; min-height: 350px; background: #0a0a0a; border-radius: 12px; border: 1px solid var(--border-light);
+            display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; overflow: hidden;
+            padding: 2rem;
+        }
+        
+        .note-wrapper { display: flex; align-items: baseline; justify-content: center; margin-bottom: 1rem; }
+        .note-name { font-size: 6rem; font-weight: 900; line-height: 1; text-transform: uppercase; color: var(--off-color); transition: color 0.2s; }
+        .note-octave { font-size: 2rem; font-weight: 700; color: gray; margin-left: 0.2rem; }
+        
+        .freq-display { font-size: 1rem; color: gray; font-weight: 700; letter-spacing: 0.1em; font-variant-numeric: tabular-nums; }
+        
+        canvas { width: 100%; max-width: 400px; height: 150px; margin-top: 1rem; }
+
+        .status-badge {
+            position: absolute; top: 1.5rem; right: 1.5rem; font-size: 10px; font-weight: 900;
+            text-transform: uppercase; padding: 0.25rem 0.75rem; border-radius: 12px;
+            background: #222; color: gray; transition: all 0.3s;
+        }
+        .status-badge.in-tune { background: rgba(249, 115, 22, 0.2); color: var(--active-color); border: 1px solid var(--active-color); }
+
+    </style>
+</head>
+<body class="noise">
+
+    <div id="loader">
+        <svg class="knife-svg-main" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
+    </div>
+
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">Владислав Ножиков</a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="index#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="index#art" class="hover:opacity-50 transition">Арт</a>
+        </div>
+    </nav>
+
+    <main class="w-full flex justify-center relative z-10">
+        <div class="app-container">
+            
+            <div class="header-section">
+                <div class="subtitle">Theory Lab / Практика</div>
+                <h1 class="title">Tuner Lab</h1>
+                <p class="text-xs text-gray-500 mt-2 max-w-xl font-medium">Точный хроматический тюнер на базе алгоритма автокорреляции. Выбери режим для своего инструмента или используй вокальный трекинг для распевок.</p>
+            </div>
+
+            <div class="editor-grid">
+                
+                <div class="control-panel">
+                    
+                    <button class="btn" id="btn-mic">🎤 Включить Микрофон</button>
+
+                    <div class="h-[1px] w-full bg-white/10 my-2"></div>
+
+                    <div class="control-group">
+                        <div class="control-label">Режим Тюнера</div>
+                        <select id="ctrl-mode">
+                            <option value="chromatic" selected>Хроматический (Все ноты)</option>
+                            <option value="guitar">Гитара (E A D G B E)</option>
+                            <option value="bass">Бас-гитара (E A D G)</option>
+                            <option value="ukulele">Укулеле (G C E A)</option>
+                            <option value="vocal">Вокал (Плавный трекинг)</option>
+                        </select>
+                    </div>
+
+                    <p class="text-[10px] text-gray-500 leading-relaxed mt-2">
+                        Оранжевый цвет означает идеальное попадание (допуск ±5 центов).
+                        В режиме вокала сглаживание повышено для стабилизации длинных нот.
+                    </p>
+
+                </div>
+
+                <div class="control-panel p-0" style="background: transparent; border: none;">
+                    <div class="tuner-display">
+                        <div class="status-badge" id="tune-status">Ожидание...</div>
+                        
+                        <div class="note-wrapper">
+                            <span class="note-name" id="note-name">-</span>
+                            <span class="note-octave" id="note-octave"></span>
+                        </div>
+                        
+                        <div class="freq-display"><span id="freq-val">440.0</span> Hz</div>
+                        
+                        <canvas id="tuner-canvas" width="400" height="150"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-12 pt-8 border-t border-white/10 flex flex-col items-center text-center gap-4 relative z-10 w-full max-w-[1000px]">
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">© <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ</p>        
+            <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">Политика конфиденциальности</a>
+        </div>
+    </footer>
+
+    <script>
+        window.onload = () => { setTimeout(() => { document.body.classList.add('loaded'); }, 500); };
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        const TunerLab = (() => {
+            const DOM = {
+                btnMic: document.getElementById('btn-mic'),
+                mode: document.getElementById('ctrl-mode'),
+                noteName: document.getElementById('note-name'),
+                noteOctave: document.getElementById('note-octave'),
+                freqVal: document.getElementById('freq-val'),
+                status: document.getElementById('tune-status'),
+                canvas: document.getElementById('tuner-canvas')
+            };
+
+            const ctx = DOM.canvas.getContext('2d');
+            
+            let audioCtx = null;
+            let analyser = null;
+            let mediaStreamSource = null;
+            let isListening = false;
+            let requestID = null;
+
+            // Буфер для аудиоданных
+            const buflen = 2048;
+            const buf = new Float32Array(buflen);
+
+            // Сглаживание
+            let smoothedCents = 0;
+            let smoothedPitch = 0;
+
+            const noteStrings = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+            // --- НАБОРЫ НОТ (MIDI Numbers) ---
+            // C4 = 60. Формула: freq = 440 * 2^((midi - 69)/12)
+            const TARGETS = {
+                guitar: [40, 45, 50, 55, 59, 64], // E2, A2, D3, G3, B3, E4
+                bass: [28, 33, 38, 43],           // E1, A1, D2, G2
+                ukulele: [67, 60, 64, 69]         // G4, C4, E4, A4
+            };
+
+            // Математика
+            const noteFromPitch = (frequency) => {
+                const noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
+                return Math.round(noteNum) + 69;
+            };
+
+            const frequencyFromNoteNumber = (note) => {
+                return 440 * Math.pow(2, (note - 69) / 12);
+            };
+
+            const centsOffFromPitch = (frequency, note) => {
+                return Math.floor(1200 * Math.log(frequency / frequencyFromNoteNumber(note)) / Math.log(2));
+            };
+
+            // АЛГОРИТМ АВТОКОРРЕЛЯЦИИ (YIN-подобный)
+            const autoCorrelate = (buf, sampleRate) => {
+                let SIZE = buf.length;
+                let rms = 0;
+
+                // Проверка громкости (RMS)
+                for (let i = 0; i < SIZE; i++) {
+                    const val = buf[i];
+                    rms += val * val;
+                }
+                rms = Math.sqrt(rms / SIZE);
+                if (rms < 0.01) return -1; // Слишком тихо
+
+                let r1 = 0, r2 = SIZE - 1, thres = 0.2;
+                for (let i = 0; i < SIZE / 2; i++) {
+                    if (Math.abs(buf[i]) < thres) { r1 = i; break; }
+                }
+                for (let i = 1; i < SIZE / 2; i++) {
+                    if (Math.abs(buf[SIZE - i]) < thres) { r2 = SIZE - i; break; }
+                }
+
+                let newBuf = buf.slice(r1, r2);
+                SIZE = newBuf.length;
+
+                let c = new Array(SIZE).fill(0);
+                for (let i = 0; i < SIZE; i++) {
+                    for (let j = 0; j < SIZE - i; j++) {
+                        c[i] = c[i] + newBuf[j] * newBuf[j + i];
+                    }
+                }
+
+                let d = 0;
+                while (c[d] > c[d + 1]) d++;
+                let maxval = -1, maxpos = -1;
+                for (let i = d; i < SIZE; i++) {
+                    if (c[i] > maxval) { maxval = c[i]; maxpos = i; }
+                }
+                let T0 = maxpos;
+
+                // Интерполяция
+                let x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1];
+                let a = (x1 + x3 - 2 * x2) / 2;
+                let b = (x3 - x1) / 2;
+                if (a) T0 = T0 - b / (2 * a);
+
+                return sampleRate / T0;
+            };
+
+            // Отрисовка шкалы (Canvas)
+            const drawTunerDial = (cents, isTuned) => {
+                ctx.clearRect(0, 0, DOM.canvas.width, DOM.canvas.height);
+                
+                const cx = DOM.canvas.width / 2;
+                const cy = DOM.canvas.height; // Низ холста
+                const radius = 130;
+
+                // Фон дуги
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, Math.PI, 2 * Math.PI);
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = '#333';
+                ctx.stroke();
+
+                // Деления
+                for(let i = -50; i <= 50; i += 10) {
+                    const angle = Math.PI + (i + 50) * (Math.PI / 100);
+                    const isCenter = i === 0;
+                    const len = isCenter ? 15 : 8;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius);
+                    ctx.lineTo(cx + Math.cos(angle) * (radius - len), cy + Math.sin(angle) * (radius - len));
+                    ctx.lineWidth = isCenter ? 3 : 2;
+                    ctx.strokeStyle = isCenter ? (isTuned ? '#f97316' : '#fff') : '#555';
+                    ctx.stroke();
+                }
+
+                // Стрелка (Needle)
+                // Ограничиваем отрисовку стрелки от -50 до 50
+                const displayCents = Math.max(-50, Math.min(50, cents));
+                const needleAngle = Math.PI + (displayCents + 50) * (Math.PI / 100);
+                
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(cx + Math.cos(needleAngle) * (radius - 5), cy + Math.sin(needleAngle) * (radius - 5));
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = isTuned ? '#f97316' : '#fff';
+                // Свечение
+                ctx.shadowBlur = isTuned ? 15 : 0;
+                ctx.shadowColor = '#f97316';
+                ctx.stroke();
+                ctx.shadowBlur = 0; // Reset
+            };
+
+            const resetDisplay = () => {
+                DOM.noteName.textContent = '-';
+                DOM.noteOctave.textContent = '';
+                DOM.freqVal.textContent = '---.-';
+                DOM.noteName.style.color = 'var(--off-color)';
+                DOM.status.textContent = isListening ? 'Слушаю...' : 'Ожидание...';
+                DOM.status.className = 'status-badge';
+                smoothedCents = 0;
+                drawTunerDial(0, false);
+            };
+
+            // Главный цикл
+            const updatePitch = () => {
+                if (!isListening) return;
+
+                analyser.getFloatTimeDomainData(buf);
+                const pitch = autoCorrelate(buf, audioCtx.sampleRate);
+
+                if (pitch === -1) {
+                    resetDisplay();
+                } else {
+                    const mode = DOM.mode.value;
+                    let targetNoteMidi;
+                    
+                    // Сглаживание частоты (сильнее для вокала)
+                    const smoothingFactor = mode === 'vocal' ? 0.9 : 0.6;
+                    smoothedPitch = smoothedPitch === 0 ? pitch : (smoothedPitch * smoothingFactor + pitch * (1 - smoothingFactor));
+
+                    if (mode === 'chromatic' || mode === 'vocal') {
+                        // Свободный поиск ближайшей ноты
+                        targetNoteMidi = noteFromPitch(smoothedPitch);
+                    } else {
+                        // Привязка к инструменту
+                        const allowedNotes = TARGETS[mode];
+                        // Ищем ближайшую из массива
+                        let minDiff = Infinity;
+                        allowedNotes.forEach(note => {
+                            const targetFreq = frequencyFromNoteNumber(note);
+                            const diff = Math.abs(smoothedPitch - targetFreq);
+                            if (diff < minDiff) {
+                                minDiff = diff;
+                                targetNoteMidi = note;
+                            }
+                        });
+                    }
+
+                    const exactFreq = frequencyFromNoteNumber(targetNoteMidi);
+                    const noteStr = noteStrings[targetNoteMidi % 12];
+                    const octave = Math.floor(targetNoteMidi / 12) - 1;
+                    
+                    // Считаем центы (отклонение)
+                    let cents = centsOffFromPitch(smoothedPitch, targetNoteMidi);
+                    
+                    // Сглаживаем движение стрелки
+                    smoothedCents = smoothedCents * 0.7 + cents * 0.3;
+
+                    // Допуск (In Tune)
+                    const isTuned = Math.abs(smoothedCents) <= 5;
+
+                    // Обновляем UI
+                    DOM.noteName.textContent = noteStr;
+                    DOM.noteOctave.textContent = octave;
+                    DOM.freqVal.textContent = smoothedPitch.toFixed(1);
+                    
+                    if (isTuned) {
+                        DOM.noteName.style.color = 'var(--tuned-color)';
+                        DOM.status.textContent = 'НАСТРОЕНО';
+                        DOM.status.className = 'status-badge in-tune';
+                    } else {
+                        DOM.noteName.style.color = '#fff';
+                        DOM.status.textContent = smoothedCents > 0 ? 'ВЫШЕ' : 'НИЖЕ';
+                        DOM.status.className = 'status-badge';
+                    }
+
+                    drawTunerDial(smoothedCents, isTuned);
+                }
+
+                requestID = requestAnimationFrame(updatePitch);
+            };
+
+            const toggleMic = async () => {
+                if (isListening) {
+                    // Stop
+                    if (mediaStreamSource) mediaStreamSource.mediaStream.getTracks().forEach(t => t.stop());
+                    cancelAnimationFrame(requestID);
+                    isListening = false;
+                    DOM.btnMic.textContent = '🎤 Включить Микрофон';
+                    DOM.btnMic.classList.remove('active');
+                    resetDisplay();
+                } else {
+                    // Start
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, autoGainControl: false, noiseSuppression: false } });
+                        
+                        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                        analyser = audioCtx.createAnalyser();
+                        analyser.fftSize = buflen;
+                        
+                        mediaStreamSource = audioCtx.createMediaStreamSource(stream);
+                        mediaStreamSource.connect(analyser);
+
+                        isListening = true;
+                        DOM.btnMic.textContent = '⏹ Выключить';
+                        DOM.btnMic.classList.add('active');
+                        smoothedPitch = 0; // Сброс
+                        
+                        updatePitch();
+                    } catch (err) {
+                        alert('Нет доступа к микрофону! Проверьте разрешения браузера.');
+                        console.error(err);
+                    }
+                }
+            };
+
+            DOM.btnMic.addEventListener('click', toggleMic);
+            
+            // Если меняем режим, обнуляем сглаживание для мгновенной реакции
+            DOM.mode.addEventListener('change', () => { smoothedPitch = 0; });
+
+            // Начальная отрисовка пустого тюнера
+            resetDisplay();
+
+        })();
+    </script>
+</body>
+</html>
