@@ -340,14 +340,14 @@
             const STEPS = 16;
             
             const TRACKS = [
-                { id: 'drums',  name: '1. Sampler',      c: 'var(--t-drums)' },
-                { id: 'synth',  name: '2. Seed Synth',   c: 'var(--t-synth)' },
-                { id: 'chaos',  name: '3. Chaos Seq',    c: 'var(--t-chaos)' },
-                { id: 'vibe',   name: '4. Atmosphere',   c: 'var(--t-vibe)' },
-                { id: 'noise',  name: '5. Granular',     c: 'var(--t-noise)' },
-                { id: 'synest', name: '6. Synesthesia',  c: 'var(--t-synest)' },
-                { id: 'rhythm', name: '7. Rhythm Gen',   c: 'var(--t-rhythm)' },
-                { id: 'audio',  name: '8. Audio Tracks', c: 'var(--t-audio)' }
+                { id: 'drums',  name: '1. Sampler',      c: 'var(--t-drums)',  vol: 0.8, mute: false, solo: false },
+                { id: 'synth',  name: '2. Seed Synth',   c: 'var(--t-synth)',  vol: 0.6, mute: false, solo: false },
+                { id: 'chaos',  name: '3. Chaos Seq',    c: 'var(--t-chaos)',  vol: 0.7, mute: false, solo: false },
+                { id: 'vibe',   name: '4. Atmosphere',   c: 'var(--t-vibe)',   vol: 0.5, mute: false, solo: false },
+                { id: 'noise',  name: '5. Granular',     c: 'var(--t-noise)',  vol: 0.8, mute: false, solo: false },
+                { id: 'synest', name: '6. Synesthesia',  c: 'var(--t-synest)', vol: 0.8, mute: false, solo: false },
+                { id: 'rhythm', name: '7. Rhythm Gen',   c: 'var(--t-rhythm)', vol: 0.8, mute: false, solo: false },
+                { id: 'audio',  name: '8. Audio Tracks', c: 'var(--t-audio)',  vol: 0.8, mute: false, solo: false }
             ];
 
             let state = {
@@ -625,7 +625,7 @@
 
                     th.querySelector('.m').addEventListener('click', function(e) { e.stopPropagation(); this.classList.toggle('active-m'); t.mute = !t.mute; updateVols(); });
                     th.querySelector('.s').addEventListener('click', function(e) { e.stopPropagation(); this.classList.toggle('active-s'); t.solo = !t.solo; updateVols(); });
-                    th.querySelector('.tv').addEventListener('input', function(e) { e.stopPropagation(); t.vol = this.value/100; updateVols(); });
+                    th.querySelector('.tv').addEventListener('input', function(e) { e.stopPropagation(); t.vol = parseFloat(this.value)/100; updateVols(); });
 
                     headers.appendChild(th);
 
