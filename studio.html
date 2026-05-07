@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MuжicLab Studio | Pro DAW</title>
+    <title>MuжicLab Studio | DAW</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Favicon -->
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
@@ -13,6 +15,7 @@
     <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
     <link rel="shortcut icon" href="/icons/favicon.ico">
     <meta name="theme-color" content="#ffffff">
+
     <style>
         :root {
             --bg-dark: #121212; --bg-panel: #1e1e1e; --bg-track: #252525; --bg-track-alt: #1f1f1f;
@@ -62,8 +65,8 @@
         .track-bottom { display: flex; align-items: center; gap: 0.5rem; }
         
         /* EXPANDED HEADERS */
-        .track-header.expanded-6 { height: 300px; } /* 60 + 6*40 */
-        .track-header.expanded-9 { height: 420px; } /* 60 + 9*40 (Сэмплер) */
+        .track-header.expanded-6 { height: 300px; } 
+        .track-header.expanded-9 { height: 420px; } 
         
         .sub-header-list { display: flex; flex-direction: column; gap: 0; opacity: 0; transition: opacity 0.2s; }
         .track-header.expanded-6 .sub-header-list, .track-header.expanded-9 .sub-header-list { opacity: 1; }
@@ -128,13 +131,23 @@
         .scanline { position: absolute; top: 0; left: 0; width: 2px; height: 100%; background: var(--accent); opacity: 0.8; pointer-events: none;}
 
         #master-canvas { width: 150px; height: 40px; background: #000; border-radius: 4px; border: 1px solid #333; }
+        
+        .glitch-active { animation: glitchScreen 0.1s infinite; }
+        @keyframes glitchScreen {
+            0% { filter: hue-rotate(0deg) invert(0%); transform: translate(0,0); }
+            20% { filter: hue-rotate(90deg) invert(20%); transform: translate(-2px, 2px); }
+            40% { filter: hue-rotate(-90deg) invert(0%); transform: translate(2px, -2px); }
+            60% { filter: hue-rotate(180deg) invert(50%); transform: translate(-2px, -2px); }
+            80% { filter: hue-rotate(-45deg) invert(0%); transform: translate(2px, 2px); }
+            100% { filter: hue-rotate(0deg) invert(0%); transform: translate(0,0); }
+        }
     </style>
 </head>
 <body>
 
     <div id="init-overlay">
         <h1 class="text-4xl font-black mb-8">MuжicLab <span class="text-transparent" style="-webkit-text-stroke: 1px white;">Studio</span></h1>
-        <button class="btn-init" id="btn-init">Включить питание</button>
+        <button class="btn-init" id="btn-init">Раздать шума</button>
     </div>
 
     <!-- TRANSPORT -->
@@ -174,9 +187,10 @@
             <span id="editor-title">Инспектор</span>
             <div style="display:flex; gap: 1rem; align-items: center;">
                 <span>Master FX:</span>
-                <div style="display:flex; gap: 0.5rem; width: 200px; align-items:center;">
+                <div style="display:flex; gap: 0.5rem; width: 320px; align-items:center;">
                     <span style="font-size: 0.6rem;">DIST</span><input type="range" id="m-dist" class="vol-slider" value="0">
-                    <span style="font-size: 0.6rem;">REV</span><input type="range" id="m-rev" class="vol-slider" value="20">
+                    <span style="font-size: 0.6rem;">REV</span><input type="range" id="m-rev" class="vol-slider" min="0" max="400" value="20">
+                    <span style="font-size: 0.6rem; color: #ef4444;">GLITCH</span><input type="range" id="m-glitch" class="vol-slider" min="0" max="100" value="0">
                 </div>
             </div>
         </div>
@@ -233,9 +247,14 @@
                     <div class="chaos-grid" id="chaos-grid"></div>
                 </div>
                 <div class="editor-col">
+                    <div class="ctrl-group"><span class="ctrl-label">Звук (Волна)</span><select id="chaos-wave"><option value="square">8-Bit (Square)</option><option value="sawtooth">Acid (Saw)</option><option value="triangle">Pluck (Tri)</option><option value="sine">Deep (Sine)</option></select></div>
+                    <div class="ctrl-group mt-2"><span class="ctrl-label">Лад (Scale)</span><select id="chaos-scale"><option value="minor">Минор</option><option value="major">Мажор</option><option value="pentatonic">Пентатоника</option><option value="phrygian">Фригийский</option></select></div>
+                    <div class="ctrl-group mt-2"><span class="ctrl-label">Root Note</span><select id="chaos-root"><option value="36">C</option><option value="38">D</option><option value="40">E</option><option value="41">F</option><option value="43">G</option><option value="45" selected>A</option><option value="47">B</option></select></div>
+                </div>
+                <div class="editor-col">
                     <button class="btn-action" id="chaos-rand">Случайные клетки</button>
-                    <button class="btn-action" id="chaos-clear">Очистить матрицу</button>
-                    <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem; color: #888; margin-top: 1rem;"><input type="checkbox" id="chaos-evo" checked> Авто-эволюция (Conway's Life)</label>
+                    <button class="btn-action mt-2" id="chaos-clear">Очистить матрицу</button>
+                    <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem; color: #888; margin-top: 1rem;"><input type="checkbox" id="chaos-evo" checked> Авто-эволюция (Conway)</label>
                 </div>
             </div>
 
@@ -257,13 +276,13 @@
                         </div>
                         <div style="font-size:0.6rem; color:#888; margin-top:4px;">Статус: <span id="gran-status" style="color:var(--accent)">Нет буфера</span></div>
                     </div>
+                    <p style="font-size:0.6rem; color:#888; margin-top: 1rem;">Гранулярный синтез запускается автоматически во время воспроизведения (Play), расщепляя аудио-буфер на частицы.</p>
                 </div>
                 <div class="editor-col">
                     <div class="ctrl-group"><span class="ctrl-label"><span>Размер Гранулы (Size)</span></span><input type="range" id="gran-size" class="vol-slider" min="10" max="200" value="50"></div>
-                    <div class="ctrl-group"><span class="ctrl-label"><span>Плотность (Density)</span></span><input type="range" id="gran-dens" class="vol-slider" min="1" max="50" value="10"></div>
+                    <div class="ctrl-group"><span class="ctrl-label"><span>Плотность (Гран/Шаг)</span></span><input type="range" id="gran-dens" class="vol-slider" min="1" max="20" value="5"></div>
                 </div>
                 <div class="editor-col">
-                    <div class="ctrl-group"><span class="ctrl-label"><span>Разброс (Spread)</span></span><input type="range" id="gran-spread" class="vol-slider" min="0" max="100" value="20"></div>
                     <div class="ctrl-group"><span class="ctrl-label"><span>Высота (Pitch)</span></span><input type="range" id="gran-pitch" class="vol-slider" min="50" max="200" value="100"></div>
                 </div>
             </div>
@@ -362,13 +381,13 @@
             let state = {
                 play: false, rec: false, bpm: 120, step: 0, nextTime: 0, timer: null,
                 activeTrk: 0, activePad: 0, activeAudio: 0,
-                synImgData: null, granBuf: null
+                synImgData: null, granBuf: null, glitchLvl: 0
             };
 
             // Recorders 
             let padRec = null, granRec = null, audRec = null;
 
-            // DATA (Сэмплер теперь 9 каналов)
+            // DATA 
             let d_samp = Array(9).fill().map(() => ({ buf: null, s: 0, e: 1, seq: Array(STEPS).fill(false) }));
             let d_synth = Array(STEPS).fill().map(()=>({a:false, n:60}));
             let d_chaos = Array(16).fill().map(()=>Array(16).fill(false));
@@ -395,18 +414,67 @@
             let nBuf;
             let vibeNodes = {};
 
+            // GLITCH NODE
+            let glitchNode = null;
+
             // --- INIT ENGINE ---
             const initEngine = () => {
                 ctx = new (window.AudioContext || window.webkitAudioContext)();
                 master = ctx.createGain(); masterAnalyser = ctx.createAnalyser(); dest = ctx.createMediaStreamDestination();
                 
+                // GLITCH PROCESSOR (AudioWorklet fallback: using ScriptProcessor for wider browser support in this 1-file setup)
+                glitchNode = ctx.createScriptProcessor(4096, 2, 2);
+                let glitchBuffer = new Float32Array(44100); // 1 sec buffer max
+                let writePtr = 0, readPtr = 0, isGlitching = false, glitchLen = 0;
+                
+                glitchNode.onaudioprocess = (e) => {
+                    const inpL = e.inputBuffer.getChannelData(0);
+                    const inpR = e.inputBuffer.getChannelData(1);
+                    const outL = e.outputBuffer.getChannelData(0);
+                    const outR = e.outputBuffer.getChannelData(1);
+
+                    for (let i = 0; i < inpL.length; i++) {
+                        let sample = (inpL[i] + inpR[i]) * 0.5; // Mono mix for glitch buf
+
+                        if(state.glitchLvl > 0) {
+                            if (!isGlitching && Math.random() < (state.glitchLvl * 0.0005)) {
+                                isGlitching = true;
+                                glitchLen = Math.floor(Math.random() * (state.glitchLvl * 1000) + 100);
+                                readPtr = writePtr - glitchLen;
+                                if(readPtr < 0) readPtr += 44100;
+                            }
+                            
+                            if (isGlitching) {
+                                sample = glitchBuffer[Math.floor(readPtr)];
+                                readPtr += (1 + (Math.random() * state.glitchLvl * 0.05)); // pitch modulation during glitch
+                                if(readPtr >= 44100) readPtr -= 44100;
+                                glitchLen--;
+                                if(glitchLen <= 0) isGlitching = false;
+                                
+                                // UI Trigger
+                                if(Math.random() < 0.1) document.body.classList.add('glitch-active');
+                                else document.body.classList.remove('glitch-active');
+                            } else {
+                                document.body.classList.remove('glitch-active');
+                            }
+                        } else {
+                            document.body.classList.remove('glitch-active');
+                        }
+
+                        glitchBuffer[writePtr] = sample;
+                        writePtr = (writePtr + 1) % 44100;
+
+                        outL[i] = state.glitchLvl > 0 ? sample : inpL[i];
+                        outR[i] = state.glitchLvl > 0 ? sample : inpR[i];
+                    }
+                };
+
                 mDist = ctx.createWaveShaper(); mDist.oversample = '4x';
                 mRev = ctx.createConvolver(); rWet = ctx.createGain(); rDry = ctx.createGain();
                 const l = ctx.sampleRate*2.5, imp = ctx.createBuffer(2, l, ctx.sampleRate);
                 for(let i=0; i<l; i++){ imp.getChannelData(0)[i] = (Math.random()*2-1)*Math.pow(1-i/l,2); imp.getChannelData(1)[i] = (Math.random()*2-1)*Math.pow(1-i/l,2); }
                 mRev.buffer = imp;
 
-                // Индивидуальные Send-каналы для реверберации
                 for(let i=0; i<8; i++){ 
                     let g = ctx.createGain(); 
                     let dry = ctx.createGain(); dry.gain.value = 1;
@@ -421,7 +489,11 @@
                 }
 
                 mDist.connect(rDry); mDist.connect(mRev).connect(rWet);
-                rDry.connect(master); rWet.connect(master);
+                
+                // Route through glitch node
+                rDry.connect(glitchNode); rWet.connect(glitchNode);
+                glitchNode.connect(master);
+                
                 master.connect(masterAnalyser); masterAnalyser.connect(ctx.destination); masterAnalyser.connect(dest);
 
                 nBuf = ctx.createBuffer(1, ctx.sampleRate*2, ctx.sampleRate);
@@ -466,7 +538,8 @@
                     for(let i=0;i<44100;i++){ let x=i*2/44100-1; c[i]=(3+d*2)*x*20*deg/(Math.PI+d*2*Math.abs(x)); }
                     mDist.curve = c;
                 }
-                rWet.gain.value = parseInt(document.getElementById('m-rev').value)/100;
+                rWet.gain.value = parseInt(document.getElementById('m-rev').value)/100; // Can go up to 4.0 now
+                state.glitchLvl = parseInt(document.getElementById('m-glitch').value);
             };
 
             const updateVols = () => {
@@ -488,39 +561,17 @@
                     const dur = p.buf.duration, st = dur*p.s, en = dur*p.e;
                     if(en-st > 0) s.start(time, st, en-st);
                 } else {
-                    // 9 Синтезированных звуков для сэмплера по дефолту
                     const o=ctx.createOscillator(), g=ctx.createGain(); o.connect(g).connect(trkGains[0]);
                     
-                    if(idx===0){ // Kick
-                        o.type='sine'; o.frequency.setValueAtTime(150,time); o.frequency.exponentialRampToValueAtTime(0.01,time+0.5); g.gain.setValueAtTime(1,time); g.gain.exponentialRampToValueAtTime(0.01,time+0.5); 
-                    } else if(idx===1){ // Snare
-                        o.type='triangle'; o.frequency.setValueAtTime(200,time); o.frequency.exponentialRampToValueAtTime(50,time+0.2); g.gain.setValueAtTime(0.8,time); g.gain.exponentialRampToValueAtTime(0.01,time+0.2);
-                        const n=ctx.createBufferSource(), nf=ctx.createBiquadFilter(), ng=ctx.createGain(); n.buffer=nBuf; nf.type='highpass'; nf.frequency.value=1500; ng.gain.setValueAtTime(1,time); ng.gain.exponentialRampToValueAtTime(0.01,time+0.25);
-                        n.connect(nf).connect(ng).connect(trkGains[0]); n.start(time); n.stop(time+0.25);
-                    } else if(idx===2){ // Hat Closed
-                        g.gain.value = 0;
-                        const n=ctx.createBufferSource(), nf=ctx.createBiquadFilter(), ng=ctx.createGain(); n.buffer=nBuf; nf.type='highpass'; nf.frequency.value=8000; ng.gain.setValueAtTime(0.6,time); ng.gain.exponentialRampToValueAtTime(0.01,time+0.05);
-                        n.connect(nf).connect(ng).connect(trkGains[0]); n.start(time); n.stop(time+0.05);
-                    } else if(idx===3){ // Hat Open
-                        g.gain.value = 0;
-                        const n=ctx.createBufferSource(), nf=ctx.createBiquadFilter(), ng=ctx.createGain(); n.buffer=nBuf; nf.type='highpass'; nf.frequency.value=8000; ng.gain.setValueAtTime(0.6,time); ng.gain.exponentialRampToValueAtTime(0.01,time+0.3);
-                        n.connect(nf).connect(ng).connect(trkGains[0]); n.start(time); n.stop(time+0.3);
-                    } else if(idx===4){ // Perc High
-                        o.type='square'; o.frequency.setValueAtTime(600,time); o.frequency.exponentialRampToValueAtTime(200,time+0.1); g.gain.setValueAtTime(0.5,time); g.gain.exponentialRampToValueAtTime(0.01,time+0.1);
-                    } else if(idx===5){ // Perc Low
-                        o.type='square'; o.frequency.setValueAtTime(300,time); o.frequency.exponentialRampToValueAtTime(100,time+0.1); g.gain.setValueAtTime(0.5,time); g.gain.exponentialRampToValueAtTime(0.01,time+0.1);
-                    } else if(idx===6){ // Clap
-                        g.gain.value = 0;
-                        const n=ctx.createBufferSource(), nf=ctx.createBiquadFilter(), ng=ctx.createGain(); n.buffer=nBuf; nf.type='bandpass'; nf.frequency.value=1200; 
-                        ng.gain.setValueAtTime(0.8,time); ng.gain.setValueAtTime(0.1, time+0.01); ng.gain.setValueAtTime(0.8, time+0.02); ng.gain.exponentialRampToValueAtTime(0.01,time+0.2);
-                        n.connect(nf).connect(ng).connect(trkGains[0]); n.start(time); n.stop(time+0.2);
-                    } else if(idx===7){ // Crash
-                        g.gain.value = 0;
-                        const n=ctx.createBufferSource(), nf=ctx.createBiquadFilter(), ng=ctx.createGain(); n.buffer=nBuf; nf.type='highpass'; nf.frequency.value=4000; ng.gain.setValueAtTime(0.8,time); ng.gain.exponentialRampToValueAtTime(0.01,time+1.5);
-                        n.connect(nf).connect(ng).connect(trkGains[0]); n.start(time); n.stop(time+1.5);
-                    } else if(idx===8){ // Sub Bass
-                        o.type='sine'; o.frequency.value=50; g.gain.setValueAtTime(1,time); g.gain.exponentialRampToValueAtTime(0.01,time+0.6);
-                    }
+                    if(idx===0){ o.type='sine'; o.frequency.setValueAtTime(150,time); o.frequency.exponentialRampToValueAtTime(0.01,time+0.5); g.gain.setValueAtTime(1,time); g.gain.exponentialRampToValueAtTime(0.01,time+0.5); }
+                    else if(idx===1){ o.type='triangle'; o.frequency.setValueAtTime(200,time); o.frequency.exponentialRampToValueAtTime(50,time+0.2); g.gain.setValueAtTime(0.8,time); g.gain.exponentialRampToValueAtTime(0.01,time+0.2); const n=ctx.createBufferSource(), nf=ctx.createBiquadFilter(), ng=ctx.createGain(); n.buffer=nBuf; nf.type='highpass'; nf.frequency.value=1500; ng.gain.setValueAtTime(1,time); ng.gain.exponentialRampToValueAtTime(0.01,time+0.25); n.connect(nf).connect(ng).connect(trkGains[0]); n.start(time); n.stop(time+0.25); }
+                    else if(idx===2){ g.gain.value = 0; const n=ctx.createBufferSource(), nf=ctx.createBiquadFilter(), ng=ctx.createGain(); n.buffer=nBuf; nf.type='highpass'; nf.frequency.value=8000; ng.gain.setValueAtTime(0.6,time); ng.gain.exponentialRampToValueAtTime(0.01,time+0.05); n.connect(nf).connect(ng).connect(trkGains[0]); n.start(time); n.stop(time+0.05); }
+                    else if(idx===3){ g.gain.value = 0; const n=ctx.createBufferSource(), nf=ctx.createBiquadFilter(), ng=ctx.createGain(); n.buffer=nBuf; nf.type='highpass'; nf.frequency.value=8000; ng.gain.setValueAtTime(0.6,time); ng.gain.exponentialRampToValueAtTime(0.01,time+0.3); n.connect(nf).connect(ng).connect(trkGains[0]); n.start(time); n.stop(time+0.3); }
+                    else if(idx===4){ o.type='square'; o.frequency.setValueAtTime(600,time); o.frequency.exponentialRampToValueAtTime(200,time+0.1); g.gain.setValueAtTime(0.5,time); g.gain.exponentialRampToValueAtTime(0.01,time+0.1); }
+                    else if(idx===5){ o.type='square'; o.frequency.setValueAtTime(300,time); o.frequency.exponentialRampToValueAtTime(100,time+0.1); g.gain.setValueAtTime(0.5,time); g.gain.exponentialRampToValueAtTime(0.01,time+0.1); }
+                    else if(idx===6){ g.gain.value = 0; const n=ctx.createBufferSource(), nf=ctx.createBiquadFilter(), ng=ctx.createGain(); n.buffer=nBuf; nf.type='bandpass'; nf.frequency.value=1200; ng.gain.setValueAtTime(0.8,time); ng.gain.setValueAtTime(0.1, time+0.01); ng.gain.setValueAtTime(0.8, time+0.02); ng.gain.exponentialRampToValueAtTime(0.01,time+0.2); n.connect(nf).connect(ng).connect(trkGains[0]); n.start(time); n.stop(time+0.2); }
+                    else if(idx===7){ g.gain.value = 0; const n=ctx.createBufferSource(), nf=ctx.createBiquadFilter(), ng=ctx.createGain(); n.buffer=nBuf; nf.type='highpass'; nf.frequency.value=4000; ng.gain.setValueAtTime(0.8,time); ng.gain.exponentialRampToValueAtTime(0.01,time+1.5); n.connect(nf).connect(ng).connect(trkGains[0]); n.start(time); n.stop(time+1.5); }
+                    else if(idx===8){ o.type='sine'; o.frequency.value=50; g.gain.setValueAtTime(1,time); g.gain.exponentialRampToValueAtTime(0.01,time+0.6); }
                     o.start(time); o.stop(time+1.5);
                 }
             };
@@ -568,6 +619,7 @@
 
             // --- SCHEDULER ---
             const scheduleStep = (st, time) => {
+                const stepDur = 0.25 * (60/state.bpm);
                 const delay = (time - ctx.currentTime)*1000;
                 setTimeout(()=>{
                     document.getElementById('playhead').style.left = `${(st/STEPS)*100}%`;
@@ -584,8 +636,20 @@
                     playSynth(d_synth[st].n + (root-45), time, document.getElementById('seed-wave').value, 1, subM);
                 }
 
-                const cScale = [48,50,52,53,55,57,59,60,62,64,65,67,69,71,72,74].reverse();
-                for(let r=0; r<16; r++) if(d_chaos[r][st]) playSynth(cScale[r], time, 'square', 2);
+                // CHAOS LAB WITH SCALES
+                const cWave = document.getElementById('chaos-wave').value || 'square';
+                const cScaleType = document.getElementById('chaos-scale').value;
+                const cRoot = parseInt(document.getElementById('chaos-root').value);
+                
+                let cScale;
+                if(cScaleType === 'minor') cScale = [0,2,3,5,7,8,10,12,14,15,17,19,20,22,24,26];
+                else if(cScaleType === 'major') cScale = [0,2,4,5,7,9,11,12,14,16,17,19,21,23,24,26];
+                else if(cScaleType === 'pentatonic') cScale = [0,3,5,7,10,12,15,17,19,22,24,27,29,31,34,36];
+                else if(cScaleType === 'phrygian') cScale = [0,1,3,5,7,8,10,12,13,15,17,19,20,22,24,25];
+                
+                cScale = cScale.map(n => cRoot + n).reverse();
+
+                for(let r=0; r<16; r++) if(d_chaos[r][st]) playSynth(cScale[r], time, cWave, 2);
                 if(st===15 && document.getElementById('chaos-evo').checked && delay>0) setTimeout(()=>{
                     let nG = Array(16).fill().map(()=>Array(16).fill(false));
                     for(let r=0;r<16;r++)for(let c=0;c<16;c++){
@@ -599,9 +663,9 @@
 
                 if(state.granBuf) {
                     const dens = parseInt(document.getElementById('gran-dens').value);
-                    const stepDur = 0.25 * (60/state.bpm);
-                    const grainsPerStep = Math.max(1, Math.floor(dens * stepDur));
-                    for(let i=0; i<grainsPerStep; i++) playGranular(time + (i/grainsPerStep)*stepDur);
+                    for(let i=0; i<dens; i++) {
+                        playGranular(time + (Math.random() * stepDur));
+                    }
                 }
 
                 if(state.synImgData) {
@@ -613,7 +677,7 @@
                     else if(sType === 'major') scale = [0,2,4,5,7,9,11,12,14,16,17,19,21,23,24,26];
                     else if(sType === 'pentatonic') scale = [0,3,5,7,10,12,15,17,19,22,24,27,29,31,34,36];
                     else if(sType === 'phrygian') scale = [0,1,3,5,7,8,10,12,13,15,17,19,20,22,24,25];
-                    else scale = Array.from({length:16},(_,i)=>i); // Chromatic
+                    else scale = Array.from({length:16},(_,i)=>i);
                     
                     scale = scale.map(n => root + n).reverse();
 
@@ -635,7 +699,7 @@
             const scheduler = () => {
                 while(state.nextTime < ctx.currentTime + 0.1) {
                     scheduleStep(state.step, state.nextTime);
-                    state.nextTime += (0.25 * (60.0 / state.bpm)); // Global Speed is strictly BPM now
+                    state.nextTime += (0.25 * (60.0 / state.bpm));
                     state.step = (state.step + 1) % STEPS;
                 }
                 state.timer = setTimeout(scheduler, 25);
@@ -647,7 +711,6 @@
                 const lanes = document.getElementById('lanes');
                 
                 TRACKS.forEach((t, i) => {
-                    // HEADER
                     const th = document.createElement('div'); th.className = 'track-header'; th.dataset.track = i;
                     if(i===0) th.classList.add('selected');
                     th.innerHTML = `
@@ -655,7 +718,7 @@
                             <div class="track-top"><span class="track-name" style="color:${t.c}">${t.name}</span><div class="track-controls"><button class="btn-mini m">M</button><button class="btn-mini s">S</button></div></div>
                             <div class="track-bottom">
                                 <span style="font-size:9px;color:#666;width:15px">VOL</span><input type="range" class="vol-slider tv" value="${t.vol*100}">
-                                <span style="font-size:9px;color:#666;width:15px;margin-left:4px;">REV</span><input type="range" class="vol-slider tr" value="${t.rev*100}">
+                                <span style="font-size:9px;color:#666;width:15px;margin-left:4px;">REV</span><input type="range" class="vol-slider tr" min="0" max="400" value="${t.rev*100}">
                             </div>
                         </div>
                     `;
@@ -692,7 +755,6 @@
 
                     headers.appendChild(th);
 
-                    // LANE
                     if(i===0 || i===1 || i===7) {
                         const tl = document.createElement('div'); 
                         tl.className = `track-lane ${i===0?'lane-drums expanded-9': i===7?'lane-audio':'lane-synth'}`; tl.dataset.track=i;
@@ -821,7 +883,7 @@
                 });
 
                 document.getElementById('global-bpm').addEventListener('change', e=>state.bpm=e.target.value);
-                ['m-dist','m-rev'].forEach(id=>document.getElementById(id).addEventListener('input', updateMasterFX));
+                ['m-dist','m-rev', 'm-glitch'].forEach(id=>document.getElementById(id).addEventListener('input', updateMasterFX));
 
                 // SCROLL SYNC
                 const tHeaders = document.getElementById('track-headers');
