@@ -3,994 +3,594 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MuжicLab Studio | DAW</title>
+    <title>MuжicLab | Владислав Ножиков</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
-    
-    <!-- Favicon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
     <link rel="manifest" href="/icons/site.webmanifest">
     <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
     <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="apple-mobile-web-app-title" content="Nozhikov">
+    <meta name="application-name" content="Nozhikov">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="msapplication-config" content="/icons/browserconfig.xml">
     <meta name="theme-color" content="#ffffff">
-
     <style>
+        /* =========================================
+           ОБЩИЕ СТИЛИ И ПЕРЕМЕННЫЕ
+           ========================================= */
         :root {
-            --bg-dark: #121212; --bg-panel: #1e1e1e; --bg-track: #252525; --bg-track-alt: #1f1f1f;
-            --border-color: #333333; --text-main: #e0e0e0; --accent: #f97316;
-            --playhead: rgba(255, 255, 255, 0.7);
-            
-            --t-drums: #e11d48; --t-synth: #2563eb; --t-chaos: #16a34a; --t-vibe: #9333ea;
-            --t-noise: #eab308; --t-synest: #06b6d4; --t-rhythm: #f43f5e;
-            --t-audio: #14b8a6;
+            --bg-color: #050505;
+            --card-bg: #111111;
+            --accent-color: #ffffff;
+            --border-light: rgba(255, 255, 255, 0.05);
+            --border-hover: rgba(255, 255, 255, 0.15);
+            --font-main: 'Inter', sans-serif;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body { background-color: var(--bg-dark); color: var(--text-main); font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* OVERLAY */
-        #init-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(18, 18, 18, 0.95); backdrop-filter: blur(10px); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s; }
-        .btn-init { font-size: 1.2rem; padding: 1rem 3rem; background: var(--accent); color: #000; border: none; border-radius: 8px; font-weight: 900; text-transform: uppercase; cursor: pointer; box-shadow: 0 0 30px rgba(249, 115, 22, 0.3); transition: transform 0.1s; }
-        .btn-init:active { transform: scale(0.95); }
+        body {
+            background-color: var(--bg-color);
+            color: var(--accent-color);
+            font-family: var(--font-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
 
-        /* TRANSPORT */
-        .transport-bar { height: 60px; background: var(--bg-panel); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; padding: 0 1rem; justify-content: space-between; flex-shrink: 0;}
-        .transport-controls { display: flex; gap: 0.5rem; align-items: center; }
-        .btn-transport { width: 40px; height: 40px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-track); color: var(--text-main); font-size: 1.2rem; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.1s; }
-        .btn-transport:hover { background: #333; } .btn-transport.active { background: var(--accent); color: #000; border-color: var(--accent); }
-        .btn-transport.recording { background: #ef4444; color: #fff; border-color: #ef4444; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); } 70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-        
-        .lcd-display { background: #000; border: 1px solid #333; border-radius: 6px; padding: 0.25rem 1rem; display: flex; align-items: center; gap: 1.5rem; font-family: monospace; color: var(--accent); box-shadow: inset 0 0 10px rgba(0,0,0,0.8); justify-content: center; }
-        .lcd-section { display: flex; flex-direction: column; align-items: center; }
-        .lcd-label { font-size: 0.5rem; color: #666; text-transform: uppercase; }
-        .lcd-val { font-size: 1.2rem; font-weight: bold; }
+        /* Эффект зернистости фона */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: 9999;
+        }
 
-        /* WORKSPACE */
-        .workspace { flex: 1; display: flex; overflow: hidden; }
+        /* =========================================
+           BENTO GRID И КАРТОЧКИ ХАБА
+           ========================================= */
+        .hub-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
 
-        /* TRACK HEADERS */
-        .track-headers { width: 280px; background: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; overflow-y: scroll; scrollbar-width: none;}
-        .track-header { height: 60px; border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; cursor: pointer; border-left: 4px solid transparent; background: var(--bg-track-alt); transition: height 0.2s, background 0.1s; flex-shrink: 0; overflow: hidden; padding: 0;}
-        .track-header.selected { background: #2a2a2a; }
-        .track-header-inner { height: 59px; padding: 0.5rem; display: flex; flex-direction: column; justify-content: space-between; flex-shrink: 0; }
-        .track-top { display: flex; justify-content: space-between; align-items: center; }
-        .track-name { font-size: 0.8rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; }
-        .track-controls { display: flex; gap: 4px; }
-        .btn-mini { width: 20px; height: 20px; border-radius: 3px; border: 1px solid #444; background: #333; font-size: 0.6rem; font-weight: bold; cursor: pointer; color: #888; }
-        .btn-mini.active-m { background: #eab308; color: #000; border-color: #eab308; }
-        .btn-mini.active-s { background: #22c55e; color: #000; border-color: #22c55e; }
-        .track-bottom { display: flex; align-items: center; gap: 0.5rem; }
-        
-        /* EXPANDED HEADERS */
-        .track-header.expanded-6 { height: 300px; } 
-        .track-header.expanded-9 { height: 420px; } 
-        
-        .sub-header-list { display: flex; flex-direction: column; gap: 0; opacity: 0; transition: opacity 0.2s; }
-        .track-header.expanded-6 .sub-header-list, .track-header.expanded-9 .sub-header-list { opacity: 1; }
-        .sub-header { height: 40px; display: flex; align-items: center; padding-left: 1rem; font-size: 0.7rem; color: #888; border-top: 1px solid #333; }
+        @media (max-width: 768px) {
+            .hub-grid { grid-template-columns: 1fr; }
+        }
 
-        .vol-slider { -webkit-appearance: none; width: 100%; height: 4px; background: #111; border-radius: 2px; outline: none; }
-        .vol-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #888; cursor: pointer; }
+        .hub-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 24px;
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s, border-color 0.3s;
+            min-height: 320px;
+        }
 
-        /* TIMELINE */
-        .timeline-area { flex: 1; background: var(--bg-dark); overflow: scroll; position: relative; display: flex; flex-direction: column; scrollbar-width: none;}
-        .ruler { height: 24px; background: var(--bg-panel); border-bottom: 1px solid var(--border-color); display: grid; grid-template-columns: repeat(16, 1fr); position: sticky; top: 0; z-index: 10; min-width: 800px; flex-shrink: 0;}
-        .ruler-step { border-right: 1px solid #333; font-size: 0.5rem; color: #666; display: flex; align-items: center; padding-left: 2px;}
-        
-        .track-lane { height: 60px; border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; background: var(--bg-track); transition: height 0.2s; min-width: 800px; flex-shrink: 0; overflow: hidden;}
-        .track-lane:nth-child(even) { background: var(--bg-track-alt); }
-        .lane-main { height: 59px; display: grid; grid-template-columns: repeat(16, 1fr); flex-shrink: 0;}
-        .lane-step { border-right: 1px solid rgba(255,255,255,0.05); position: relative; cursor: pointer; transition: 0.1s; }
-        .lane-step:hover { background: rgba(255,255,255,0.05); }
-        .lane-step:nth-child(4n+1) { border-left: 1px solid rgba(255,255,255,0.1); }
-        
-        /* EXPANDED LANES */
-        .track-lane.expanded-6 { height: 300px; }
-        .track-lane.expanded-9 { height: 420px; }
-        .sub-lanes-container { display: none; flex-direction: column; }
-        .track-lane.expanded-6 .sub-lanes-container, .track-lane.expanded-9 .sub-lanes-container { display: flex; }
-        .sub-lane { height: 40px; display: grid; grid-template-columns: repeat(16, 1fr); border-top: 1px solid #333; }
+        .hub-card:hover {
+            transform: scale(1.02);
+            background: #141414;
+            border-color: var(--border-hover);
+        }
 
-        .note { position: absolute; top: 15%; left: 10%; width: 80%; height: 70%; border-radius: 3px; box-shadow: inset 0 0 5px rgba(0,0,0,0.5); pointer-events: none;}
-        
-        .playhead-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--playhead); box-shadow: 0 0 10px rgba(255,255,255,0.5); z-index: 5; pointer-events: none; transition: left 0.05s linear; left: 0%; }
+        /* Типографика внутри карточек */
+        .card-tag {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: gray;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
 
-        /* EDITOR PANEL */
-        .editor-panel { height: 320px; background: var(--bg-panel); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; flex-shrink: 0;}
-        .editor-header { height: 30px; background: #1a1a1a; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; padding: 0 1rem; font-size: 0.7rem; font-weight: bold; color: #888; text-transform: uppercase; justify-content: space-between;}
-        .editor-content { flex: 1; padding: 1rem; overflow-y: auto; display: none; gap: 2rem; }
-        .editor-content.active { display: flex; }
+        .card-title {
+            font-size: 1.75rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+        }
 
-        /* CONTROLS */
-        .editor-col { display: flex; flex-direction: column; gap: 1rem; flex: 1; min-width: 200px;}
-        .ctrl-group { display: flex; flex-direction: column; gap: 0.2rem; }
-        .ctrl-label { font-size: 0.6rem; color: #888; text-transform: uppercase; font-weight: bold; display: flex; justify-content: space-between;}
-        select, input[type=text] { background: #111; color: #fff; border: 1px solid #444; padding: 0.4rem; border-radius: 4px; font-size: 0.8rem; outline: none; }
-        .btn-action { background: #333; color: #fff; border: 1px solid #555; padding: 0.4rem; border-radius: 4px; font-size: 0.7rem; text-transform: uppercase; cursor: pointer; transition: 0.2s;}
-        .btn-action:hover { background: var(--accent); color: #000; border-color: var(--accent); }
-        .btn-action.rec { border-color: #ef4444; color: #ef4444; }
-        .btn-action.rec.recording { background: #ef4444; color: #fff; animation: pulse 1s infinite; }
+        .card-desc {
+            font-size: 0.875rem;
+            color: #888;
+            line-height: 1.5;
+            max-width: 85%;
+        }
 
-        /* SAMPLER PADS */
-        .drum-pads { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; height: 100%;}
-        .pad { background: #252525; border: 1px solid #444; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; padding: 1rem 0; transition: 0.1s;}
-        .pad.selected { border-color: var(--accent); background: rgba(249, 115, 22, 0.1); }
-        .pad:active, .pad.playing { background: var(--t-drums); border-color: #fff; transform: scale(0.95);}
-        .pad-key { font-size: 1.5rem; font-weight: 900; }
-        .pad-name { font-size: 0.6rem; color: #aaa; text-transform: uppercase; pointer-events: none;}
+        /* Стили векторной графики (SVG) */
+        .card-icon {
+            margin-top: auto;
+            align-self: flex-end;
+            width: 120px;
+            height: 120px;
+            opacity: 0.3;
+            transition: all 0.5s ease;
+        }
 
-        /* GRIDS */
-        .chaos-grid { display: grid; grid-template-columns: repeat(16, 1fr); gap: 1px; width: 100%; aspect-ratio: 1; background: #111; border: 1px solid #444; max-width: 250px;}
-        .chaos-cell { background: #222; cursor: pointer; }
-        .chaos-cell.alive { background: var(--t-chaos); }
+        .hub-card:hover .card-icon {
+            opacity: 1;
+            transform: scale(1.1) rotate(-5deg);
+        }
 
-        .synest-canvas { width: 100%; max-width: 200px; aspect-ratio: 1; background: #000; border: 1px solid #444; image-rendering: pixelated; position: relative;}
-        .scanline { position: absolute; top: 0; left: 0; width: 2px; height: 100%; background: var(--accent); opacity: 0.8; pointer-events: none;}
+        /* Специфичные анимации для каждой иконки при наведении */
+        .hub-card:hover .svg-wave { animation: slideWave 2s linear infinite; }
+        .hub-card:hover .svg-beat { animation: heartbeat 1s ease-in-out infinite; }
+        .hub-card:hover .svg-spin { animation: spinSlow 4s linear infinite; }
+        .hub-card:hover .svg-float { animation: floatSync 2s ease-in-out infinite; }
 
-        #master-canvas { width: 150px; height: 40px; background: #000; border-radius: 4px; border: 1px solid #333; }
-        
-        .glitch-active { animation: glitchScreen 0.1s infinite; }
-        @keyframes glitchScreen {
-            0% { filter: hue-rotate(0deg) invert(0%); transform: translate(0,0); }
-            20% { filter: hue-rotate(90deg) invert(20%); transform: translate(-2px, 2px); }
-            40% { filter: hue-rotate(-90deg) invert(0%); transform: translate(2px, -2px); }
-            60% { filter: hue-rotate(180deg) invert(50%); transform: translate(-2px, -2px); }
-            80% { filter: hue-rotate(-45deg) invert(0%); transform: translate(2px, 2px); }
-            100% { filter: hue-rotate(0deg) invert(0%); transform: translate(0,0); }
+        @keyframes slideWave {
+            0% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: 50; }
+        }
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        @keyframes spinSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes floatSync {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* =========================================
+           КНОПКА НАЗАД / LINK
+           ========================================= */
+        .arrow-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 700;
+            margin-top: 1.5rem;
+            color: var(--accent-color);
+            transition: opacity 0.2s;
+        }
+        .hub-card:hover .arrow-link {
+            opacity: 0.5;
         }
     </style>
 </head>
 <body>
 
-    <div id="init-overlay">
-        <h1 class="text-4xl font-black mb-8">MuжicLab <span class="text-transparent" style="-webkit-text-stroke: 1px white;">Studio</span></h1>
-        <button class="btn-init" id="btn-init">Раздать шума</button>
-    </div>
-
-    <!-- TRANSPORT -->
-    <div class="transport-bar">
-        <div class="transport-controls">
-            <button class="btn-transport" id="btn-play" title="Play / Stop (Space)">▶</button>
-            <button class="btn-transport" id="btn-rec" title="Mixdown to .webm">⏺</button>
+    <!-- ВЕРХНЯЯ НАВИГАЦИЯ -->
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">
+            Владислав Ножиков
+        </a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="index#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="index#art" class="hover:opacity-50 transition">Арт</a>
         </div>
-        <div class="lcd-display">
-            <div class="lcd-section"><span class="lcd-label">BPM</span><input type="number" id="global-bpm" value="120" min="60" max="240" style="background:transparent; border:none; color:var(--accent); font-size:1.2rem; font-weight:bold; width: 50px; text-align:center; padding:0;"></div>
-            <div class="lcd-section"><span class="lcd-label">STEP</span><span class="lcd-val" id="lcd-step">01</span></div>
-            <div class="lcd-section"><span class="lcd-label">TIME</span><span class="lcd-val" id="lcd-time">0:00</span></div>
-        </div>
-        <div class="transport-controls">
-            <div style="font-size: 0.6rem; color: #666; text-transform: uppercase; text-align: right; line-height: 1;">Master<br>Out</div>
-            <canvas id="master-canvas" width="150" height="40"></canvas>
-        </div>
-    </div>
+    </nav>
 
-    <div class="workspace">
-        <!-- TRACK HEADERS -->
-        <div class="track-headers" id="track-headers"></div>
-        
-        <!-- TIMELINE -->
-        <div class="timeline-area" id="timeline-area">
-            <div style="position: relative; min-width: 800px; display: flex; flex-direction: column; min-height: 100%;">
-                <div class="ruler" id="ruler"></div>
-                <div class="playhead-line" id="playhead"></div>
-                <div class="track-lanes" id="lanes"></div>
-            </div>
-        </div>
-    </div>
+    <!-- ОСНОВНОЙ КОНТЕНТ -->
+    <main class="pt-32 px-6 md:px-12 pb-24 max-w-7xl mx-auto relative z-10">
 
-    <!-- INSPECTOR -->
-    <div class="editor-panel">
-        <div class="editor-header">
-            <span id="editor-title">Инспектор</span>
-            <div style="display:flex; gap: 1rem; align-items: center;">
-                <span>Master FX:</span>
-                <div style="display:flex; gap: 0.5rem; width: 320px; align-items:center;">
-                    <span style="font-size: 0.6rem;">DIST</span><input type="range" id="m-dist" class="vol-slider" value="0">
-                    <span style="font-size: 0.6rem;">REV</span><input type="range" id="m-rev" class="vol-slider" min="0" max="400" value="20">
-                    <span style="font-size: 0.6rem; color: #ef4444;">GLITCH</span><input type="range" id="m-glitch" class="vol-slider" min="0" max="100" value="0">
-                </div>
-            </div>
-        </div>
-        
-        <div id="editors-container" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
-            
-            <!-- ED 0: SAMPLER (9 PADS) -->
-            <div class="editor-content" id="ed-0">
-                <div class="editor-col" style="flex: 0 0 350px;">
-                    <div class="drum-pads" id="sampler-pads"></div>
-                </div>
-                <div class="editor-col">
-                    <div class="ctrl-group">
-                        <span class="ctrl-label">Сэмпл для пэда <span id="samp-active-name" style="color:var(--accent); font-size:1rem;">Q</span></span>
-                        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-                            <button class="btn-action rec" id="samp-rec">🎤 Запись</button>
-                            <label class="btn-action" style="flex:1; text-align:center;">📁 Файл<input type="file" id="samp-file" accept="audio/*,video/webm" style="display:none;"></label>
-                        </div>
-                    </div>
-                    <div class="ctrl-group mt-4">
-                        <span class="ctrl-label"><span>Start Trim</span><span id="samp-v-start">0%</span></span>
-                        <input type="range" id="samp-start" class="vol-slider" value="0">
-                    </div>
-                    <div class="ctrl-group mt-2">
-                        <span class="ctrl-label"><span>End Trim</span><span id="samp-v-end">100%</span></span>
-                        <input type="range" id="samp-end" class="vol-slider" value="100">
-                    </div>
-                </div>
-            </div>
+        <!-- ХИДЕР ХАБА -->
+        <header class="mb-12 md:mb-16">
+            <h1 class="text-5xl md:text-8xl font-black tracking-tighter uppercase mb-4">
+                Muжic<span class="text-transparent" style="-webkit-text-stroke: 1px white;">Lab</span>
+            </h1>
+            <p class="text-lg md:text-xl text-gray-400 max-w-2xl leading-relaxed">
+                Интерактивная лаборатория звука, ритма и творческого хаоса. Сборник инструментов для композиторов, музыкантов и исследователей смыслов.
+            </p>
+        </header>
 
-            <!-- ED 1: SEED SYNTH -->
-            <div class="editor-content" id="ed-1">
-                <div class="editor-col">
-                    <div class="ctrl-group">
-                        <span class="ctrl-label">Текстовый Сид</span>
-                        <input type="text" id="seed-val" value="Nozhikov" style="font-size: 1.5rem; text-align:center;">
-                    </div>
-                    <button class="btn-action" id="seed-rand">Сгенерировать мелодию</button>
-                    <p style="font-size:0.7rem; color:#888; margin-top: 0.5rem;">Кликай по дорожке таймлайна, чтобы расставить триггеры.</p>
-                </div>
-                <div class="editor-col">
-                    <div class="ctrl-group"><span class="ctrl-label">Форма волны</span><select id="seed-wave"><option value="sawtooth">Acid (Saw)</option><option value="square">8-Bit (Square)</option><option value="triangle">Pluck (Tri)</option><option value="sine">Deep (Sine)</option></select></div>
-                    <div class="ctrl-group"><span class="ctrl-label">Лад (Scale)</span><select id="seed-scale"><option value="minor">Минор</option><option value="major">Мажор</option><option value="pentatonic">Пентатоника</option><option value="phrygian">Фригийский</option></select></div>
-                </div>
-                <div class="editor-col">
-                    <div class="ctrl-group"><span class="ctrl-label">Root Note</span><select id="seed-root"><option value="36">C</option><option value="38">D</option><option value="40">E</option><option value="41">F</option><option value="43">G</option><option value="45" selected>A</option><option value="47">B</option></select></div>
-                    <div class="ctrl-group"><span class="ctrl-label">Sub Mix (Октава вниз)</span><input type="range" id="seed-sub" class="vol-slider" value="50"></div>
-                </div>
-            </div>
 
-            <!-- ED 2: CHAOS -->
-            <div class="editor-content" id="ed-2">
-                <div class="editor-col" style="flex: 0 0 250px;">
-                    <div class="chaos-grid" id="chaos-grid"></div>
-                </div>
-                <div class="editor-col">
-                    <div class="ctrl-group"><span class="ctrl-label">Звук (Волна)</span><select id="chaos-wave"><option value="square">8-Bit (Square)</option><option value="sawtooth">Acid (Saw)</option><option value="triangle">Pluck (Tri)</option><option value="sine">Deep (Sine)</option></select></div>
-                    <div class="ctrl-group mt-2"><span class="ctrl-label">Лад (Scale)</span><select id="chaos-scale"><option value="minor">Минор</option><option value="major">Мажор</option><option value="pentatonic">Пентатоника</option><option value="phrygian">Фригийский</option></select></div>
-                    <div class="ctrl-group mt-2"><span class="ctrl-label">Root Note</span><select id="chaos-root"><option value="36">C</option><option value="38">D</option><option value="40">E</option><option value="41">F</option><option value="43">G</option><option value="45" selected>A</option><option value="47">B</option></select></div>
-                </div>
-                <div class="editor-col">
-                    <button class="btn-action" id="chaos-rand">Случайные клетки</button>
-                    <button class="btn-action mt-2" id="chaos-clear">Очистить матрицу</button>
-                    <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem; color: #888; margin-top: 1rem;"><input type="checkbox" id="chaos-evo" checked> Авто-эволюция (Conway)</label>
-                </div>
-            </div>
+        <div class="hub-grid grid grid-cols-1 md:grid-cols-4 gap-6 mt-12">
+           <!-- 3. MICRO-DAW (col-span-4 - ЦЕНТРАЛЬНЫЙ БЛОК) -->
 
-            <!-- ED 3: VIBE -->
-            <div class="editor-content" id="ed-3">
-                <div class="editor-col" style="flex: 3; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;" id="vibe-sliders-container">
-                    <!-- Sliders injected via JS -->
-                </div>
-            </div>
-
-            <!-- ED 4: NOISE (GRANULAR) -->
-            <div class="editor-content" id="ed-4">
-                <div class="editor-col">
-                    <div class="ctrl-group">
-                        <span class="ctrl-label">Источник для гранул</span>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <button class="btn-action rec" id="gran-rec">🎤 Запись (ВКЛ/ВЫКЛ)</button>
-                            <label class="btn-action" style="flex:1; text-align:center;">📁 Файл<input type="file" id="gran-file" accept="audio/*,video/webm" style="display:none;"></label>
-                        </div>
-                        <div style="font-size:0.6rem; color:#888; margin-top:4px;">Статус: <span id="gran-status" style="color:var(--accent)">Нет буфера</span></div>
-                    </div>
-                    <p style="font-size:0.6rem; color:#888; margin-top: 1rem;">Гранулярный синтез запускается автоматически во время воспроизведения (Play), расщепляя аудио-буфер на частицы.</p>
-                </div>
-                <div class="editor-col">
-                    <div class="ctrl-group"><span class="ctrl-label"><span>Размер Гранулы (Size)</span></span><input type="range" id="gran-size" class="vol-slider" min="10" max="200" value="50"></div>
-                    <div class="ctrl-group"><span class="ctrl-label"><span>Плотность (Гран/Шаг)</span></span><input type="range" id="gran-dens" class="vol-slider" min="1" max="20" value="5"></div>
-                </div>
-                <div class="editor-col">
-                    <div class="ctrl-group"><span class="ctrl-label"><span>Высота (Pitch)</span></span><input type="range" id="gran-pitch" class="vol-slider" min="50" max="200" value="100"></div>
-                </div>
-            </div>
-
-            <!-- ED 5: SYNESTHESIA -->
-            <div class="editor-content" id="ed-5">
-                <div class="editor-col" style="flex: 0 0 200px;">
-                    <div class="synest-canvas">
-                        <canvas id="syn-cvs" width="16" height="16" style="width:100%; height:100%;"></canvas>
-                        <div class="scanline" id="syn-scan"></div>
-                    </div>
-                </div>
-                <div class="editor-col">
-                    <label class="btn-action" style="text-align:center; padding: 1rem;">Загрузить Изображение (PNG/JPG)<input type="file" id="syn-file" accept="image/*" style="display:none;"></label>
-                    <p style="font-size:0.7rem; color:#888; margin-top: 1rem;">Изображение конвертируется в 16x16. Яркие пиксели генерируют ноты.</p>
-                </div>
-                <div class="editor-col">
-                    <div class="ctrl-group"><span class="ctrl-label">Форма волны</span><select id="syn-wave"><option value="sine">Sine</option><option value="triangle">Triangle</option><option value="square">Square</option><option value="sawtooth">Saw</option></select></div>
-                    <div class="ctrl-group"><span class="ctrl-label">Лад (Scale)</span><select id="syn-scale"><option value="minor">Минор</option><option value="major">Мажор</option><option value="pentatonic">Пентатоника</option><option value="phrygian">Фригийский</option><option value="chromatic">Хроматика</option></select></div>
-                    <div class="ctrl-group"><span class="ctrl-label">Root Note</span><select id="syn-root"><option value="48">C3</option><option value="50">D3</option><option value="52">E3</option><option value="53">F3</option><option value="55">G3</option><option value="57">A3</option><option value="59">B3</option></select></div>
-                </div>
-            </div>
-
-            <!-- ED 6: RHYTHM -->
-            <div class="editor-content" id="ed-6">
-                <div class="editor-col">
-                    <div class="ctrl-group"><span class="ctrl-label">Стиль Грува</span>
-                        <select id="rhy-groove">
-                            <option value="metronome">Метроном</option>
-                            <option value="rock">Рок</option>
-                            <option value="hiphop">Хип-Хоп</option>
-                            <option value="dubstep">Дабстеп</option>
-                            <option value="house">Хаус / Техно</option>
-                        </select>
-                    </div>
-                    <p style="font-size:0.7rem; color:#888; margin-top: 1rem;">Процедурная драм-машина. Играет независимо от Сэмплера на основе алгоритмических паттернов.</p>
-                </div>
-            </div>
-
-            <!-- ED 7: AUDIO TRACKS -->
-            <div class="editor-content" id="ed-7">
-                <div class="editor-col">
-                    <div class="ctrl-group">
-                        <span class="ctrl-label">Выбранный Аудио Канал</span>
-                        <select id="audio-select-chan">
-                            <option value="0">Канал 1</option>
-                            <option value="1">Канал 2</option>
-                            <option value="2">Канал 3</option>
-                            <option value="3">Канал 4</option>
-                            <option value="4">Канал 5</option>
-                            <option value="5">Канал 6</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="editor-col">
-                    <div class="ctrl-group">
-                        <span class="ctrl-label">Источник для Канала <span id="audio-active-name" style="color:var(--accent)">1</span></span>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <button class="btn-action rec" id="audio-rec">🎤 Запись (ВКЛ/ВЫКЛ)</button>
-                            <label class="btn-action" style="flex:1; text-align:center;">📁 Файл<input type="file" id="audio-file" accept="audio/*,video/webm" style="display:none;"></label>
-                        </div>
-                        <div style="font-size:0.6rem; color:#888; margin-top:4px;">Статус: <span id="audio-status" style="color:var(--accent)">Нет буфера</span></div>
-                    </div>
-                </div>
-                <div class="editor-col">
-                    <div class="ctrl-group">
-                        <span class="ctrl-label"><span>Start Trim</span><span id="audio-v-start">0%</span></span>
-                        <input type="range" id="audio-start" class="vol-slider" value="0">
-                    </div>
-                    <div class="ctrl-group mt-2">
-                        <span class="ctrl-label"><span>End Trim</span><span id="audio-v-end">100%</span></span>
-                        <input type="range" id="audio-end" class="vol-slider" value="100">
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <!-- LOGIC -->
-    <script>
-        const App = (() => {
-            const STEPS = 16;
-            
-            const TRACKS = [
-                { id: 'drums',  name: '1. Sampler',      c: 'var(--t-drums)',  vol: 0.8, rev: 0.1, mute: false, solo: false },
-                { id: 'synth',  name: '2. Seed Synth',   c: 'var(--t-synth)',  vol: 0.6, rev: 0.3, mute: false, solo: false },
-                { id: 'chaos',  name: '3. Chaos Seq',    c: 'var(--t-chaos)',  vol: 0.7, rev: 0.4, mute: false, solo: false },
-                { id: 'vibe',   name: '4. Atmosphere',   c: 'var(--t-vibe)',   vol: 0.5, rev: 0.0, mute: false, solo: false },
-                { id: 'noise',  name: '5. Granular',     c: 'var(--t-noise)',  vol: 0.8, rev: 0.5, mute: false, solo: false },
-                { id: 'synest', name: '6. Synesthesia',  c: 'var(--t-synest)', vol: 0.8, rev: 0.6, mute: false, solo: false },
-                { id: 'rhythm', name: '7. Rhythm Gen',   c: 'var(--t-rhythm)', vol: 0.8, rev: 0.2, mute: false, solo: false },
-                { id: 'audio',  name: '8. Audio Tracks', c: 'var(--t-audio)',  vol: 0.8, rev: 0.2, mute: false, solo: false }
-            ];
-
-            let state = {
-                play: false, rec: false, bpm: 120, step: 0, nextTime: 0, timer: null,
-                activeTrk: 0, activePad: 0, activeAudio: 0,
-                synImgData: null, granBuf: null, glitchLvl: 0
-            };
-
-            // Recorders 
-            let padRec = null, granRec = null, audRec = null;
-
-            // DATA 
-            let d_samp = Array(9).fill().map(() => ({ buf: null, s: 0, e: 1, seq: Array(STEPS).fill(false) }));
-            let d_synth = Array(STEPS).fill().map(()=>({a:false, n:60}));
-            let d_chaos = Array(16).fill().map(()=>Array(16).fill(false));
-            let d_audio = Array(6).fill().map(() => ({ buf: null, s: 0, e: 1, seq: Array(STEPS).fill(false) }));
-            
-            const VIBES = [
-                { id: 'rain', n: 'Дождь', v: 0 }, { id: 'fire', n: 'Костер', v: 0 }, { id: 'ocean', n: 'Океан', v: 0 }, { id: 'forest', n: 'Лес', v: 0 },
-                { id: 'cafe', n: 'Толпа', v: 0 }, { id: 'train', n: 'Поезд', v: 0 }, { id: 'cricket', n: 'Сверчки', v: 0 }, { id: 'vinyl', n: 'Винил', v: 0 },
-                { id: 'fan', n: 'Вентилятор', v: 0 }, { id: 'tape', n: 'Пленка', v: 0 }, { id: 'white', n: 'Белый шум', v: 0 }, { id: 'pink', n: 'Розовый', v: 0 },
-                { id: 'bin', n: 'Binaural (10Hz)', v: 0 }
-            ];
-
-            const GROOVES = {
-                metronome: { k: [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0], s: [], h: [] },
-                rock:   { k: [1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0], s: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0], h: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0] },
-                hiphop: { k: [1,0,0,0, 0,0,1,0, 0,0,0,0, 1,0,0,0], s: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0], h: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,1] },
-                dubstep:{ k: [1,0,0,0, 0,0,0,0, 0,0,1,0, 0,0,0,0], s: [0,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0], h: [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0] },
-                house:  { k: [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0], s: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0], h: [0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0] }
-            };
-
-            // AUDIO
-            let ctx, master, mAnalys, dest, rec, recChunks = [];
-            let trkGains = [], trkRevSends = [], mDist, mRev, rWet, rDry;
-            let nBuf;
-            let vibeNodes = {};
-
-            // GLITCH NODE
-            let glitchNode = null;
-
-            // --- INIT ENGINE ---
-            const initEngine = () => {
-                ctx = new (window.AudioContext || window.webkitAudioContext)();
-                master = ctx.createGain(); masterAnalyser = ctx.createAnalyser(); dest = ctx.createMediaStreamDestination();
+ <a href="studio" class="hub-card col-span-1 md:col-span-4 reveal" style="transition-delay: 0.1s;">
+                <div class="card-tag">Pro Production / Единая Среда</div>
+                <h2 class="card-title text-4xl md:text-5xl">MuжicLab Studio (beta)</h2>
+                <p class="card-desc md:max-w-2xl">Браузерная DAW. 8 независимых дорожек: сэмплер на 9 пэдов, генеративные синтезаторы, клеточные автоматы, гранулярный шум и мастер-эффекты.</p>
+                <div class="arrow-link">Открыть студию →</div>
                 
-                // GLITCH PROCESSOR (AudioWorklet fallback: using ScriptProcessor for wider browser support in this 1-file setup)
-                glitchNode = ctx.createScriptProcessor(4096, 2, 2);
-                let glitchBuffer = new Float32Array(44100); // 1 sec buffer max
-                let writePtr = 0, readPtr = 0, isGlitching = false, glitchLen = 0;
-                
-                glitchNode.onaudioprocess = (e) => {
-                    const inpL = e.inputBuffer.getChannelData(0);
-                    const inpR = e.inputBuffer.getChannelData(1);
-                    const outL = e.outputBuffer.getChannelData(0);
-                    const outR = e.outputBuffer.getChannelData(1);
-
-                    for (let i = 0; i < inpL.length; i++) {
-                        let sample = (inpL[i] + inpR[i]) * 0.5; // Mono mix for glitch buf
-
-                        if(state.glitchLvl > 0) {
-                            if (!isGlitching && Math.random() < (state.glitchLvl * 0.0005)) {
-                                isGlitching = true;
-                                glitchLen = Math.floor(Math.random() * (state.glitchLvl * 1000) + 100);
-                                readPtr = writePtr - glitchLen;
-                                if(readPtr < 0) readPtr += 44100;
-                            }
-                            
-                            if (isGlitching) {
-                                sample = glitchBuffer[Math.floor(readPtr)];
-                                readPtr += (1 + (Math.random() * state.glitchLvl * 0.05)); // pitch modulation during glitch
-                                if(readPtr >= 44100) readPtr -= 44100;
-                                glitchLen--;
-                                if(glitchLen <= 0) isGlitching = false;
-                                
-                                // UI Trigger
-                                if(Math.random() < 0.1) document.body.classList.add('glitch-active');
-                                else document.body.classList.remove('glitch-active');
-                            } else {
-                                document.body.classList.remove('glitch-active');
-                            }
-                        } else {
-                            document.body.classList.remove('glitch-active');
-                        }
-
-                        glitchBuffer[writePtr] = sample;
-                        writePtr = (writePtr + 1) % 44100;
-
-                        outL[i] = state.glitchLvl > 0 ? sample : inpL[i];
-                        outR[i] = state.glitchLvl > 0 ? sample : inpR[i];
-                    }
-                };
-
-                mDist = ctx.createWaveShaper(); mDist.oversample = '4x';
-                mRev = ctx.createConvolver(); rWet = ctx.createGain(); rDry = ctx.createGain();
-                const l = ctx.sampleRate*2.5, imp = ctx.createBuffer(2, l, ctx.sampleRate);
-                for(let i=0; i<l; i++){ imp.getChannelData(0)[i] = (Math.random()*2-1)*Math.pow(1-i/l,2); imp.getChannelData(1)[i] = (Math.random()*2-1)*Math.pow(1-i/l,2); }
-                mRev.buffer = imp;
-
-                for(let i=0; i<8; i++){ 
-                    let g = ctx.createGain(); 
-                    let dry = ctx.createGain(); dry.gain.value = 1;
-                    let send = ctx.createGain(); send.gain.value = TRACKS[i].rev;
-                    
-                    g.connect(dry); g.connect(send);
-                    dry.connect(mDist);
-                    send.connect(mRev);
-                    
-                    trkGains.push(g); 
-                    trkRevSends.push(send);
-                }
-
-                mDist.connect(rDry); mDist.connect(mRev).connect(rWet);
-                
-                // Route through glitch node
-                rDry.connect(glitchNode); rWet.connect(glitchNode);
-                glitchNode.connect(master);
-                
-                master.connect(masterAnalyser); masterAnalyser.connect(ctx.destination); masterAnalyser.connect(dest);
-
-                nBuf = ctx.createBuffer(1, ctx.sampleRate*2, ctx.sampleRate);
-                for(let i=0; i<nBuf.length; i++) nBuf.getChannelData(0)[i] = Math.random()*2-1;
-
-                initVibes(); updateMasterFX(); updateVols(); drawMaster();
-                document.getElementById('init-overlay').style.opacity=0; setTimeout(()=>document.getElementById('init-overlay').remove(), 500);
-            };
-
-            const initVibes = () => {
-                const addVibe = (id, setupFn) => {
-                    vibeNodes[id] = ctx.createGain(); vibeNodes[id].gain.value = 0;
-                    setupFn(vibeNodes[id]);
-                    vibeNodes[id].connect(trkGains[3]);
-                };
-                const getN = () => { const src = ctx.createBufferSource(); src.buffer = nBuf; src.loop = true; return src; };
-                const getO = (t, f) => { const o = ctx.createOscillator(); o.type = t; o.frequency.value = f; return o; };
-
-                addVibe('rain', g => { const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=400; const n=getN(); n.connect(f).connect(g); n.start(); });
-                addVibe('fire', g => { const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=150; const n=getN(); n.connect(f).connect(g); n.start(); });
-                addVibe('ocean', g => { const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=200; const n=getN(); n.connect(f).connect(g); n.start(); });
-                addVibe('forest', g => { const f = ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=350; const n=getN(); n.connect(f).connect(g); n.start(); });
-                addVibe('cafe', g => { const f = ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=400; const n=getN(); n.connect(f).connect(g); n.start(); });
-                addVibe('train', g => { const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=800; const n=getN(); n.connect(f).connect(g); n.start(); });
-                addVibe('cricket', g => { const o = getO('sine', 4500); o.connect(g); o.start(); });
-                addVibe('vinyl', g => { const f = ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=6000; const n=getN(); n.connect(f).connect(g); n.start(); });
-                addVibe('fan', g => { const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=200; const n=getN(); n.connect(f).connect(g); n.start(); });
-                addVibe('tape', g => { const f = ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=1500; const n=getN(); n.connect(f).connect(g); n.start(); });
-                addVibe('white', g => { const n=getN(); n.connect(g); n.start(); });
-                addVibe('pink', g => { const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=800; const n=getN(); n.connect(f).connect(g); n.start(); });
-                addVibe('bin', g => { 
-                    const oL=getO('sine',200), oR=getO('sine',210), pL=ctx.createStereoPanner(), pR=ctx.createStereoPanner();
-                    pL.pan.value=-1; pR.pan.value=1; oL.connect(pL).connect(g); oR.connect(pR).connect(g); oL.start(); oR.start();
-                });
-            };
-
-            const updateMasterFX = () => {
-                if(!ctx) return;
-                const d = parseInt(document.getElementById('m-dist').value);
-                if(d===0) mDist.curve=null; else {
-                    const c = new Float32Array(44100); const deg = Math.PI/180;
-                    for(let i=0;i<44100;i++){ let x=i*2/44100-1; c[i]=(3+d*2)*x*20*deg/(Math.PI+d*2*Math.abs(x)); }
-                    mDist.curve = c;
-                }
-                rWet.gain.value = parseInt(document.getElementById('m-rev').value)/100; // Can go up to 4.0 now
-                state.glitchLvl = parseInt(document.getElementById('m-glitch').value);
-            };
-
-            const updateVols = () => {
-                if(!ctx) return;
-                const anyS = TRACKS.some(t=>t.solo);
-                TRACKS.forEach((t,i) => {
-                    let v = t.mute ? 0 : t.vol;
-                    if(anyS && !t.solo) v=0;
-                    trkGains[i].gain.setValueAtTime(v, ctx.currentTime);
-                    if(trkRevSends[i]) trkRevSends[i].gain.setValueAtTime(t.rev, ctx.currentTime);
-                });
-            };
-
-            // --- SOUND GENERATORS ---
-            const playPad = (idx, time) => {
-                const p = d_samp[idx];
-                if(p.buf) {
-                    const s = ctx.createBufferSource(); s.buffer = p.buf; s.connect(trkGains[0]);
-                    const dur = p.buf.duration, st = dur*p.s, en = dur*p.e;
-                    if(en-st > 0) s.start(time, st, en-st);
-                } else {
-                    const o=ctx.createOscillator(), g=ctx.createGain(); o.connect(g).connect(trkGains[0]);
-                    
-                    if(idx===0){ o.type='sine'; o.frequency.setValueAtTime(150,time); o.frequency.exponentialRampToValueAtTime(0.01,time+0.5); g.gain.setValueAtTime(1,time); g.gain.exponentialRampToValueAtTime(0.01,time+0.5); }
-                    else if(idx===1){ o.type='triangle'; o.frequency.setValueAtTime(200,time); o.frequency.exponentialRampToValueAtTime(50,time+0.2); g.gain.setValueAtTime(0.8,time); g.gain.exponentialRampToValueAtTime(0.01,time+0.2); const n=ctx.createBufferSource(), nf=ctx.createBiquadFilter(), ng=ctx.createGain(); n.buffer=nBuf; nf.type='highpass'; nf.frequency.value=1500; ng.gain.setValueAtTime(1,time); ng.gain.exponentialRampToValueAtTime(0.01,time+0.25); n.connect(nf).connect(ng).connect(trkGains[0]); n.start(time); n.stop(time+0.25); }
-                    else if(idx===2){ g.gain.value = 0; const n=ctx.createBufferSource(), nf=ctx.createBiquadFilter(), ng=ctx.createGain(); n.buffer=nBuf; nf.type='highpass'; nf.frequency.value=8000; ng.gain.setValueAtTime(0.6,time); ng.gain.exponentialRampToValueAtTime(0.01,time+0.05); n.connect(nf).connect(ng).connect(trkGains[0]); n.start(time); n.stop(time+0.05); }
-                    else if(idx===3){ g.gain.value = 0; const n=ctx.createBufferSource(), nf=ctx.createBiquadFilter(), ng=ctx.createGain(); n.buffer=nBuf; nf.type='highpass'; nf.frequency.value=8000; ng.gain.setValueAtTime(0.6,time); ng.gain.exponentialRampToValueAtTime(0.01,time+0.3); n.connect(nf).connect(ng).connect(trkGains[0]); n.start(time); n.stop(time+0.3); }
-                    else if(idx===4){ o.type='square'; o.frequency.setValueAtTime(600,time); o.frequency.exponentialRampToValueAtTime(200,time+0.1); g.gain.setValueAtTime(0.5,time); g.gain.exponentialRampToValueAtTime(0.01,time+0.1); }
-                    else if(idx===5){ o.type='square'; o.frequency.setValueAtTime(300,time); o.frequency.exponentialRampToValueAtTime(100,time+0.1); g.gain.setValueAtTime(0.5,time); g.gain.exponentialRampToValueAtTime(0.01,time+0.1); }
-                    else if(idx===6){ g.gain.value = 0; const n=ctx.createBufferSource(), nf=ctx.createBiquadFilter(), ng=ctx.createGain(); n.buffer=nBuf; nf.type='bandpass'; nf.frequency.value=1200; ng.gain.setValueAtTime(0.8,time); ng.gain.setValueAtTime(0.1, time+0.01); ng.gain.setValueAtTime(0.8, time+0.02); ng.gain.exponentialRampToValueAtTime(0.01,time+0.2); n.connect(nf).connect(ng).connect(trkGains[0]); n.start(time); n.stop(time+0.2); }
-                    else if(idx===7){ g.gain.value = 0; const n=ctx.createBufferSource(), nf=ctx.createBiquadFilter(), ng=ctx.createGain(); n.buffer=nBuf; nf.type='highpass'; nf.frequency.value=4000; ng.gain.setValueAtTime(0.8,time); ng.gain.exponentialRampToValueAtTime(0.01,time+1.5); n.connect(nf).connect(ng).connect(trkGains[0]); n.start(time); n.stop(time+1.5); }
-                    else if(idx===8){ o.type='sine'; o.frequency.value=50; g.gain.setValueAtTime(1,time); g.gain.exponentialRampToValueAtTime(0.01,time+0.6); }
-                    o.start(time); o.stop(time+1.5);
-                }
-            };
-
-            const playAudioTrack = (idx, time) => {
-                const p = d_audio[idx];
-                if(p.buf) {
-                    const s = ctx.createBufferSource(); s.buffer = p.buf; s.connect(trkGains[7]);
-                    const dur = p.buf.duration, st = dur*p.s, en = dur*p.e;
-                    if(en-st > 0) s.start(time, st, en-st);
-                }
-            };
-
-            const playSynth = (note, time, type, tIdx, subMix=0) => {
-                const o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain();
-                const freq = 440 * Math.pow(2, (note-69)/12);
-                o.type = type; o.frequency.value = freq;
-                f.type = 'lowpass'; f.frequency.setValueAtTime(2000, time); f.frequency.exponentialRampToValueAtTime(100, time+0.2);
-                g.gain.setValueAtTime(0, time); g.gain.linearRampToValueAtTime(0.5, time+0.02); g.gain.exponentialRampToValueAtTime(0.01, time+0.3);
-                o.connect(f).connect(g).connect(trkGains[tIdx]); o.start(time); o.stop(time+0.4);
-
-                if(subMix > 0) {
-                    const sub = ctx.createOscillator(), subG = ctx.createGain();
-                    sub.type = 'sine'; sub.frequency.value = freq / 2;
-                    subG.gain.setValueAtTime(0, time); subG.gain.linearRampToValueAtTime(subMix*0.5, time+0.02); subG.gain.exponentialRampToValueAtTime(0.01, time+0.3);
-                    sub.connect(f).connect(subG).connect(trkGains[tIdx]); sub.start(time); sub.stop(time+0.4);
-                }
-            };
-
-            const playGranular = (time) => {
-                if(!state.granBuf) return;
-                const size = parseInt(document.getElementById('gran-size').value)/1000;
-                const pitch = parseInt(document.getElementById('gran-pitch').value)/100;
-                
-                const s = ctx.createBufferSource(); s.buffer = state.granBuf; s.playbackRate.value = pitch;
-                const g = ctx.createGain();
-                g.gain.setValueAtTime(0, time); g.gain.linearRampToValueAtTime(0.5, time+size/2); g.gain.linearRampToValueAtTime(0, time+size);
-                
-                let offset = Math.random() * (state.granBuf.duration - size);
-                if(offset < 0) offset = 0;
-                
-                s.connect(g).connect(trkGains[4]);
-                s.start(time, offset, size);
-            };
-
-            // --- SCHEDULER ---
-            const scheduleStep = (st, time) => {
-                const stepDur = 0.25 * (60/state.bpm);
-                const delay = (time - ctx.currentTime)*1000;
-                setTimeout(()=>{
-                    document.getElementById('playhead').style.left = `${(st/STEPS)*100}%`;
-                    document.getElementById('lcd-step').textContent = (st+1).toString().padStart(2,'0');
-                    if(st===0) { document.getElementById('syn-scan').style.left = '0%'; }
-                    else { document.getElementById('syn-scan').style.left = `${(st/STEPS)*100}%`; }
-                }, delay > 0 ? delay : 0);
-
-                for(let i=0; i<9; i++){ if(d_samp[i].seq[st]) playPad(i, time); }
-
-                if(d_synth[st].a) {
-                    const root = parseInt(document.getElementById('seed-root').value);
-                    const subM = parseInt(document.getElementById('seed-sub').value)/100;
-                    playSynth(d_synth[st].n + (root-45), time, document.getElementById('seed-wave').value, 1, subM);
-                }
-
-                // CHAOS LAB WITH SCALES
-                const cWave = document.getElementById('chaos-wave').value || 'square';
-                const cScaleType = document.getElementById('chaos-scale').value;
-                const cRoot = parseInt(document.getElementById('chaos-root').value);
-                
-                let cScale;
-                if(cScaleType === 'minor') cScale = [0,2,3,5,7,8,10,12,14,15,17,19,20,22,24,26];
-                else if(cScaleType === 'major') cScale = [0,2,4,5,7,9,11,12,14,16,17,19,21,23,24,26];
-                else if(cScaleType === 'pentatonic') cScale = [0,3,5,7,10,12,15,17,19,22,24,27,29,31,34,36];
-                else if(cScaleType === 'phrygian') cScale = [0,1,3,5,7,8,10,12,13,15,17,19,20,22,24,25];
-                
-                cScale = cScale.map(n => cRoot + n).reverse();
-
-                for(let r=0; r<16; r++) if(d_chaos[r][st]) playSynth(cScale[r], time, cWave, 2);
-                if(st===15 && document.getElementById('chaos-evo').checked && delay>0) setTimeout(()=>{
-                    let nG = Array(16).fill().map(()=>Array(16).fill(false));
-                    for(let r=0;r<16;r++)for(let c=0;c<16;c++){
-                        let nb=0;
-                        for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){ if(i===0&&j===0)continue; if(d_chaos[(r+i+16)%16][(c+j+16)%16]) nb++; }
-                        if(d_chaos[r][c] && (nb===2||nb===3)) nG[r][c]=true; else if(!d_chaos[r][c] && nb===3) nG[r][c]=true;
-                    }
-                    d_chaos = nG;
-                    for(let r=0;r<16;r++)for(let c=0;c<16;c++) document.getElementById('chaos-grid').children[r*16+c].classList.toggle('alive', d_chaos[r][c]);
-                }, delay);
-
-                if(state.granBuf) {
-                    const dens = parseInt(document.getElementById('gran-dens').value);
-                    for(let i=0; i<dens; i++) {
-                        playGranular(time + (Math.random() * stepDur));
-                    }
-                }
-
-                if(state.synImgData) {
-                    const sType = document.getElementById('syn-scale').value;
-                    const root = parseInt(document.getElementById('syn-root').value);
-                    const wType = document.getElementById('syn-wave').value;
-                    let scale;
-                    if(sType === 'minor') scale = [0,2,3,5,7,8,10,12,14,15,17,19,20,22,24,26];
-                    else if(sType === 'major') scale = [0,2,4,5,7,9,11,12,14,16,17,19,21,23,24,26];
-                    else if(sType === 'pentatonic') scale = [0,3,5,7,10,12,15,17,19,22,24,27,29,31,34,36];
-                    else if(sType === 'phrygian') scale = [0,1,3,5,7,8,10,12,13,15,17,19,20,22,24,25];
-                    else scale = Array.from({length:16},(_,i)=>i);
-                    
-                    scale = scale.map(n => root + n).reverse();
-
-                    for(let y=0; y<16; y++) {
-                        const i = (y*16 + st)*4;
-                        const bright = (state.synImgData[i]+state.synImgData[i+1]+state.synImgData[i+2])/3;
-                        if(bright > 128) playSynth(scale[y], time, wType, 5);
-                    }
-                }
-
-                const grv = GROOVES[document.getElementById('rhy-groove').value];
-                if(grv.k && grv.k[st]) { const o=ctx.createOscillator(), g=ctx.createGain(); o.type='sine'; o.frequency.setValueAtTime(100,time); o.frequency.exponentialRampToValueAtTime(0.01,time+0.4); g.gain.setValueAtTime(0,time); g.gain.linearRampToValueAtTime(1,time+0.01); g.gain.exponentialRampToValueAtTime(0.01,time+0.4); o.connect(g).connect(trkGains[6]); o.start(time); o.stop(time+0.4); }
-                if(grv.s && grv.s[st]) { const o=ctx.createBufferSource(), f=ctx.createBiquadFilter(), g=ctx.createGain(); o.buffer=nBuf; f.type='highpass'; f.frequency.value=1000; g.gain.setValueAtTime(0,time); g.gain.linearRampToValueAtTime(0.8,time+0.01); g.gain.exponentialRampToValueAtTime(0.01,time+0.2); o.connect(f).connect(g).connect(trkGains[6]); o.start(time); o.stop(time+0.2); }
-                if(grv.h && grv.h[st]) { const o=ctx.createBufferSource(), f=ctx.createBiquadFilter(), g=ctx.createGain(); o.buffer=nBuf; f.type='highpass'; f.frequency.value=8000; g.gain.setValueAtTime(0,time); g.gain.linearRampToValueAtTime(0.4,time+0.01); g.gain.exponentialRampToValueAtTime(0.01,time+0.1); o.connect(f).connect(g).connect(trkGains[6]); o.start(time); o.stop(time+0.1); }
-                
-                for(let i=0; i<6; i++){ if(d_audio[i].seq[st]) playAudioTrack(i, time); }
-            };
-
-            const scheduler = () => {
-                while(state.nextTime < ctx.currentTime + 0.1) {
-                    scheduleStep(state.step, state.nextTime);
-                    state.nextTime += (0.25 * (60.0 / state.bpm));
-                    state.step = (state.step + 1) % STEPS;
-                }
-                state.timer = setTimeout(scheduler, 25);
-            };
-
-            // --- UI BUILDERS ---
-            const buildUI = () => {
-                const headers = document.getElementById('track-headers');
-                const lanes = document.getElementById('lanes');
-                
-                TRACKS.forEach((t, i) => {
-                    const th = document.createElement('div'); th.className = 'track-header'; th.dataset.track = i;
-                    if(i===0) th.classList.add('selected');
-                    th.innerHTML = `
-                        <div class="track-header-inner">
-                            <div class="track-top"><span class="track-name" style="color:${t.c}">${t.name}</span><div class="track-controls"><button class="btn-mini m">M</button><button class="btn-mini s">S</button></div></div>
-                            <div class="track-bottom">
-                                <span style="font-size:9px;color:#666;width:15px">VOL</span><input type="range" class="vol-slider tv" value="${t.vol*100}">
-                                <span style="font-size:9px;color:#666;width:15px;margin-left:4px;">REV</span><input type="range" class="vol-slider tr" min="0" max="400" value="${t.rev*100}">
-                            </div>
-                        </div>
-                    `;
-                    
-                    if(i===0 || i===7) {
-                        const shl = document.createElement('div'); shl.className = 'sub-header-list';
-                        const labels = i===0 ? ['Q - Kick','W - Snare','E - Hat C','A - Hat O','S - Perc 1','D - Perc 2','Z - Clap','X - Crash','C - Sub'] : ['Канал 1','Канал 2','Канал 3','Канал 4','Канал 5','Канал 6'];
-                        labels.forEach(n => {
-                            const sh = document.createElement('div'); sh.className = 'sub-header'; sh.textContent = n; shl.appendChild(sh);
-                        });
-                        th.appendChild(shl);
-                    }
-                    
-                    th.addEventListener('click', (e) => {
-                        if(e.target.tagName==='BUTTON' || e.target.tagName==='INPUT') return;
-                        document.querySelectorAll('.track-header').forEach(h=>h.classList.remove('selected'));
-                        th.classList.add('selected');
+                <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
+                    <g class="svg-float">
+                        <rect x="10" y="25" width="12" height="8" rx="1" fill="#111" stroke="white" opacity="0.8" />
+                        <rect x="25" y="25" width="65" height="8" rx="1" fill="white" opacity="0.1" stroke="none" />
+                        <rect x="28" y="27" width="8" height="4" rx="1" fill="white" stroke="none" opacity="0.5" />
+                        <rect x="50" y="27" width="15" height="4" rx="1" fill="white" stroke="none" opacity="0.5" />
                         
-                        if(i===0) { th.classList.add('expanded-9'); document.querySelector('.lane-drums').classList.add('expanded-9'); }
-                        else { document.querySelector('.track-header[data-track="0"]').classList.remove('expanded-9'); document.querySelector('.lane-drums').classList.remove('expanded-9'); }
+                        <rect x="10" y="38" width="12" height="8" rx="1" fill="#111" stroke="white" opacity="0.8" />
+                        <rect x="25" y="38" width="65" height="8" rx="1" fill="white" opacity="0.1" stroke="none" />
+                        <rect x="40" y="40" width="12" height="4" rx="1" fill="#f97316" stroke="none" class="svg-beat" />
+                        
+                        <rect x="10" y="51" width="12" height="8" rx="1" fill="#111" stroke="white" opacity="0.8" />
+                        <rect x="25" y="51" width="65" height="8" rx="1" fill="white" opacity="0.1" stroke="none" />
+                        <rect x="60" y="53" width="20" height="4" rx="1" fill="white" stroke="none" opacity="0.5" />
+                        
+                        <rect x="10" y="64" width="12" height="8" rx="1" fill="#111" stroke="white" opacity="0.8" />
+                        <rect x="25" y="64" width="65" height="8" rx="1" fill="white" opacity="0.1" stroke="none" />
+                        <rect x="30" y="66" width="5" height="4" rx="1" fill="white" stroke="none" opacity="0.5" />
+                        <rect x="45" y="66" width="5" height="4" rx="1" fill="white" stroke="none" opacity="0.5" />
+                        <rect x="75" y="66" width="5" height="4" rx="1" fill="white" stroke="none" opacity="0.5" />
 
-                        if(i===7) { th.classList.add('expanded-6'); document.querySelector('.lane-audio').classList.add('expanded-6'); }
-                        else if(document.querySelector('.track-header[data-track="7"]')) { document.querySelector('.track-header[data-track="7"]').classList.remove('expanded-6'); document.querySelector('.lane-audio').classList.remove('expanded-6'); }
+                        <g class="svg-playhead">
+                            <line x1="28" y1="18" x2="28" y2="78" stroke="#f97316" stroke-width="1.5" />
+                            <polygon points="25,18 31,18 28,22" fill="#f97316" stroke="none" />
+                        </g>
+                    </g>
+                </svg>
+            </a>           
+            
+            <!-- 3. MICRO-DAW (col-span-4 - ЦЕНТРАЛЬНЫЙ БЛОК) -->
+            <a href="daw" class="hub-card col-span-1 md:col-span-4 reveal" style="transition-delay: 0.2s;">
+                <div class="card-tag">Production / Запись</div>
+                <h2 class="card-title">Сэмплер & Секвенсор</h2>
+                <p class="card-desc">Полноценная микро-студия. Записывай голос, режь сэмплы, выставляй их по шагам и меняй тональность в пианоролле. Твой звук в твоих руках.</p>
+                <div class="arrow-link">Открыть модуль →</div>
 
-                        document.getElementById('editor-title').textContent = `Инспектор: ${t.name}`;
-                        document.querySelectorAll('.editor-content').forEach(c=>c.classList.remove('active'));
-                        document.getElementById(`ed-${i}`).classList.add('active');
-                    });
+                <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
+                    <rect x="10" y="20" width="15" height="10" fill="white" />
+                    <rect x="30" y="20" width="15" height="10" opacity="0.3" />
+                    <rect x="50" y="20" width="15" height="10" fill="white" />
+                    <rect x="70" y="20" width="15" height="10" opacity="0.3" />
+                    <rect x="10" y="40" width="15" height="10" opacity="0.3" />
+                    <rect x="30" y="40" width="15" height="10" fill="white" />
+                    <rect x="50" y="40" width="15" height="10" opacity="0.3" />
+                    <!-- Оранжевый прямоугольник справа снизу -->
+                    <rect x="70" y="40" width="15" height="10" fill="#f97316" stroke="none" class="svg-beat" />
+                    <path d="M 20 80 L 30 65 L 40 85 L 50 60 L 60 90 L 70 70 L 80 80" stroke-width="2" stroke-linejoin="round" />
+                </svg>
+            </a>
 
-                    th.querySelector('.m').addEventListener('click', function(e) { e.stopPropagation(); this.classList.toggle('active-m'); t.mute = !t.mute; updateVols(); });
-                    th.querySelector('.s').addEventListener('click', function(e) { e.stopPropagation(); this.classList.toggle('active-s'); t.solo = !t.solo; updateVols(); });
-                    th.querySelector('.tv').addEventListener('input', function(e) { e.stopPropagation(); t.vol = parseFloat(this.value)/100; updateVols(); });
-                    th.querySelector('.tr').addEventListener('input', function(e) { e.stopPropagation(); t.rev = parseFloat(this.value)/100; updateVols(); });
+            <!-- 4. THEORY LAB (col-span-2) -->
+            <a href="theory" class="hub-card col-span-1 md:col-span-2 reveal" style="transition-delay: 0.3s;">
+                <div class="card-tag">Theory Lab / Гармония</div>
+                <h2 class="card-title">Лаборатория Гармонии</h2>
+                <p class="card-desc">Двусторонний определитель аккордов и ладов. Строй сложные созвучия или распознавай их через гриф и клавиши.</p>
+                <div class="arrow-link">Открыть модуль →</div>
 
-                    headers.appendChild(th);
+                <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
+                    <polygon points="50,20 80,70 20,70" stroke-width="1.5" opacity="0.3" stroke-dasharray="4 4" />
+                    <circle cx="50" cy="53" r="2" fill="white" class="svg-float" />
+                    <!-- Оранжевая тоника -->
+                    <circle cx="50" cy="20" r="6" fill="#f97316" stroke="none" class="svg-beat" />
+                    <circle cx="80" cy="70" r="5" fill="white" class="svg-beat" style="animation-delay: 0.3s;" />
+                    <circle cx="20" cy="70" r="5" fill="white" class="svg-beat" style="animation-delay: 0.6s;" />
+                </svg>
+            </a>
 
-                    if(i===0 || i===1 || i===7) {
-                        const tl = document.createElement('div'); 
-                        tl.className = `track-lane ${i===0?'lane-drums expanded-9': i===7?'lane-audio':'lane-synth'}`; tl.dataset.track=i;
-                        const lm = document.createElement('div'); lm.className='lane-main';
-                        for(let c=0; c<STEPS; c++){ const s=document.createElement('div'); s.className='lane-step'; lm.appendChild(s); }
-                        tl.appendChild(lm);
+            <!-- 5. OBLIQUE STRATEGIES (col-span-2) -->
+            <a href="brian" class="hub-card col-span-1 md:col-span-2 reveal" style="transition-delay: 0.4s;">
+                <div class="card-tag">Mind Lab / Инсайт</div>
+                <h2 class="card-title">Обходные Стратегии</h2>
+                <p class="card-desc">Цифровые колоды Брайана Ино, «Ножевая» колода и Таро для поиска нестандартных решений в творчестве.</p>
+                <div class="arrow-link">Открыть модуль →</div>
 
-                        if(i===0 || i===7) {
-                            const slc = document.createElement('div'); slc.className = 'sub-lanes-container';
-                            const rows = i===0 ? 9 : 6;
-                            const dArr = i===0 ? d_samp : d_audio;
-                            for(let r=0; r<rows; r++) {
-                                const sl = document.createElement('div'); sl.className = 'sub-lane';
-                                for(let c=0; c<STEPS; c++){ 
-                                    const s=document.createElement('div'); s.className='lane-step';
-                                    s.addEventListener('click', () => { dArr[r].seq[c] = !dArr[r].seq[c]; drawLanes(); });
-                                    sl.appendChild(s); 
-                                }
-                                slc.appendChild(sl);
-                            }
-                            tl.appendChild(slc);
-                        } else {
-                            Array.from(lm.children).forEach((s,c) => { s.addEventListener('click', ()=>{ d_synth[c].a = !d_synth[c].a; drawLanes(); }); });
-                        }
-                        lanes.appendChild(tl);
-                    } else {
-                        const tl = document.createElement('div'); tl.className = 'track-lane';
-                        tl.innerHTML = `<div style="display:flex; height:100%; align-items:center; justify-content:center; color:#555; font-size:0.8rem; font-style:italic;">Настройки в Инспекторе</div>`;
-                        lanes.appendChild(tl);
-                    }
-                });
+                <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
+                    <g class="svg-float">
+                        <rect x="20" y="15" width="40" height="60" rx="2" transform="rotate(-15 40 45)" opacity="0.4" />
+                        <rect x="40" y="25" width="40" height="60" rx="2" transform="rotate(5 60 55)" fill="#111111" />
+                        <!-- Кривой оранжевый глаз -->
+                        <path d="M 50 50 Q 60 35 70 50 Q 60 65 50 50 Z" stroke-width="1.5" />
+                        <circle cx="60" cy="50" r="4" fill="#f97316" stroke="none" class="svg-beat" />
+                    </g>
+                </svg>
+            </a>
 
-                const r = document.getElementById('ruler');
-                for(let i=0;i<STEPS;i++){ const s = document.createElement('div'); s.className='ruler-step'; s.textContent=i+1; r.appendChild(s); }
+            <!-- 1. ВИЗУАЛИЗАТОР (col-span-2) -->
+            <a href="visualizer" class="hub-card col-span-1 md:col-span-2 reveal">
+                <div class="card-tag">Music Lab / Теория</div>
+                <h2 class="card-title">Генеративный Визуализатор</h2>
+                <p class="card-desc">Интерактивная связь между гитарным грифом, пианино и нотным станом. Изучай теорию через Web Audio API.</p>
+                <div class="arrow-link">Открыть модуль →</div>
 
-                const dp = document.getElementById('sampler-pads');
-                ['Q','W','E','A','S','D','Z','X','C'].forEach((k,i)=>{
-                    const p = document.createElement('div'); p.className='pad'; if(i===0)p.classList.add('selected');
-                    p.innerHTML = `<span class="pad-key">${k}</span><span class="pad-name">Pad ${i+1}</span>`;
-                    p.addEventListener('mousedown', ()=>{
-                        document.querySelectorAll('#sampler-pads .pad').forEach(x=>x.classList.remove('selected'));
-                        p.classList.add('selected'); state.activePad = i;
-                        document.getElementById('samp-active-name').textContent = k;
-                        document.getElementById('samp-start').value = d_samp[i].s*100; document.getElementById('samp-v-start').textContent = Math.round(d_samp[i].s*100)+'%';
-                        document.getElementById('samp-end').value = d_samp[i].e*100; document.getElementById('samp-v-end').textContent = Math.round(d_samp[i].e*100)+'%';
-                        if(ctx) playPad(i,0);
-                    });
-                    dp.appendChild(p);
-                });
+                <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
+                    <path class="svg-wave" d="M 0 50 Q 25 20, 50 50 T 100 50" stroke-dasharray="5 5" />
+                    <line x1="10" y1="30" x2="90" y2="30" stroke-width="1" opacity="0.3"/>
+                    <line x1="10" y1="40" x2="90" y2="40" stroke-width="1" opacity="0.3"/>
+                    <line x1="10" y1="60" x2="90" y2="60" stroke-width="1" opacity="0.3"/>
+                    <line x1="10" y1="70" x2="90" y2="70" stroke-width="1" opacity="0.3"/>
+                    <circle cx="30" cy="50" r="4" fill="white" />
+                    <!-- Оранжевая точка -->
+                    <circle cx="70" cy="40" r="5" fill="#f97316" stroke="none" class="svg-beat" />
+                </svg>
+            </a>
 
-                const cg = document.getElementById('chaos-grid');
-                for(let r=0;r<16;r++)for(let c=0;c<16;c++){
-                    const cell=document.createElement('div'); cell.className='chaos-cell';
-                    cell.addEventListener('mousedown', ()=>{ d_chaos[r][c]=!d_chaos[r][c]; cell.classList.toggle('alive'); });
-                    cell.addEventListener('mouseenter', e=>{ if(e.buttons===1){ d_chaos[r][c]=true; cell.classList.add('alive'); }});
-                    cg.appendChild(cell);
-                }
+            <!-- 2. RHYTHM LAB (col-span-2) -->
+            <a href="rhythm" class="hub-card col-span-1 md:col-span-2 reveal" style="transition-delay: 0.1s;">
+                <div class="card-tag">Rhythm Lab / Пульс</div>
+                <h2 class="card-title">Генератор Грува & BPM</h2>
+                <p class="card-desc">Продвинутый метроном с функцией Tap Tempo, сложными размерами такта и встроенными барабанами.</p>
+                <div class="arrow-link">Открыть модуль →</div>
 
-                const vc = document.getElementById('vibe-sliders-container');
-                VIBES.forEach(v => {
-                    const g = document.createElement('div'); g.className='ctrl-group';
-                    g.innerHTML = `<span class="ctrl-label">${v.n}</span><input type="range" class="vol-slider vs" data-vid="${v.id}" value="0">`;
-                    g.querySelector('.vs').addEventListener('input', e=>{
-                        if(ctx && vibeNodes[v.id]) vibeNodes[v.id].gain.value = e.target.value/100;
-                    });
-                    vc.appendChild(g);
-                });
-            };
+                <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
+                    <rect x="20" y="20" width="25" height="25" rx="4" class="svg-beat" style="transform-origin: 32.5px 32.5px;" />
+                    <rect x="55" y="20" width="25" height="25" rx="4" opacity="0.5"/>
+                    <rect x="20" y="55" width="25" height="25" rx="4" opacity="0.5"/>
+                    <rect x="55" y="55" width="25" height="25" rx="4" class="svg-beat" style="transform-origin: 67.5px 67.5px; animation-delay: 0.5s;" />
+                    <!-- Оранжевая точка в центре -->
+                    <circle cx="50" cy="50" r="4" fill="#f97316" stroke="none" class="svg-beat" />
+                </svg>
+            </a>
 
-            const drawLanes = () => {
-                const sLm = document.querySelector('.lane-synth .lane-main').children;
-                for(let i=0;i<STEPS;i++) sLm[i].innerHTML = d_synth[i].a ? '<div class="note"></div>' : '';
-                const slc = document.querySelector('.lane-drums .sub-lanes-container').children;
-                for(let r=0;r<9;r++){
-                    const sl = slc[r].children;
-                    for(let c=0;c<STEPS;c++) sl[c].innerHTML = d_samp[r].seq[c] ? '<div class="note"></div>' : '';
-                }
-                const slc_a = document.querySelector('.lane-audio .sub-lanes-container').children;
-                for(let r=0;r<6;r++){
-                    const sl = slc_a[r].children;
-                    for(let c=0;c<STEPS;c++) sl[c].innerHTML = d_audio[r].seq[c] ? '<div class="note" style="background:var(--t-audio)"></div>' : '';
-                }
-            };
+            <!-- 6. PIXEL LAB (Bitmap Editor) -->
+    <a href="bitmap" class="hub-card col-span-1 md:col-span-2 reveal" style="transition-delay: 0.5s;">
+    <div class="card-tag">Visual Lab / Изображения</div>
+    <h2 class="card-title">Bitmap Editor</h2>
+    <p class="card-desc">Ретро-обработка фотографий. Превращай любые снимки в стильные 1-битные паттерны с помощью алгоритмов дизеринга и фирменных цветов.</p>
+    <div class="arrow-link">Открыть модуль →</div>
 
-            const genSeed = () => {
-                const str = document.getElementById('seed-val').value;
-                let h=0xdeadbeef; for(let i=0;i<str.length;i++) h=Math.imul(h^str.charCodeAt(i), 2654435761);
-                const rand = ()=>{ h^=h<<13; h^=h>>>17; h^=h<<5; return ((h>>>0)/4294967296); };
-                const sType = document.getElementById('seed-scale').value;
-                const sc = sType==='minor'?[48,50,51,53,55,56,58,60] : sType==='pentatonic'?[48,51,53,55,58,60,63,65] : sType==='major'?[48,50,52,53,55,57,59,60] : [48,49,51,53,55,56,58,60];
-                for(let i=0;i<STEPS;i++) d_synth[i].n = sc[Math.floor(rand()*sc.length)];
-                drawLanes();
-            };
+    <!-- Векторная графика (Сетка пикселей) -->
+    <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
+        <g class="svg-float">
+            <!-- Пиксельная сетка -->
+            <rect x="20" y="20" width="15" height="15" fill="white" opacity="0.5" />
+            <rect x="40" y="20" width="15" height="15" fill="#111111" stroke="white" />
+            <rect x="60" y="20" width="15" height="15" fill="white" />
 
-            const drawMaster = () => {
-                const cvs = document.getElementById('master-canvas'); const c2 = cvs.getContext('2d');
-                const bl = masterAnalyser.frequencyBinCount, d = new Uint8Array(bl);
-                const draw = () => {
-                    requestAnimationFrame(draw); masterAnalyser.getByteTimeDomainData(d);
-                    c2.fillStyle='#000'; c2.fillRect(0,0,cvs.width,cvs.height);
-                    c2.lineWidth=2; c2.strokeStyle=state.rec?'#ef4444':'#f97316'; c2.beginPath();
-                    let sw = cvs.width*1.0/bl, x=0;
-                    for(let i=0;i<bl;i++){ let v=d[i]/128.0, y=v*cvs.height/2; if(i===0)c2.moveTo(x,y); else c2.lineTo(x,y); x+=sw; }
-                    c2.lineTo(cvs.width, cvs.height/2); c2.stroke();
-                }; draw();
-            };
+            <rect x="20" y="40" width="15" height="15" fill="#f97316" stroke="none" class="svg-beat" />
+            <rect x="40" y="40" width="15" height="15" fill="white" />
+            <rect x="60" y="40" width="15" height="15" fill="white" opacity="0.3" />
 
-            // --- BINDINGS ---
-            const bindEvents = () => {
-                document.getElementById('btn-init').addEventListener('click', ()=>{ initEngine(); genSeed(); drawLanes(); });
-                
-                document.getElementById('btn-play').addEventListener('click', function(){
-                    if(!ctx) return; state.play = !state.play;
-                    if(state.play) { this.classList.add('active'); state.step=0; state.nextTime=ctx.currentTime+0.05; state.startTime=ctx.currentTime; scheduler(); }
-                    else { this.classList.remove('active'); clearTimeout(state.timer); document.getElementById('playhead').style.left='0%'; }
-                });
+            <rect x="20" y="60" width="15" height="15" fill="white" />
+            <rect x="40" y="60" width="15" height="15" fill="#111111" stroke="white" />
+            <rect x="60" y="60" width="15" height="15" fill="#f97316" stroke="none" class="svg-beat" style="animation-delay: 0.4s;" />
+        </g>
+    </svg>
+    </a>
 
-                document.getElementById('btn-rec').addEventListener('click', function(){
-                    if(!ctx) return;
-                    if(!state.rec) {
-                        recChunks = []; rec = new MediaRecorder(dest.stream);
-                        rec.ondataavailable = e=>recChunks.push(e.data);
-                        rec.onstop = () => { const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(recChunks,{type:'audio/webm'})); a.download=`mujic_mix_${Date.now()}.webm`; a.click(); };
-                        rec.start(); state.rec=true; this.classList.add('recording');
-                    } else { rec.stop(); state.rec=false; this.classList.remove('recording'); }
-                });
+    <!-- 7. NOISE LAB (Granular Synth) -->
+            <a href="noise" class="hub-card col-span-1 md:col-span-2 reveal" style="transition-delay: 0.6s;">
+                <div class="card-tag">Sound Design / Эмбиент</div>
+                <h2 class="card-title">Noise Lab</h2>
+                <p class="card-desc">Гранулярный синтезатор. Загрузи короткий сэмпл или запиши голос, чтобы разобрать его на атомы и превратить в бесконечный обволакивающий гул.</p>
+                <div class="arrow-link">Открыть модуль →</div>
 
-                document.getElementById('global-bpm').addEventListener('change', e=>state.bpm=e.target.value);
-                ['m-dist','m-rev', 'm-glitch'].forEach(id=>document.getElementById(id).addEventListener('input', updateMasterFX));
+                <!-- Векторная графика (Волна, распадающаяся на гранулы) -->
+                <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
+                    <!-- Исходная затухающая волна -->
+                    <path d="M 10 60 Q 30 20 50 60" stroke-width="1.5" opacity="0.3" stroke-dasharray="4 4" />
 
-                // SCROLL SYNC
-                const tHeaders = document.getElementById('track-headers');
-                const tArea = document.getElementById('timeline-area');
-                let syncL = false, syncR = false;
-                tHeaders.addEventListener('scroll', () => {
-                    if(!syncL) { syncR = true; tArea.scrollTop = tHeaders.scrollTop; }
-                    syncL = false;
-                });
-                tArea.addEventListener('scroll', () => {
-                    if(!syncR) { syncL = true; tHeaders.scrollTop = tArea.scrollTop; }
-                    syncR = false;
-                });
+                    <!-- Левитирующее облако гранул -->
+                    <g class="svg-float">
+                        <circle cx="60" cy="45" r="2" fill="white" stroke="none" />
+                        <circle cx="70" cy="65" r="1.5" fill="white" stroke="none" />
+                        <circle cx="85" cy="35" r="2.5" fill="white" stroke="none" />
+                        <circle cx="90" cy="55" r="2" fill="white" stroke="none" />
+                        <circle cx="55" cy="70" r="1" fill="white" stroke="none" />
+                        <!-- Главная пульсирующая оранжевая гранула -->
+                        <circle cx="75" cy="50" r="4" fill="#f97316" stroke="none" class="svg-beat" />
+                    </g>
+                </svg>
+            </a>
 
-                // Sampler bindings
-                const lF = async (f, isMic=false)=>{
-                    if(!ctx)return; const b = await ctx.decodeAudioData(await f.arrayBuffer());
-                    const i = state.activePad; d_samp[i].buf = b;
-                    document.getElementById('sampler-pads').children[i].querySelector('.pad-name').textContent = isMic ? 'MIC_REC' : f.name.substring(0,10);
-                };
-                document.getElementById('samp-file').addEventListener('change', e=>{ if(e.target.files.length) lF(e.target.files[0]); });
-                document.getElementById('samp-rec').addEventListener('click', async function(){
-                    if(!ctx)return;
-                    if(padRec && padRec.state === 'recording') { padRec.stop(); return; }
-                    try {
-                        const s = await navigator.mediaDevices.getUserMedia({audio:true}); padRec = new MediaRecorder(s); const ch = [];
-                        padRec.ondataavailable = e=>ch.push(e.data);
-                        padRec.onstop = async ()=>{ const b=new Blob(ch,{type:'audio/webm'}); await lF(b,true); s.getTracks().forEach(t=>t.stop()); this.classList.remove('recording'); this.textContent='🎤 Запись'; };
-                        padRec.start(); this.classList.add('recording'); this.textContent='⏹ Стоп';
-                    } catch(err){ alert('No Mic'); }
-                });
-                document.getElementById('samp-start').addEventListener('input', e=>{ const i=state.activePad; d_samp[i].s = e.target.value/100; document.getElementById('samp-v-start').textContent=e.target.value+'%'; });
-                document.getElementById('samp-end').addEventListener('input', e=>{ const i=state.activePad; d_samp[i].e = e.target.value/100; document.getElementById('samp-v-end').textContent=e.target.value+'%'; });
+<!-- 9. CHAOS LAB (Клеточный Секвенсор) -->
+<a href="chaos" class="hub-card col-span-1 md:col-span-2 reveal" style="transition-delay: 0.8s;">
+    <div class="card-tag">Chaos Lab / Алгоритмы</div>
+    <h2 class="card-title">Клеточный Секвенсор</h2>
+    <p class="card-desc">Генеративный MIDI-модуль на базе «Игры Жизнь» Конвея. Рисуй паттерны, запускай мутацию и слушай, как математика порождает непредсказуемые арпеджио.</p>
+    <div class="arrow-link">Открыть модуль →</div>
 
-                // Seed
-                document.getElementById('seed-rand').addEventListener('click', ()=>{ document.getElementById('seed-val').value=Math.random().toString(36).substring(2,7).toUpperCase(); genSeed(); });
-                document.getElementById('seed-val').addEventListener('input', genSeed);
-                document.getElementById('seed-scale').addEventListener('change', genSeed);
+    <!-- Векторная графика (Сетка и эволюция клеток) -->
+    <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
+        <g class="svg-float">
+            <!-- Верхний ряд -->
+            <rect x="25" y="25" width="12" height="12" rx="2" fill="white" opacity="0.2" stroke="none" />
+            <rect x="42" y="25" width="12" height="12" rx="2" fill="white" opacity="0.8" stroke="none" />
+            <rect x="59" y="25" width="12" height="12" rx="2" fill="white" opacity="0.2" stroke="none" />
 
-                // Chaos
-                document.getElementById('chaos-rand').addEventListener('click', ()=>{ for(let r=0;r<16;r++)for(let c=0;c<16;c++) d_chaos[r][c]=Math.random()>0.8; for(let r=0;r<16;r++)for(let c=0;c<16;c++) document.getElementById('chaos-grid').children[r*16+c].classList.toggle('alive', d_chaos[r][c]); });
-                document.getElementById('chaos-clear').addEventListener('click', ()=>{ for(let r=0;r<16;r++)d_chaos[r].fill(false); for(let r=0;r<16;r++)for(let c=0;c<16;c++) document.getElementById('chaos-grid').children[r*16+c].classList.remove('alive'); });
+            <!-- Средний ряд (с центральной пульсирующей клеткой) -->
+            <rect x="25" y="42" width="12" height="12" rx="2" fill="white" opacity="0.8" stroke="none" />
+            <rect x="42" y="42" width="12" height="12" rx="2" fill="#f97316" stroke="none" class="svg-beat" />
+            <rect x="59" y="42" width="12" height="12" rx="2" fill="white" opacity="0.8" stroke="none" />
 
-                // Granular
-                document.getElementById('gran-file').addEventListener('change', async e=>{
-                    if(!ctx)return; const b = await ctx.decodeAudioData(await e.target.files[0].arrayBuffer()); state.granBuf = b; document.getElementById('gran-status').textContent='Loaded';
-                });
-                document.getElementById('gran-rec').addEventListener('click', async function(){
-                    if(!ctx)return;
-                    if(granRec && granRec.state === 'recording') { granRec.stop(); return; }
-                    try {
-                        const s = await navigator.mediaDevices.getUserMedia({audio:true}); granRec = new MediaRecorder(s); const ch = [];
-                        granRec.ondataavailable = e=>ch.push(e.data);
-                        granRec.onstop = async ()=>{ const b=new Blob(ch,{type:'audio/webm'}); state.granBuf = await ctx.decodeAudioData(await b.arrayBuffer()); document.getElementById('gran-status').textContent='MIC_REC'; s.getTracks().forEach(t=>t.stop()); this.classList.remove('recording'); this.textContent='🎤 Запись (ВКЛ/ВЫКЛ)'; };
-                        granRec.start(); this.classList.add('recording'); this.textContent='⏹ Стоп';
-                    } catch(err){ alert('No Mic'); }
-                });
+            <!-- Нижний ряд -->
+            <rect x="25" y="59" width="12" height="12" rx="2" fill="white" opacity="0.2" stroke="none" />
+            <rect x="42" y="59" width="12" height="12" rx="2" fill="white" opacity="0.8" stroke="none" />
+            <rect x="59" y="59" width="12" height="12" rx="2" fill="white" opacity="0.2" stroke="none" />
+        </g>
+    </svg>
+</a>
 
-                // Audio Tracks
-                document.getElementById('audio-select-chan').addEventListener('change', e=>{
-                    const i = parseInt(e.target.value); state.activeAudio = i;
-                    document.getElementById('audio-active-name').textContent = i+1;
-                    document.getElementById('audio-start').value = d_audio[i].s*100; document.getElementById('audio-v-start').textContent = Math.round(d_audio[i].s*100)+'%';
-                    document.getElementById('audio-end').value = d_audio[i].e*100; document.getElementById('audio-v-end').textContent = Math.round(d_audio[i].e*100)+'%';
-                    document.getElementById('audio-status').textContent = d_audio[i].buf ? 'Загружено' : 'Пусто';
-                });
-                const lFAudio = async (f, isMic=false)=>{
-                    if(!ctx)return; const b = await ctx.decodeAudioData(await f.arrayBuffer());
-                    const i = state.activeAudio; d_audio[i].buf = b;
-                    document.getElementById('audio-status').textContent = isMic ? 'MIC_REC' : f.name.substring(0,10);
-                };
-                document.getElementById('audio-file').addEventListener('change', e=>{ if(e.target.files.length) lFAudio(e.target.files[0]); });
-                document.getElementById('audio-rec').addEventListener('click', async function(){
-                    if(!ctx)return;
-                    if(audRec && audRec.state === 'recording') { audRec.stop(); return; }
-                    try {
-                        const s = await navigator.mediaDevices.getUserMedia({audio:true}); audRec = new MediaRecorder(s); const ch = [];
-                        audRec.ondataavailable = e=>ch.push(e.data);
-                        audRec.onstop = async ()=>{ const b=new Blob(ch,{type:'audio/webm'}); await lFAudio(b,true); s.getTracks().forEach(t=>t.stop()); this.classList.remove('recording'); this.textContent='🎤 Запись'; };
-                        audRec.start(); this.classList.add('recording'); this.textContent='⏹ Стоп';
-                    } catch(err){ alert('No Mic'); }
-                });
-                document.getElementById('audio-start').addEventListener('input', e=>{ const i=state.activeAudio; d_audio[i].s = e.target.value/100; document.getElementById('audio-v-start').textContent=e.target.value+'%'; });
-                document.getElementById('audio-end').addEventListener('input', e=>{ const i=state.activeAudio; d_audio[i].e = e.target.value/100; document.getElementById('audio-v-end').textContent=e.target.value+'%'; });
+<!-- 10. VIBE LAB (Фокус & Атмосфера) -->
+<a href="vibe" class="hub-card col-span-1 md:col-span-2 reveal" style="transition-delay: 0.9s;">
+    <div class="card-tag">Mind Lab / Фокус</div>
+    <h2 class="card-title">Vibe Lab</h2>
+    <p class="card-desc">Безлимитный микшер состояний, генератор бинауральных ритмов (альфа-волн) и запись микса для глубокой концентрации.</p>
+    <div class="arrow-link">Открыть модуль →</div>
 
-                // Synesthesia
-                document.getElementById('syn-file').addEventListener('change', e=>{
-                    const f = e.target.files[0]; if(!f)return;
-                    const r = new FileReader(); r.onload = ev => {
-                        const img = new Image(); img.onload = () => {
-                            const cvs = document.getElementById('syn-cvs'); const cx = cvs.getContext('2d');
-                            cx.drawImage(img,0,0,16,16); state.synImgData = cx.getImageData(0,0,16,16).data;
-                        }; img.src = ev.target.result;
-                    }; r.readAsDataURL(f);
-                });
+    <!-- Векторная графика (Символ концентрации/мозговых волн) -->
+    <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
+        <g class="svg-float">
+            <!-- Альфа-волны (синусоиды) -->
+            <path d="M 15 50 Q 32.5 10 50 50 T 85 50" stroke-width="1.5" opacity="0.6"/>
+            <path d="M 15 50 Q 32.5 90 50 50 T 85 50" stroke-width="1.5" opacity="0.3"/>
+            <!-- Центр фокуса (пульсирующая точка) -->
+            <circle cx="50" cy="50" r="5" fill="#f97316" stroke="none" class="svg-beat" />
+            <!-- Орбита / Таймер -->
+            <circle cx="50" cy="50" r="35" stroke-dasharray="4 6" opacity="0.3" />
+        </g>
+    </svg>
+</a>
 
-                window.addEventListener('keydown', e=>{
-                    if(e.code==='Space' && e.target.tagName!=='INPUT'){ e.preventDefault(); document.getElementById('btn-play').click(); }
-                    if(!e.repeat && e.target.tagName!=='INPUT'){
-                        const pm={'KeyQ':0,'KeyW':1,'KeyE':2,'KeyA':3,'KeyS':4,'KeyD':5,'KeyZ':6,'KeyX':7,'KeyC':8};
-                        if(pm[e.code]!==undefined){ playPad(pm[e.code], 0); const p=document.getElementById('sampler-pads').children[pm[e.code]]; if(p){ p.classList.add('playing'); setTimeout(()=>p.classList.remove('playing'),100); } }
-                    }
-                });
-            };
+<!-- 11. SYNESTHESIA LAB (Изображение ↔ Звук) -->
+            <a href="synesthesia" class="hub-card col-span-1 md:col-span-2 reveal" style="transition-delay: 1.0s;">
+                <div class="card-tag">Data Lab / Синтез</div>
+                <h2 class="card-title">Synesthesia Lab</h2>
+                <p class="card-desc">Генеративный арт-конвертер. Сканируй изображения как оптические партитуры для создания мелодий или превращай аудио в геометрические визуальные паттерны.</p>
+                <div class="arrow-link">Открыть модуль →</div>
 
-            buildUI(); bindEvents();
-        })();
+                <!-- Векторная графика (Оптический сканер / Фигуры Лиссажу) -->
+                <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
+                    <g class="svg-float">
+                        <!-- Волна/Орбита (Аудио в Изображение) -->
+                        <path d="M 50 20 C 80 20, 80 80, 50 80 C 20 80, 20 20, 50 20" stroke-width="1" opacity="0.4"/>
+                        <path d="M 50 30 C 70 30, 70 70, 50 70 C 30 70, 30 30, 50 30" stroke-width="1.5" opacity="0.7"/>
+                        <!-- Сканер (Изображение в Звук) -->
+                        <line x1="50" y1="10" x2="50" y2="90" stroke="#f97316" stroke-width="2" class="svg-beat" />
+                        <circle cx="50" cy="30" r="3" fill="#f97316" stroke="none" />
+                        <circle cx="50" cy="70" r="3" fill="#f97316" stroke="none" />
+                    </g>
+                </svg>
+            </a>
+
+      <!-- 8. DOSTOEVSKY GEN (Генератор смыслов) -->
+            <a href="dostoevsky" class="hub-card col-span-1 md:col-span-2 reveal" style="transition-delay: 0.7s;">
+                <div class="card-tag">Mind Lab / Концепции</div>
+                <h2 class="card-title">Смысловая Триада</h2>
+                <p class="card-desc">Генератор нарративов на основе «Преступления и наказания». Три случайных слова, выхваченных из петербургской хтони, чтобы запустить творческий процесс.</p>
+                <div class="arrow-link">Открыть модуль →</div>
+
+                <!-- Векторная графика (Три абстрактных слова/линии) -->
+                <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
+                    <g class="svg-float">
+                        <!-- Абстрактные текстовые блоки -->
+                        <rect x="20" y="30" width="35" height="8" rx="2" fill="white" opacity="0.8" stroke="none" />
+                        <!-- Центральное "слово" — оранжевое и пульсирует -->
+                        <rect x="50" y="50" width="25" height="8" rx="2" fill="#f97316" stroke="none" class="svg-beat" />
+                        <rect x="30" y="70" width="45" height="8" rx="2" fill="white" opacity="0.3" stroke="none" />
+
+                        <!-- Пунктирные линии, связывающие смыслы -->
+                        <path d="M 37 38 L 62 50 L 52 70" stroke-width="1" opacity="0.5" stroke-dasharray="3 3" />
+                    </g>
+                </svg>
+            </a> 
+
+
+            <!-- 12. VINYL LAB (Интерактивный проигрыватель) -->
+            <a href="vinyl" class="hub-card col-span-1 md:col-span-2 reveal" style="transition-delay: 1.1s;">
+                <div class="card-tag">Sonic Lab / Интерактив</div>
+                <h2 class="card-title">Vinyl Lab</h2>
+                <p class="card-desc">Физический виниловый проигрыватель. Скретчинг мышкой на десктопе, вращение гироскопом на смартфоне. Записывай голос или загружай треки.</p>
+                <div class="arrow-link">Открыть модуль →</div>
+
+                <!-- Векторная графика (Виниловая пластинка) -->
+                <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
+                    <g class="svg-float">
+                        <!-- Пластинка -->
+                        <circle cx="50" cy="50" r="35" stroke="white" stroke-width="2" fill="#111" />
+                        <circle cx="50" cy="50" r="25" stroke="white" stroke-width="1" opacity="0.5" stroke-dasharray="2 4"/>
+                        <circle cx="50" cy="50" r="15" stroke="white" stroke-width="1" opacity="0.3"/>
+                        <!-- Лейбл и яблоко -->
+                        <circle cx="50" cy="50" r="10" fill="#f97316" stroke="none" class="svg-beat" />
+                        <circle cx="50" cy="50" r="2" fill="#000" stroke="none" />
+                        <!-- Блик -->
+                        <path d="M 25 25 Q 50 10 75 25" stroke="white" stroke-width="2" opacity="0.3" stroke-linecap="round"/>
+                    </g>
+                </svg>
+            </a>
+
+            <!-- 13. SEED LOOP LAB (Генератор лупов) -->
+            <a href="seed" class="hub-card col-span-1 md:col-span-2 reveal" style="transition-delay: 1.2s;">
+                <div class="card-tag">Audio Lab / Синтез</div>
+                <h2 class="card-title">Seed Loop Lab</h2>
+                <p class="card-desc">Криптографический генератор паттернов. Введи любую фразу, и алгоритм превратит её в уникальный музыкальный луп. Полный контроль над тональностью, синтезом и эффектами.</p>
+                <div class="arrow-link">Открыть модуль →</div>
+
+                <!-- Векторная графика (Текст превращается в луп) -->
+                <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
+                    <g class="svg-float">
+                        <!-- Текстовые блоки (Seed) -->
+                        <rect x="20" y="30" width="10" height="4" fill="#f97316" stroke="none" class="svg-beat" />
+                        <rect x="35" y="30" width="20" height="4" fill="white" opacity="0.6" stroke="none" />
+                        <rect x="60" y="30" width="15" height="4" fill="white" opacity="0.3" stroke="none" />
+
+                        <!-- Зацикленная стрелка (Луп) -->
+                        <path d="M 25 50 Q 50 80 75 50" stroke-width="1.5" stroke-dasharray="4 4"/>
+                        <path d="M 25 50 Q 50 20 75 50" stroke-width="1.5"/>
+                        <polygon points="70,45 75,50 70,55" fill="white" stroke="none" />
+
+                        <!-- Волны (Результат) -->
+                        <path d="M 20 70 Q 35 60 50 70 T 80 70" stroke-width="1" opacity="0.5"/>
+                    </g>
+                </svg>
+            </a>
+
+        </div>
+    </main>
+<!-- Всплывашка-нож (Cookie) - Финальная версия -->
+    <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
+
+        <!-- Острие и лезвие -->
+        <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" 
+             style="border-bottom-left-radius: 120px 100%; border-top-left-radius: 0;">
+
+            <div class="relative z-10 flex items-center justify-end w-full">
+                <!-- Убрана точка после Cookie -->
+                <p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight text-right">
+                    Мы собираем <span class="text-white font-bold">Cookie</span><br>
+                    <a href="privacy" class="underline hover:text-white transition">Политика</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- "Палочка" (Гарда) -->
+        <!-- Заменили прозрачный белый (bg-white/20) на плотный серый (bg-neutral-600) -->
+        <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm relative z-10 pointer-events-none shadow-sm"></div>
+
+        <!-- Рукоять, которая и является кнопкой "Принять" -->
+        <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center relative px-4 md:px-6 hover:bg-white hover:text-black hover:border-white transition-colors cursor-pointer group">
+
+            <!-- Текст ПРИНЯТЬ на самой рукояти (без лишних элементов) -->
+            <span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap z-20 relative">
+                Принять
+            </span>
+
+        </button>
+
+    </div>
+
+    <!-- Скрипт логики всплывашки -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cookieKnife = document.getElementById('cookie-knife');
+            const acceptBtn = document.getElementById('accept-cookie-btn');
+
+            if (!localStorage.getItem('cookieAccepted')) {
+                setTimeout(() => {
+                    cookieKnife.classList.remove('translate-y-40', 'opacity-0');
+                    cookieKnife.classList.add('translate-y-0', 'opacity-100');
+                }, 2500);
+            }
+
+            acceptBtn.addEventListener('click', () => {
+                localStorage.setItem('cookieAccepted', 'true');
+                cookieKnife.classList.remove('translate-y-0', 'opacity-100');
+                cookieKnife.classList.add('translate-y-40', 'opacity-0');
+            });
+        });
+    </script>
+
+    <!-- ФУТЕР -->
+    <footer class="mt-12 md:mt-24 pt-12 pb-12 border-t border-white/10 flex flex-col items-center text-center gap-8 relative z-10">
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">
+                © <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ
+            </p>        
+            <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">
+                Политика конфиденциальности
+            </a>
+        </div>
+    </footer>
+
+    <script>
+        // Установка текущего года в футере
+        document.getElementById('current-year').textContent = new Date().getFullYear();
     </script>
 </body>
 </html>
