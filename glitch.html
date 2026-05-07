@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glitch Lab | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="theme-color" content="#ffffff">
+
+    <style>
+        :root {
+            --bg-color: #050505; --card-bg: #111111; --accent-color: #ffffff;
+            --border-light: rgba(255, 255, 255, 0.1); --control-bg: #1a1a1a;
+            --active-color: #f97316; --danger-color: #ff3333; --font-main: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        a { color: inherit; text-decoration: none; }
+
+        body {
+            background-color: var(--bg-color); color: var(--accent-color); font-family: var(--font-main);
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            padding: 6rem 2rem 2rem 2rem; overflow-x: hidden; position: relative;
+        }
+
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.05; pointer-events: none; z-index: 9999;
+        }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+            display: flex; justify-content: center; align-items: center; z-index: 10001;
+            transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+        .knife-svg-main { width: 120px; height: 120px; fill: none; stroke: white; stroke-width: 1.2; animation: rotate-knife 1.5s linear infinite; }
+        @keyframes rotate-knife { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loaded #loader { transform: translateY(-100%); }
+
+        .app-container {
+            background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 24px;
+            padding: 2rem; width: 100%; max-width: 1000px; position: relative; z-index: 10;
+            display: flex; flex-direction: column; gap: 2rem; backdrop-filter: blur(10px);
+        }
+
+        .subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: gray; font-weight: 700; margin-bottom: 0.5rem; }
+        .title { font-size: 2rem; font-weight: 900; text-transform: uppercase; line-height: 1.1; letter-spacing: -0.02em; }
+
+        .editor-grid { display: grid; grid-template-columns: 300px 1fr; gap: 2rem; }
+        @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
+
+        .control-panel { background: rgba(5,5,5,0.8); border: 1px solid var(--border-light); border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; height: fit-content; }
+
+        .drop-zone {
+            border: 2px dashed var(--border-light); border-radius: 8px; padding: 1.5rem 1rem;
+            text-align: center; font-size: 12px; color: gray; font-weight: 900; text-transform: uppercase;
+            cursor: pointer; transition: all 0.3s; background: var(--bg-color); display: flex; flex-direction: column; justify-content: center;
+        }
+        .drop-zone.dragover { border-color: var(--active-color); background: rgba(249, 115, 22, 0.1); color: var(--active-color); }
+
+        .btn {
+            background: var(--control-bg); color: var(--accent-color); border: 1px solid var(--border-light);
+            border-radius: 8px; padding: 0.75rem 1rem; font-size: 12px; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.3s ease;
+            text-align: center; width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem;
+        }
+        .btn:hover { background: var(--accent-color); color: #000; }
+        .btn.active { background: var(--active-color); color: #000; border-color: var(--active-color); }
+        
+        .btn-play-big { font-size: 1.5rem; padding: 1.5rem; border: 2px solid var(--border-light); }
+        .btn-play-big:hover { background: var(--active-color); color: #000; border-color: var(--active-color); box-shadow: 0 0 30px rgba(249, 115, 22, 0.4);}
+        
+        .btn-export { border-color: var(--active-color); color: var(--active-color); }
+        .btn-export:hover { background: var(--active-color); color: black; }
+
+        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .control-label { display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; font-weight: 900; color: gray; }
+        select { background: var(--control-bg); color: white; border: 1px solid var(--border-light); padding: 0.75rem; border-radius: 8px; font-size: 12px; outline: none; cursor: pointer; text-transform: uppercase; font-weight: 900; width: 100%; }
+
+        .preview-box {
+            width: 100%; min-height: 400px; background: #0a0a0a; border-radius: 12px; border: 1px solid var(--border-light);
+            display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; position: relative;
+            background-image: repeating-linear-gradient(45deg, #111 25%, transparent 25%, transparent 75%, #111 75%, #111), repeating-linear-gradient(45deg, #111 25%, #0a0a0a 25%, #0a0a0a 75%, #111 75%, #111);
+            background-position: 0 0, 10px 10px; background-size: 20px 20px;
+        }
+        canvas { max-width: 100%; max-height: 60vh; object-fit: contain; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+
+        .glitch-anim { animation: rgbShift 0.2s linear infinite alternate; }
+        @keyframes rgbShift {
+            0% { filter: drop-shadow(2px 0px 0px red) drop-shadow(-2px 0px 0px blue); }
+            50% { filter: drop-shadow(-2px 0px 0px red) drop-shadow(2px 0px 0px blue); }
+            100% { filter: drop-shadow(0px 2px 0px red) drop-shadow(0px -2px 0px blue); }
+        }
+    </style>
+</head>
+<body class="noise">
+
+    <div id="loader">
+        <svg class="knife-svg-main" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
+    </div>
+
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">Владислав Ножиков</a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="index#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="index#art" class="hover:opacity-50 transition">Арт</a>
+        </div>
+    </nav>
+
+    <main class="w-full flex justify-center relative z-10">
+        <div class="app-container">
+            
+            <div class="header-section">
+                <div class="subtitle">Visual Lab / Глитч-Арт</div>
+                <h1 class="title">Glitch Lab</h1>
+                <p class="text-xs text-gray-500 mt-2 max-w-xl font-medium">Рандомный искажатель фотографий. Каждый клик генерирует уникальный результат, объединяя цветокоррекцию и разрушение геометрии кадра.</p>
+            </div>
+
+            <div class="editor-grid">
+                
+                <div class="control-panel">
+                    
+                    <button class="btn btn-play-big" id="btn-mutate">🎲 МУТИРОВАТЬ</button>
+
+                    <div class="h-[1px] w-full bg-white/10 my-1"></div>
+
+                    <label class="drop-zone" id="img-drop-zone">
+                        <span id="drop-text">PNG, JPG, WEBP<br><br>ЗАГРУЗИТЬ ИЗОБРАЖЕНИЕ</span>
+                        <input type="file" id="img-input" accept="image/*" style="display: none;">
+                    </label>
+
+                    <div class="control-group mt-2">
+                        <div class="control-label">Степень разрушения</div>
+                        <select id="ctrl-mode">
+                            <option value="color">Только Цветокоррекция</option>
+                            <option value="distort" selected>Цвет + Искривления (Полный Хаос)</option>
+                        </select>
+                    </div>
+
+                    <div class="flex gap-2 mt-2">
+                        <button class="btn" id="btn-reset" style="border-color: #333; color: gray;">Оригинал</button>
+                        <button class="btn btn-export" id="btn-export">💾 .PNG</button>
+                    </div>
+
+                </div>
+
+                <div class="control-panel">
+                    <div class="preview-box">
+                        <canvas id="glitch-canvas"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-12 pt-8 border-t border-white/10 flex flex-col items-center text-center gap-4 relative z-10 w-full max-w-[1000px]">
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">© <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ</p>        
+            <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">Политика конфиденциальности</a>
+        </div>
+    </footer>
+
+    <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
+        <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" style="border-bottom-left-radius: 120px 100%; border-top-left-radius: 0;">
+            <div class="relative z-10 flex items-center justify-end w-full text-right"><p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight">Мы собираем <span class="text-white font-bold">Cookie</span><br><a href="privacy" class="underline hover:text-white transition">Политика</a></p></div>
+        </div>
+        <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm relative z-10 pointer-events-none shadow-sm"></div>
+        <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center relative px-4 md:px-6 hover:bg-white hover:text-black transition-colors cursor-pointer group"><span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap z-20 relative">Принять</span></button>
+    </div>
+
+    <script>
+        window.onload = () => { setTimeout(() => { document.body.classList.add('loaded'); }, 500); };
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const cookieKnife = document.getElementById('cookie-knife');
+            if (!localStorage.getItem('cookieAccepted')) { setTimeout(() => { cookieKnife.classList.remove('translate-y-40', 'opacity-0'); cookieKnife.classList.add('translate-y-0', 'opacity-100'); }, 2500); }
+            document.getElementById('accept-cookie-btn').addEventListener('click', () => { localStorage.setItem('cookieAccepted', 'true'); cookieKnife.classList.remove('translate-y-0', 'opacity-100'); cookieKnife.classList.add('translate-y-40', 'opacity-0'); });
+        });
+
+        const GlitchLab = (() => {
+            const DOM = {
+                drop: document.getElementById('img-drop-zone'),
+                input: document.getElementById('img-input'),
+                dropText: document.getElementById('drop-text'),
+                canvas: document.getElementById('glitch-canvas'),
+                btnMutate: document.getElementById('btn-mutate'),
+                btnReset: document.getElementById('btn-reset'),
+                btnExport: document.getElementById('btn-export'),
+                mode: document.getElementById('ctrl-mode')
+            };
+
+            const ctx = DOM.canvas.getContext('2d', { willReadFrequently: true });
+            
+            // Храним оригинальное изображение в памяти, чтобы мутации не накапливались бесконечно и не превращали всё в кашу
+            let originalImage = null;
+            let imgW = 0;
+            let imgH = 0;
+
+            const loadImage = (file) => {
+                if (!file.type.startsWith('image/')) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        originalImage = img;
+                        imgW = img.width;
+                        imgH = img.height;
+                        DOM.canvas.width = imgW;
+                        DOM.canvas.height = imgH;
+                        
+                        // Сбрасываем холст
+                        resetCanvas();
+                        DOM.dropText.innerHTML = "ИЗОБРАЖЕНИЕ ЗАГРУЖЕНО<br><br>НАЖМИ МУТИРОВАТЬ";
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            };
+
+            // Drag & Drop
+            DOM.input.addEventListener('change', (e) => { if (e.target.files.length) loadImage(e.target.files[0]); });
+            DOM.drop.addEventListener('dragover', (e) => { e.preventDefault(); DOM.drop.classList.add('dragover'); });
+            DOM.drop.addEventListener('dragleave', () => DOM.drop.classList.remove('dragover'));
+            DOM.drop.addEventListener('drop', (e) => { e.preventDefault(); DOM.drop.classList.remove('dragover'); if (e.dataTransfer.files.length) loadImage(e.dataTransfer.files[0]); });
+
+            const resetCanvas = () => {
+                if (!originalImage) return;
+                ctx.filter = 'none';
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.drawImage(originalImage, 0, 0, imgW, imgH);
+            };
+
+            // --- АЛГОРИТМЫ МУТАЦИИ ---
+
+            const applyRandomColorCorrection = () => {
+                // Генерируем безумные фильтры
+                const hue = Math.floor(Math.random() * 360);
+                const saturate = Math.floor(50 + Math.random() * 250); // 50% - 300%
+                const contrast = Math.floor(80 + Math.random() * 150); // 80% - 230%
+                const brightness = Math.floor(50 + Math.random() * 100); // 50% - 150%
+                const invert = Math.random() > 0.85 ? 100 : 0; // 15% шанс инверсии
+                const sepia = Math.random() > 0.8 ? (50 + Math.random() * 50) : 0; // Шанс сепии
+                
+                ctx.filter = `hue-rotate(${hue}deg) saturate(${saturate}%) contrast(${contrast}%) brightness(${brightness}%) invert(${invert}%) sepia(${sepia}%)`;
+                ctx.drawImage(originalCanvasBuffer(), 0, 0); // Рисуем из чистого буфера с фильтрами
+                ctx.filter = 'none'; // Сброс
+            };
+
+            const applyDistortions = () => {
+                // 1. Slicing (Разрезание и сдвиг полос)
+                const numSlices = Math.floor(Math.random() * 15) + 5;
+                for (let i = 0; i < numSlices; i++) {
+                    const sliceY = Math.random() * imgH;
+                    const sliceH = Math.random() * (imgH / 8); // Тонкие полоски
+                    const shiftX = (Math.random() - 0.5) * (imgW / 3); // Сдвиг влево/вправо
+                    
+                    // Копируем кусок и вставляем со сдвигом
+                    const sliceData = ctx.getImageData(0, sliceY, imgW, sliceH);
+                    
+                    // Заливаем дырку цветом или оставляем как есть (заливка дает прикольный эффект)
+                    if (Math.random() > 0.5) {
+                        ctx.fillStyle = Math.random() > 0.5 ? '#f97316' : '#000';
+                        ctx.fillRect(0, sliceY, imgW, sliceH);
+                    }
+                    
+                    ctx.putImageData(sliceData, shiftX, sliceY);
+                }
+
+                // 2. Chromatic Aberration (Сдвиг RGB каналов)
+                if (Math.random() > 0.3) {
+                    const imgData = ctx.getImageData(0, 0, imgW, imgH);
+                    const data = imgData.data;
+                    const temp = new Uint8ClampedArray(data);
+                    
+                    const shiftR = Math.floor((Math.random() - 0.5) * (imgW * 0.05)) * 4; // Сдвиг красного
+                    const shiftB = Math.floor((Math.random() - 0.5) * (imgW * 0.05)) * 4; // Сдвиг синего
+                    
+                    for (let i = 0; i < data.length; i += 4) {
+                        // R channel
+                        if (i + shiftR >= 0 && i + shiftR < data.length) data[i] = temp[i + shiftR];
+                        // B channel
+                        if (i + shiftB >= 0 && i + shiftB < data.length) data[i+2] = temp[i + shiftB + 2];
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+                }
+
+                // 3. Pixelation (Низкое разрешение)
+                if (Math.random() > 0.7) {
+                    const pixelSize = Math.floor(Math.random() * 10) + 5;
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = imgW / pixelSize;
+                    tempCanvas.height = imgH / pixelSize;
+                    const tCtx = tempCanvas.getContext('2d');
+                    // Рисуем маленькую
+                    tCtx.drawImage(DOM.canvas, 0, 0, tempCanvas.width, tempCanvas.height);
+                    // Растягиваем обратно без сглаживания
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.drawImage(tempCanvas, 0, 0, imgW, imgH);
+                    ctx.imageSmoothingEnabled = true;
+                }
+            };
+
+            // Вспомогательная функция для чистой отрисовки
+            const originalCanvasBuffer = () => {
+                const c = document.createElement('canvas');
+                c.width = imgW; c.height = imgH;
+                c.getContext('2d').drawImage(originalImage, 0, 0, imgW, imgH);
+                return c;
+            };
+
+            // MAIN MUTATE FUNCTION
+            DOM.btnMutate.addEventListener('click', () => {
+                if (!originalImage) return alert("Сначала загрузите изображение!");
+                
+                // Анимация кнопки
+                DOM.btnMutate.classList.add('playing');
+                setTimeout(() => DOM.btnMutate.classList.remove('playing'), 200);
+
+                const mode = DOM.mode.value;
+                
+                // Всегда начинаем с чистого листа, чтобы глитч не превращался в серое месиво
+                resetCanvas();
+
+                // Применяем цвета
+                applyRandomColorCorrection();
+
+                // Применяем геометрию, если включено
+                if (mode === 'distort') {
+                    applyDistortions();
+                    // Добавляем CSS анимацию подергивания для эффекта
+                    DOM.canvas.classList.add('glitch-anim');
+                    setTimeout(() => DOM.canvas.classList.remove('glitch-anim'), 300);
+                }
+            });
+
+            DOM.btnReset.addEventListener('click', () => {
+                if (!originalImage) return;
+                resetCanvas();
+            });
+
+            DOM.btnExport.addEventListener('click', () => {
+                if (!originalImage) return;
+                const url = DOM.canvas.toDataURL("image/png");
+                const a = document.createElement('a'); 
+                a.href = url; 
+                a.download = `glitch_lab_mutation_${Date.now()}.png`; 
+                a.click();
+            });
+
+            // Нарисуем заглушку
+            ctx.fillStyle = "#111";
+            ctx.fillRect(0, 0, 300, 300);
+
+        })();
+    </script>
+</body>
+</html>
