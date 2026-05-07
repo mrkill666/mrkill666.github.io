@@ -88,6 +88,15 @@
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--active-color); cursor: pointer; margin-top: -6px; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #333; border-radius: 2px; }
 
+        /* Тумблер для сетки */
+        .toggle-container { display: flex; align-items: center; justify-content: space-between; font-size: 10px; text-transform: uppercase; font-weight: 900; color: white;}
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--active-color); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
         #init-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(17,17,17,0.85); backdrop-filter: blur(8px); z-index: 50;
@@ -126,7 +135,7 @@
             <div class="header-section">
                 <div class="subtitle">Sonic Lab / Генератив</div>
                 <h1 class="title">Graph Lab</h1>
-                <p class="text-xs text-gray-500 mt-2 max-w-xl font-medium">Генеративная сеть. Сигналы путешествуют по графу, отскакивая от тупиков и создавая бесконечные лупы. Высота узла = Нота, Характер = Тембр.</p>
+                <p class="text-xs text-gray-500 mt-2 max-w-xl font-medium">Генеративная сеть. Сигналы путешествуют по графу, создавая полиритмические лупы. Включи привязку к сетке (Snap) для жесткого квантования ритма.</p>
             </div>
 
             <div class="editor-grid">
@@ -170,7 +179,24 @@
                         </select>
                     </div>
 
+                    <div class="h-[1px] w-full bg-white/10 my-1"></div>
+
+                    <div class="toggle-container">
+                        <div class="flex flex-col gap-1">
+                            <span>Привязка к сетке (Snap)</span>
+                            <span class="text-[8px] text-gray-500 normal-case">Квантование ритма и нот</span>
+                        </div>
+                        <label class="switch"><input type="checkbox" id="ctrl-snap"><span class="slider"></span></label>
+                    </div>
+
                     <div class="control-group mt-2">
+                        <div class="control-label"><span>Размер сетки</span><span class="control-val" id="val-grid-size">40px</span></div>
+                        <input type="range" id="ctrl-grid-size" min="20" max="100" step="10" value="40">
+                    </div>
+
+                    <div class="h-[1px] w-full bg-white/10 my-1"></div>
+
+                    <div class="control-group">
                         <div class="control-label"><span>Скорость сигналов (BPM)</span><span class="control-val" id="val-bpm">120</span></div>
                         <input type="range" id="ctrl-bpm" min="30" max="300" value="120">
                     </div>
@@ -229,6 +255,8 @@
                 btnClear: document.getElementById('btn-clear'),
                 root: document.getElementById('ctrl-root'),
                 scale: document.getElementById('ctrl-scale'),
+                snap: document.getElementById('ctrl-snap'),
+                gridSize: document.getElementById('ctrl-grid-size'), valGridSize: document.getElementById('val-grid-size'),
                 bpm: document.getElementById('ctrl-bpm'), valBpm: document.getElementById('val-bpm'),
                 rev: document.getElementById('ctrl-rev'), valRev: document.getElementById('val-rev'),
                 overlayBtn: document.getElementById('btn-init-audio'),
@@ -245,11 +273,10 @@
             let chunks = [];
 
             // Graph State
-            const MAX_DIST = 180; 
+            let MAX_DIST = 180; 
             let nodes = []; // { id, x, y, type, anim, neighbors: [] }
             let pulses = []; // { source: node, target: node, progress: 0..1 }
 
-            // Храним относительные интервалы, а не жесткие MIDI-ноты
             const SCALE_INTERVALS = {
                 minor: [0, 3, 5, 7, 10],
                 major: [0, 2, 4, 7, 9],
@@ -257,20 +284,16 @@
                 techno: [0, 1, 3, 5, 7, 8, 10]
             };
 
-            // Функция получения массива MIDI-нот текущей гаммы в реальном времени
             const getScaleNotes = () => {
-                const rootOffset = parseInt(DOM.root.value); // 0 (C) to 11 (B)
+                const rootOffset = parseInt(DOM.root.value);
                 const intervals = SCALE_INTERVALS[DOM.scale.value];
                 let notes = [];
-                
-                // Генерируем ноты на 4 октавы, начиная с C2 (MIDI 36)
                 for (let oct = 0; oct < 4; oct++) {
                     const baseMidi = 36 + rootOffset + (oct * 12);
                     intervals.forEach(interval => {
                         notes.push(baseMidi + interval);
                     });
                 }
-                // Переворачиваем, так как на канвасе Y=0 это верх (высокие ноты)
                 return notes.reverse();
             };
 
@@ -281,7 +304,6 @@
                 masterGain = audioCtx.createGain(); masterGain.gain.value = 0.5;
                 streamDest = audioCtx.createMediaStreamDestination();
 
-                // Reverb
                 verbNode = audioCtx.createConvolver();
                 verbGain = audioCtx.createGain();
                 const len = audioCtx.sampleRate * 3, imp = audioCtx.createBuffer(2, len, audioCtx.sampleRate);
@@ -312,7 +334,6 @@
                 const env = audioCtx.createGain();
                 const filter = audioCtx.createBiquadFilter();
 
-                // Динамическое вычисление ноты в момент удара
                 const currentScale = getScaleNotes();
                 const noteIdx = Math.floor((node.y / DOM.canvas.height) * currentScale.length);
                 const midi = currentScale[Math.max(0, Math.min(currentScale.length-1, noteIdx))];
@@ -332,17 +353,19 @@
                 osc.start(now);
                 osc.stop(now + 1.5);
 
-                node.anim = 1.0; // Вспышка
+                node.anim = 1.0; 
             };
 
             // --- GRAPH LOGIC ---
             const updateNetwork = () => {
-                // Сброс и пересчет связей
+                // В режиме сетки увеличиваем дистанцию коннекта, чтобы диагонали тоже схватывались
+                MAX_DIST = DOM.snap.checked ? parseInt(DOM.gridSize.value) * 1.5 : 180;
+                
                 nodes.forEach(n => n.neighbors = []);
                 for(let i = 0; i < nodes.length; i++) {
                     for(let j = i + 1; j < nodes.length; j++) {
                         const d = Math.hypot(nodes[i].x - nodes[j].x, nodes[i].y - nodes[j].y);
-                        if(d < MAX_DIST) {
+                        if(d <= MAX_DIST + 1) { // +1 для погрешностей float
                             nodes[i].neighbors.push(nodes[j]);
                             nodes[j].neighbors.push(nodes[i]);
                         }
@@ -368,20 +391,25 @@
             DOM.wrapper.addEventListener('mousedown', (e) => {
                 if (!audioCtx) return;
                 const rect = DOM.canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
+                let x = e.clientX - rect.left;
+                let y = e.clientY - rect.top;
                 
+                // Привязка к сетке (Snap)
+                if (DOM.snap.checked) {
+                    const gSize = parseInt(DOM.gridSize.value);
+                    x = Math.round(x / gSize) * gSize;
+                    y = Math.round(y / gSize) * gSize;
+                }
+
                 const types = ['sine', 'triangle', 'square', 'sawtooth'];
                 const type = types[Math.floor(Math.random() * types.length)];
 
-                // Не сохраняем конкретный midi, только координаты и тембр
                 const newNode = { id: Date.now(), x, y, type, anim: 0, neighbors: [] };
                 nodes.push(newNode);
                 
                 updateNetwork();
                 triggerNode(newNode);
                 
-                // Если узел связался с другими, выпускаем импульс
                 spawnPulse(newNode);
             });
 
@@ -392,10 +420,17 @@
                 ctx.fillStyle = '#0a0a0a';
                 ctx.fillRect(0, 0, DOM.canvas.width, DOM.canvas.height);
 
+                // Отрисовка фона (Сетка)
+                const gSize = parseInt(DOM.gridSize.value);
+                ctx.strokeStyle = DOM.snap.checked ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)';
+                ctx.lineWidth = 1;
+                for(let i=0; i<DOM.canvas.width; i+=gSize) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i, DOM.canvas.height); ctx.stroke(); }
+                for(let i=0; i<DOM.canvas.height; i+=gSize) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(DOM.canvas.width, i); ctx.stroke(); }
+
                 // Физика импульсов
                 if (isPlaying) {
                     const bpm = parseInt(DOM.bpm.value);
-                    const pixelsPerFrame = (bpm / 60) * 1.5; // Скорость зависит от BPM
+                    const pixelsPerFrame = (bpm / 60) * 1.5;
 
                     for (let i = pulses.length - 1; i >= 0; i--) {
                         const p = pulses[i];
@@ -404,22 +439,18 @@
                         p.progress += pixelsPerFrame / dist;
 
                         if (p.progress >= 1) {
-                            // УДАР!
                             triggerNode(p.target);
                             
-                            // Поиск следующего пути
                             const neighbors = p.target.neighbors;
                             if (neighbors.length > 0) {
-                                // Пытаемся не прыгать обратно, если есть другие пути
                                 let nextTargets = neighbors.filter(n => n.id !== p.source.id);
-                                if (nextTargets.length === 0) nextTargets = neighbors; // Тупик, отскакиваем
+                                if (nextTargets.length === 0) nextTargets = neighbors; 
                                 
                                 const nextNode = nextTargets[Math.floor(Math.random() * nextTargets.length)];
                                 p.source = p.target;
                                 p.target = nextNode;
                                 p.progress = 0;
                             } else {
-                                // Связей нет, импульс умирает
                                 pulses.splice(i, 1);
                             }
                         }
@@ -431,7 +462,7 @@
                 for (let i = 0; i < nodes.length; i++) {
                     for (let j = i + 1; j < nodes.length; j++) {
                         const dist = Math.hypot(nodes[i].x - nodes[j].x, nodes[i].y - nodes[j].y);
-                        if (dist < MAX_DIST) {
+                        if (dist <= MAX_DIST + 1) {
                             ctx.strokeStyle = `rgba(255, 255, 255, ${0.3 * (1 - dist/MAX_DIST)})`;
                             ctx.beginPath();
                             ctx.moveTo(nodes[i].x, nodes[i].y);
@@ -451,7 +482,6 @@
                     ctx.fillStyle = '#f97316';
                     ctx.fill();
                     
-                    // Свечение
                     ctx.shadowBlur = 10; ctx.shadowColor = '#f97316';
                     ctx.fill();
                     ctx.shadowBlur = 0;
@@ -459,7 +489,6 @@
 
                 // Отрисовка узлов
                 nodes.forEach(node => {
-                    // Аура при ударе
                     if (node.anim > 0.05) {
                         ctx.beginPath();
                         ctx.arc(node.x, node.y, 4 + node.anim * 15, 0, Math.PI * 2);
@@ -502,6 +531,13 @@
             DOM.btnClear.addEventListener('click', () => { 
                 nodes = []; 
                 pulses = []; 
+            });
+
+            // Обновление графа при переключении сетки
+            DOM.snap.addEventListener('change', updateNetwork);
+            DOM.gridSize.addEventListener('input', e => { 
+                DOM.valGridSize.textContent = `${e.target.value}px`;
+                if(DOM.snap.checked) updateNetwork();
             });
 
             DOM.bpm.addEventListener('input', e => DOM.valBpm.textContent = e.target.value);
