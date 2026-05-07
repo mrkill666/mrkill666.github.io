@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phrase Lab | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="theme-color" content="#ffffff">
+
+    <style>
+        :root {
+            --bg-color: #050505; --card-bg: #111111; --accent-color: #ffffff;
+            --border-light: rgba(255, 255, 255, 0.1); --control-bg: #1a1a1a;
+            --active-color: #f97316; --danger-color: #ff3333; --font-main: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        a { color: inherit; text-decoration: none; }
+
+        body {
+            background-color: var(--bg-color); color: var(--accent-color); font-family: var(--font-main);
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            padding: 6rem 2rem 2rem 2rem; overflow-x: hidden; position: relative;
+        }
+
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.05; pointer-events: none; z-index: 9999;
+        }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+            display: flex; justify-content: center; align-items: center; z-index: 10001;
+            transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+        .knife-svg-main { width: 120px; height: 120px; fill: none; stroke: white; stroke-width: 1.2; animation: rotate-knife 1.5s linear infinite; }
+        @keyframes rotate-knife { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loaded #loader { transform: translateY(-100%); }
+
+        .app-container {
+            background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 24px;
+            padding: 2rem; width: 100%; max-width: 1000px; position: relative; z-index: 10;
+            display: flex; flex-direction: column; gap: 2rem; backdrop-filter: blur(10px);
+        }
+
+        .subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: gray; font-weight: 700; margin-bottom: 0.5rem; }
+        .title { font-size: 2rem; font-weight: 900; text-transform: uppercase; line-height: 1.1; letter-spacing: -0.02em; }
+
+        .editor-grid { display: grid; grid-template-columns: 350px 1fr; gap: 2rem; }
+        @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
+
+        .control-panel { background: rgba(5,5,5,0.8); border: 1px solid var(--border-light); border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; height: fit-content; }
+
+        .btn {
+            background: var(--control-bg); color: var(--accent-color); border: 1px solid var(--border-light);
+            border-radius: 8px; padding: 0.75rem 1rem; font-size: 12px; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.3s ease;
+            text-align: center; width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem;
+        }
+        .btn:hover { background: var(--accent-color); color: #000; }
+        .btn.active { background: var(--active-color); color: #000; border-color: var(--active-color); box-shadow: 0 0 15px rgba(249, 115, 22, 0.4);}
+        
+        .btn-generate-big { font-size: 1.5rem; padding: 1.5rem; border-color: var(--active-color); color: var(--active-color); }
+        .btn-generate-big:hover { background: var(--active-color); color: #000; box-shadow: 0 0 30px rgba(249, 115, 22, 0.4); }
+        .btn-generate-big:active { transform: scale(0.98); }
+
+        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .control-label { display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; font-weight: 900; color: gray; }
+
+        /* Mode Selector (Radio Buttons Group) */
+        .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+
+        /* Output Display */
+        .output-box {
+            width: 100%; min-height: 350px; background: #0a0a0a; border-radius: 12px; border: 1px solid var(--border-light);
+            display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; padding: 2rem;
+            text-align: center;
+        }
+        
+        .phrase-text {
+            font-size: 3rem; font-weight: 900; line-height: 1.2; letter-spacing: -0.02em; color: var(--accent-color);
+            text-transform: lowercase; /* Для поэтичности */
+            opacity: 0;
+        }
+
+        /* Анимация плавного появления */
+        .fade-in {
+            animation: textFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes textFadeIn {
+            0% { opacity: 0; transform: translateY(15px); filter: blur(5px); }
+            100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+
+    </style>
+</head>
+<body class="noise">
+
+    <div id="loader">
+        <svg class="knife-svg-main" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
+    </div>
+
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">Владислав Ножиков</a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="index#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="mujiclab" class="hover:opacity-50 transition">Мuжiclab</a>
+        </div>
+    </nav>
+
+    <main class="w-full flex justify-center relative z-10">
+        <div class="app-container">
+            
+            <div class="header-section">
+                <div class="subtitle">Text Lab / Генерация</div>
+                <h1 class="title">Phrase Lab</h1>
+                <p class="text-xs text-gray-500 mt-2 max-w-xl font-medium">Алгоритмический генератор смыслов. Выбери режим и нажми СГЕНЕРИРОВАТЬ, чтобы создать уникальную фразу.</p>
+            </div>
+
+            <div class="editor-grid">
+                
+                <div class="control-panel">
+                    
+                    <div class="control-group">
+                        <div class="control-label mb-2">Режим генерации</div>
+                        <div class="mode-grid">
+                            <button class="btn mode-btn" data-mode="1">1 Слово</button>
+                            <button class="btn mode-btn active" data-mode="2">2 Слова</button>
+                            <button class="btn mode-btn" data-mode="3">3 Слова</button>
+                            <button class="btn mode-btn" data-mode="4">4 Слова</button>
+                        </div>
+                    </div>
+
+                    <div class="h-[1px] w-full bg-white/10 my-2"></div>
+
+                    <div class="control-group">
+                        <div class="control-label mb-1">Структура</div>
+                        <p class="text-[10px] text-gray-500" id="structure-desc">Прилагательное + Существительное</p>
+                    </div>
+
+                    <button class="btn btn-generate-big mt-4" id="btn-generate">СГЕНЕРИРОВАТЬ</button>
+
+                </div>
+
+                <div class="control-panel p-2">
+                    <div class="output-box">
+                        <div class="phrase-text" id="output-text">ожидание...</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-12 pt-8 border-t border-white/10 flex flex-col items-center text-center gap-4 relative z-10 w-full max-w-[1000px]">
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">© <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ</p>        
+            <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">Политика конфиденциальности</a>
+        </div>
+    </footer>
+
+    <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
+        <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" style="border-bottom-left-radius: 120px 100%; border-top-left-radius: 0;">
+            <div class="relative z-10 flex items-center justify-end w-full text-right"><p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight">Мы собираем <span class="text-white font-bold">Cookie</span><br><a href="privacy" class="underline hover:text-white transition">Политика</a></p></div>
+        </div>
+        <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm relative z-10 pointer-events-none shadow-sm"></div>
+        <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center relative px-4 md:px-6 hover:bg-white hover:text-black transition-colors cursor-pointer group"><span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap z-20 relative">Принять</span></button>
+    </div>
+
+    <script>
+        window.onload = () => { setTimeout(() => { document.body.classList.add('loaded'); }, 500); };
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const cookieKnife = document.getElementById('cookie-knife');
+            if (!localStorage.getItem('cookieAccepted')) { setTimeout(() => { cookieKnife.classList.remove('translate-y-40', 'opacity-0'); cookieKnife.classList.add('translate-y-0', 'opacity-100'); }, 2500); }
+            document.getElementById('accept-cookie-btn').addEventListener('click', () => { localStorage.setItem('cookieAccepted', 'true'); cookieKnife.classList.remove('translate-y-0', 'opacity-100'); cookieKnife.classList.add('translate-y-40', 'opacity-0'); });
+        });
+
+        const PhraseLab = (() => {
+            // Словари
+            const dictionaries = {
+                nouns: ["время", "человек", "дело", "жизнь", "день", "рука", "работа", "слово", "место", "лицо", "глаз", "вопрос", "ряд", "край", "конец", "форма", "путь", "город", "голос", "час", "мир", "история", "свет", "тень", "ночь", "ветер", "небо", "море", "звук", "тишина", "дорога", "вечность", "мгновение", "взгляд", "молчание", "мысль", "душа", "сердце", "огонь", "вода", "земля", "воздух", "пыль", "пепел", "туман", "дождь", "снег", "лед", "пламя", "искра", "камень", "песок", "стекло", "дерево", "лес", "гора", "река", "звезда", "солнце", "луна", "космос", "пустота", "бездна", "горизонт", "предел", "тайна", "загадка", "иллюзия", "сон", "реальность", "память", "забвение", "боль", "радость", "страх", "надежда", "свобода", "закон", "правило", "система", "хаос", "порядок", "сила", "слабость", "движение", "покой", "начало", "исток", "финал", "граница", "стена", "мост", "дверь", "окно", "ключ", "замок", "шаг", "след", "отражение", "зеркало", "эхо", "шепот", "крик", "песня", "ритм", "мелодия", "цвет", "линия", "узор", "суть", "смысл", "идея", "цель", "причина", "следствие", "случай", "судьба", "выбор"],
+                adjectives: ["большой", "новый", "старый", "белый", "черный", "красный", "долгий", "тихий", "темный", "светлый", "глубокий", "пустой", "живой", "мертвый", "холодный", "горячий", "синий", "зеленый", "желтый", "вечный", "краткий", "полный", "острый", "тупой", "гладкий", "шершавый", "мягкий", "твердый", "легкий", "тяжелый", "сильный", "слабый", "быстрый", "медленный", "яркий", "тусклый", "прозрачный", "мутный", "чистый", "грязный", "ясный", "скрытый", "тайный", "явный", "странный", "обычный", "редкий", "частый", "далекий", "близкий", "высокий", "низкий", "широкий", "узкий", "прямой", "кривой", "сложный", "простой", "верный", "ложный", "истинный", "фальшивый", "прекрасный", "ужасный", "добрый", "злой", "спокойный", "тревожный", "опасный", "безопасный", "свободный", "связанный", "открытый", "закрытый", "забытый", "памятный", "случайный", "закономерный", "бесконечный", "конечный", "хрупкий", "прочный", "гибкий", "жесткий", "сладкий", "горький", "соленый", "кислый", "громкий", "немой", "слепой", "зрячий", "дикий", "ручной", "искусственный", "естественный"],
+                verbs: ["сказать", "мочь", "говорить", "знать", "стать", "хотеть", "видеть", "идти", "стоять", "думать", "спросить", "жить", "смотреть", "сидеть", "понять", "иметь", "делать", "взять", "сделать", "казаться", "давать", "пойти", "значить", "бежать", "лететь", "плыть", "лежать", "слушать", "слышать", "молчал", "помнить", "забыть", "искать", "найти", "терять", "ждать", "верить", "любить", "умирать", "рождаться", "создавать", "разрушать", "строить", "ломать", "открывать", "закрывать", "начинать", "заканчивать", "продолжать", "останавливать", "бросать", "ловить", "падать", "подниматься", "спускаться", "входить", "выходить", "возвращаться", "уходить", "прощать", "обвинять", "защищать", "нападать", "прятать", "показывать", "скрывать", "светить", "греть", "остывать", "замерзать", "таять", "гореть", "гаснуть", "дышать", "задыхаться", "кричать", "шептать", "петь", "плакать", "смеяться", "улыбаться", "хмуриться", "расти", "стареть", "меняться", "оставаться", "исчезать", "появляться", "оказываться", "стремиться", "избегать", "притягивать", "отталкивать", "соединять", "разделять", "собирать", "разбрасывать"]
+            };
+
+            const DOM = {
+                modeBtns: document.querySelectorAll('.mode-btn'),
+                desc: document.getElementById('structure-desc'),
+                btnGen: document.getElementById('btn-generate'),
+                output: document.getElementById('output-text')
+            };
+
+            let currentMode = '2'; // По умолчанию
+
+            // Описания режимиов
+            const descriptions = {
+                '1': 'Случайное слово из любого словаря',
+                '2': 'Прилагательное + Существительное',
+                '3': 'Прилагательное + Существительное + Глагол',
+                '4': 'Прилагательное + Существительное + Глагол + Существительное'
+            };
+
+            // Функция выбора случайного элемента
+            const getRandomItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+            // Переключение режимов
+            DOM.modeBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    DOM.modeBtns.forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentMode = e.target.getAttribute('data-mode');
+                    DOM.desc.textContent = descriptions[currentMode];
+                });
+            });
+
+            // Логика генерации
+            const generatePhrase = () => {
+                let result = "";
+                const noun1 = getRandomItem(dictionaries.nouns);
+                const adj = getRandomItem(dictionaries.adjectives);
+                const verb = getRandomItem(dictionaries.verbs);
+                
+                // Для 4 слов берем второе существительное, отличное от первого
+                let noun2 = getRandomItem(dictionaries.nouns);
+                while(noun2 === noun1) {
+                    noun2 = getRandomItem(dictionaries.nouns);
+                }
+
+                switch(currentMode) {
+                    case '1':
+                        const allWords = [...dictionaries.nouns, ...dictionaries.adjectives, ...dictionaries.verbs];
+                        result = getRandomItem(allWords);
+                        break;
+                    case '2':
+                        result = `${adj} ${noun1}`;
+                        break;
+                    case '3':
+                        result = `${adj} ${noun1} ${verb}`;
+                        break;
+                    case '4':
+                        result = `${adj} ${noun1} ${verb} ${noun2}`;
+                        break;
+                }
+
+                // Перезапуск CSS анимации
+                DOM.output.classList.remove('fade-in');
+                void DOM.output.offsetWidth; // Принудительный reflow
+                DOM.output.textContent = result;
+                DOM.output.classList.add('fade-in');
+            };
+
+            // Слушатель кнопки
+            DOM.btnGen.addEventListener('click', generatePhrase);
+
+            // Первая генерация при загрузке
+            setTimeout(generatePhrase, 800);
+
+        })();
+    </script>
+</body>
+</html>
