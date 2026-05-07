@@ -6,6 +6,13 @@
     <title>MuжicLab Studio | Pro DAW</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="theme-color" content="#ffffff">
     <style>
         :root {
             --bg-dark: #121212; --bg-panel: #1e1e1e; --bg-track: #252525; --bg-track-alt: #1f1f1f;
@@ -54,11 +61,12 @@
         .btn-mini.active-s { background: #22c55e; color: #000; border-color: #22c55e; }
         .track-bottom { display: flex; align-items: center; gap: 0.5rem; }
         
-        /* EXPANDED HEADERS (4 и 6 рядов) */
-        .track-header.expanded-4 { height: 220px; } /* 60 + 4*40 */
+        /* EXPANDED HEADERS */
         .track-header.expanded-6 { height: 300px; } /* 60 + 6*40 */
+        .track-header.expanded-9 { height: 420px; } /* 60 + 9*40 (Сэмплер) */
+        
         .sub-header-list { display: flex; flex-direction: column; gap: 0; opacity: 0; transition: opacity 0.2s; }
-        .track-header.expanded-4 .sub-header-list, .track-header.expanded-6 .sub-header-list { opacity: 1; }
+        .track-header.expanded-6 .sub-header-list, .track-header.expanded-9 .sub-header-list { opacity: 1; }
         .sub-header { height: 40px; display: flex; align-items: center; padding-left: 1rem; font-size: 0.7rem; color: #888; border-top: 1px solid #333; }
 
         .vol-slider { -webkit-appearance: none; width: 100%; height: 4px; background: #111; border-radius: 2px; outline: none; }
@@ -77,10 +85,10 @@
         .lane-step:nth-child(4n+1) { border-left: 1px solid rgba(255,255,255,0.1); }
         
         /* EXPANDED LANES */
-        .track-lane.expanded-4 { height: 220px; }
         .track-lane.expanded-6 { height: 300px; }
+        .track-lane.expanded-9 { height: 420px; }
         .sub-lanes-container { display: none; flex-direction: column; }
-        .track-lane.expanded-4 .sub-lanes-container, .track-lane.expanded-6 .sub-lanes-container { display: flex; }
+        .track-lane.expanded-6 .sub-lanes-container, .track-lane.expanded-9 .sub-lanes-container { display: flex; }
         .sub-lane { height: 40px; display: grid; grid-template-columns: repeat(16, 1fr); border-top: 1px solid #333; }
 
         .note { position: absolute; top: 15%; left: 10%; width: 80%; height: 70%; border-radius: 3px; box-shadow: inset 0 0 5px rgba(0,0,0,0.5); pointer-events: none;}
@@ -104,11 +112,11 @@
         .btn-action.rec.recording { background: #ef4444; color: #fff; animation: pulse 1s infinite; }
 
         /* SAMPLER PADS */
-        .drum-pads { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;}
+        .drum-pads { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; height: 100%;}
         .pad { background: #252525; border: 1px solid #444; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; padding: 1rem 0; transition: 0.1s;}
         .pad.selected { border-color: var(--accent); background: rgba(249, 115, 22, 0.1); }
         .pad:active, .pad.playing { background: var(--t-drums); border-color: #fff; transform: scale(0.95);}
-        .pad-key { font-size: 1.2rem; font-weight: 900; }
+        .pad-key { font-size: 1.5rem; font-weight: 900; }
         .pad-name { font-size: 0.6rem; color: #aaa; text-transform: uppercase; pointer-events: none;}
 
         /* GRIDS */
@@ -175,24 +183,24 @@
         
         <div id="editors-container" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
             
-            <!-- ED 0: SAMPLER -->
+            <!-- ED 0: SAMPLER (9 PADS) -->
             <div class="editor-content" id="ed-0">
-                <div class="editor-col" style="flex: 0 0 300px;">
+                <div class="editor-col" style="flex: 0 0 350px;">
                     <div class="drum-pads" id="sampler-pads"></div>
                 </div>
                 <div class="editor-col">
                     <div class="ctrl-group">
-                        <span class="ctrl-label">Сэмпл для выбранного пэда (<span id="samp-active-name" style="color:var(--accent)">Q</span>)</span>
-                        <div style="display: flex; gap: 0.5rem;">
+                        <span class="ctrl-label">Сэмпл для пэда <span id="samp-active-name" style="color:var(--accent); font-size:1rem;">Q</span></span>
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
                             <button class="btn-action rec" id="samp-rec">🎤 Запись</button>
                             <label class="btn-action" style="flex:1; text-align:center;">📁 Файл<input type="file" id="samp-file" accept="audio/*,video/webm" style="display:none;"></label>
                         </div>
                     </div>
-                    <div class="ctrl-group mt-2">
+                    <div class="ctrl-group mt-4">
                         <span class="ctrl-label"><span>Start Trim</span><span id="samp-v-start">0%</span></span>
                         <input type="range" id="samp-start" class="vol-slider" value="0">
                     </div>
-                    <div class="ctrl-group">
+                    <div class="ctrl-group mt-2">
                         <span class="ctrl-label"><span>End Trim</span><span id="samp-v-end">100%</span></span>
                         <input type="range" id="samp-end" class="vol-slider" value="100">
                     </div>
@@ -204,7 +212,7 @@
                 <div class="editor-col">
                     <div class="ctrl-group">
                         <span class="ctrl-label">Текстовый Сид</span>
-                        <input type="text" id="seed-val" value="LOGIC" style="font-size: 1.5rem; text-align:center;">
+                        <input type="text" id="seed-val" value="Nozhikov" style="font-size: 1.5rem; text-align:center;">
                     </div>
                     <button class="btn-action" id="seed-rand">Сгенерировать мелодию</button>
                     <p style="font-size:0.7rem; color:#888; margin-top: 0.5rem;">Кликай по дорожке таймлайна, чтобы расставить триггеры.</p>
@@ -216,7 +224,6 @@
                 <div class="editor-col">
                     <div class="ctrl-group"><span class="ctrl-label">Root Note</span><select id="seed-root"><option value="36">C</option><option value="38">D</option><option value="40">E</option><option value="41">F</option><option value="43">G</option><option value="45" selected>A</option><option value="47">B</option></select></div>
                     <div class="ctrl-group"><span class="ctrl-label">Sub Mix (Октава вниз)</span><input type="range" id="seed-sub" class="vol-slider" value="50"></div>
-                    <div class="ctrl-group"><span class="ctrl-label">Speed</span><select id="seed-speed"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="2">2x</option></select></div>
                 </div>
             </div>
 
@@ -271,10 +278,12 @@
                 </div>
                 <div class="editor-col">
                     <label class="btn-action" style="text-align:center; padding: 1rem;">Загрузить Изображение (PNG/JPG)<input type="file" id="syn-file" accept="image/*" style="display:none;"></label>
-                    <p style="font-size:0.7rem; color:#888; margin-top: 1rem;">Изображение конвертируется в 16x16. Яркие пиксели генерируют ноты по вертикали во время проигрывания.</p>
+                    <p style="font-size:0.7rem; color:#888; margin-top: 1rem;">Изображение конвертируется в 16x16. Яркие пиксели генерируют ноты.</p>
                 </div>
                 <div class="editor-col">
-                    <div class="ctrl-group"><span class="ctrl-label">Лад (Scale)</span><select id="syn-scale"><option value="minor">Минор</option><option value="chromatic">Хроматика (Dissonance)</option></select></div>
+                    <div class="ctrl-group"><span class="ctrl-label">Форма волны</span><select id="syn-wave"><option value="sine">Sine</option><option value="triangle">Triangle</option><option value="square">Square</option><option value="sawtooth">Saw</option></select></div>
+                    <div class="ctrl-group"><span class="ctrl-label">Лад (Scale)</span><select id="syn-scale"><option value="minor">Минор</option><option value="major">Мажор</option><option value="pentatonic">Пентатоника</option><option value="phrygian">Фригийский</option><option value="chromatic">Хроматика</option></select></div>
+                    <div class="ctrl-group"><span class="ctrl-label">Root Note</span><select id="syn-root"><option value="48">C3</option><option value="50">D3</option><option value="52">E3</option><option value="53">F3</option><option value="55">G3</option><option value="57">A3</option><option value="59">B3</option></select></div>
                 </div>
             </div>
 
@@ -340,14 +349,14 @@
             const STEPS = 16;
             
             const TRACKS = [
-                { id: 'drums',  name: '1. Sampler',      c: 'var(--t-drums)',  vol: 0.8, mute: false, solo: false },
-                { id: 'synth',  name: '2. Seed Synth',   c: 'var(--t-synth)',  vol: 0.6, mute: false, solo: false },
-                { id: 'chaos',  name: '3. Chaos Seq',    c: 'var(--t-chaos)',  vol: 0.7, mute: false, solo: false },
-                { id: 'vibe',   name: '4. Atmosphere',   c: 'var(--t-vibe)',   vol: 0.5, mute: false, solo: false },
-                { id: 'noise',  name: '5. Granular',     c: 'var(--t-noise)',  vol: 0.8, mute: false, solo: false },
-                { id: 'synest', name: '6. Synesthesia',  c: 'var(--t-synest)', vol: 0.8, mute: false, solo: false },
-                { id: 'rhythm', name: '7. Rhythm Gen',   c: 'var(--t-rhythm)', vol: 0.8, mute: false, solo: false },
-                { id: 'audio',  name: '8. Audio Tracks', c: 'var(--t-audio)',  vol: 0.8, mute: false, solo: false }
+                { id: 'drums',  name: '1. Sampler',      c: 'var(--t-drums)',  vol: 0.8, rev: 0.1, mute: false, solo: false },
+                { id: 'synth',  name: '2. Seed Synth',   c: 'var(--t-synth)',  vol: 0.6, rev: 0.3, mute: false, solo: false },
+                { id: 'chaos',  name: '3. Chaos Seq',    c: 'var(--t-chaos)',  vol: 0.7, rev: 0.4, mute: false, solo: false },
+                { id: 'vibe',   name: '4. Atmosphere',   c: 'var(--t-vibe)',   vol: 0.5, rev: 0.0, mute: false, solo: false },
+                { id: 'noise',  name: '5. Granular',     c: 'var(--t-noise)',  vol: 0.8, rev: 0.5, mute: false, solo: false },
+                { id: 'synest', name: '6. Synesthesia',  c: 'var(--t-synest)', vol: 0.8, rev: 0.6, mute: false, solo: false },
+                { id: 'rhythm', name: '7. Rhythm Gen',   c: 'var(--t-rhythm)', vol: 0.8, rev: 0.2, mute: false, solo: false },
+                { id: 'audio',  name: '8. Audio Tracks', c: 'var(--t-audio)',  vol: 0.8, rev: 0.2, mute: false, solo: false }
             ];
 
             let state = {
@@ -359,9 +368,9 @@
             // Recorders 
             let padRec = null, granRec = null, audRec = null;
 
-            // DATA
-            let d_samp = Array(4).fill().map(() => ({ buf: null, s: 0, e: 1, seq: Array(STEPS).fill(false) }));
-            let d_synth = Array(STEPS).fill().map(()=>({a:false, n:60})); // Initialize inactive
+            // DATA (Сэмплер теперь 9 каналов)
+            let d_samp = Array(9).fill().map(() => ({ buf: null, s: 0, e: 1, seq: Array(STEPS).fill(false) }));
+            let d_synth = Array(STEPS).fill().map(()=>({a:false, n:60}));
             let d_chaos = Array(16).fill().map(()=>Array(16).fill(false));
             let d_audio = Array(6).fill().map(() => ({ buf: null, s: 0, e: 1, seq: Array(STEPS).fill(false) }));
             
@@ -382,7 +391,7 @@
 
             // AUDIO
             let ctx, master, mAnalys, dest, rec, recChunks = [];
-            let trkGains = [], mDist, mRev, rWet, rDry;
+            let trkGains = [], trkRevSends = [], mDist, mRev, rWet, rDry;
             let nBuf;
             let vibeNodes = {};
 
@@ -397,7 +406,19 @@
                 for(let i=0; i<l; i++){ imp.getChannelData(0)[i] = (Math.random()*2-1)*Math.pow(1-i/l,2); imp.getChannelData(1)[i] = (Math.random()*2-1)*Math.pow(1-i/l,2); }
                 mRev.buffer = imp;
 
-                for(let i=0; i<8; i++){ let g = ctx.createGain(); g.connect(mDist); trkGains.push(g); }
+                // Индивидуальные Send-каналы для реверберации
+                for(let i=0; i<8; i++){ 
+                    let g = ctx.createGain(); 
+                    let dry = ctx.createGain(); dry.gain.value = 1;
+                    let send = ctx.createGain(); send.gain.value = TRACKS[i].rev;
+                    
+                    g.connect(dry); g.connect(send);
+                    dry.connect(mDist);
+                    send.connect(mRev);
+                    
+                    trkGains.push(g); 
+                    trkRevSends.push(send);
+                }
 
                 mDist.connect(rDry); mDist.connect(mRev).connect(rWet);
                 rDry.connect(master); rWet.connect(master);
@@ -455,6 +476,7 @@
                     let v = t.mute ? 0 : t.vol;
                     if(anyS && !t.solo) v=0;
                     trkGains[i].gain.setValueAtTime(v, ctx.currentTime);
+                    if(trkRevSends[i]) trkRevSends[i].gain.setValueAtTime(t.rev, ctx.currentTime);
                 });
             };
 
@@ -466,12 +488,40 @@
                     const dur = p.buf.duration, st = dur*p.s, en = dur*p.e;
                     if(en-st > 0) s.start(time, st, en-st);
                 } else {
-                    const o=ctx.createOscillator(), g=ctx.createGain();
-                    if(idx===0){ o.type='sine'; o.frequency.setValueAtTime(150,time); o.frequency.exponentialRampToValueAtTime(0.01,time+0.5); g.gain.setValueAtTime(0,time); g.gain.linearRampToValueAtTime(1,time+0.01); g.gain.exponentialRampToValueAtTime(0.01,time+0.5); }
-                    else if(idx===1){ o.type='triangle'; o.frequency.setValueAtTime(250,time); g.gain.setValueAtTime(0,time); g.gain.linearRampToValueAtTime(1,time+0.01); g.gain.exponentialRampToValueAtTime(0.01,time+0.2); }
-                    else if(idx===2){ o.type='square'; o.frequency.setValueAtTime(8000,time); g.gain.setValueAtTime(0,time); g.gain.linearRampToValueAtTime(0.3,time+0.01); g.gain.exponentialRampToValueAtTime(0.01,time+0.1); }
-                    else { o.type='sawtooth'; o.frequency.setValueAtTime(600,time); g.gain.setValueAtTime(0,time); g.gain.linearRampToValueAtTime(0.5,time+0.01); g.gain.exponentialRampToValueAtTime(0.01,time+0.1); }
-                    o.connect(g).connect(trkGains[0]); o.start(time); o.stop(time+0.5);
+                    // 9 Синтезированных звуков для сэмплера по дефолту
+                    const o=ctx.createOscillator(), g=ctx.createGain(); o.connect(g).connect(trkGains[0]);
+                    
+                    if(idx===0){ // Kick
+                        o.type='sine'; o.frequency.setValueAtTime(150,time); o.frequency.exponentialRampToValueAtTime(0.01,time+0.5); g.gain.setValueAtTime(1,time); g.gain.exponentialRampToValueAtTime(0.01,time+0.5); 
+                    } else if(idx===1){ // Snare
+                        o.type='triangle'; o.frequency.setValueAtTime(200,time); o.frequency.exponentialRampToValueAtTime(50,time+0.2); g.gain.setValueAtTime(0.8,time); g.gain.exponentialRampToValueAtTime(0.01,time+0.2);
+                        const n=ctx.createBufferSource(), nf=ctx.createBiquadFilter(), ng=ctx.createGain(); n.buffer=nBuf; nf.type='highpass'; nf.frequency.value=1500; ng.gain.setValueAtTime(1,time); ng.gain.exponentialRampToValueAtTime(0.01,time+0.25);
+                        n.connect(nf).connect(ng).connect(trkGains[0]); n.start(time); n.stop(time+0.25);
+                    } else if(idx===2){ // Hat Closed
+                        g.gain.value = 0;
+                        const n=ctx.createBufferSource(), nf=ctx.createBiquadFilter(), ng=ctx.createGain(); n.buffer=nBuf; nf.type='highpass'; nf.frequency.value=8000; ng.gain.setValueAtTime(0.6,time); ng.gain.exponentialRampToValueAtTime(0.01,time+0.05);
+                        n.connect(nf).connect(ng).connect(trkGains[0]); n.start(time); n.stop(time+0.05);
+                    } else if(idx===3){ // Hat Open
+                        g.gain.value = 0;
+                        const n=ctx.createBufferSource(), nf=ctx.createBiquadFilter(), ng=ctx.createGain(); n.buffer=nBuf; nf.type='highpass'; nf.frequency.value=8000; ng.gain.setValueAtTime(0.6,time); ng.gain.exponentialRampToValueAtTime(0.01,time+0.3);
+                        n.connect(nf).connect(ng).connect(trkGains[0]); n.start(time); n.stop(time+0.3);
+                    } else if(idx===4){ // Perc High
+                        o.type='square'; o.frequency.setValueAtTime(600,time); o.frequency.exponentialRampToValueAtTime(200,time+0.1); g.gain.setValueAtTime(0.5,time); g.gain.exponentialRampToValueAtTime(0.01,time+0.1);
+                    } else if(idx===5){ // Perc Low
+                        o.type='square'; o.frequency.setValueAtTime(300,time); o.frequency.exponentialRampToValueAtTime(100,time+0.1); g.gain.setValueAtTime(0.5,time); g.gain.exponentialRampToValueAtTime(0.01,time+0.1);
+                    } else if(idx===6){ // Clap
+                        g.gain.value = 0;
+                        const n=ctx.createBufferSource(), nf=ctx.createBiquadFilter(), ng=ctx.createGain(); n.buffer=nBuf; nf.type='bandpass'; nf.frequency.value=1200; 
+                        ng.gain.setValueAtTime(0.8,time); ng.gain.setValueAtTime(0.1, time+0.01); ng.gain.setValueAtTime(0.8, time+0.02); ng.gain.exponentialRampToValueAtTime(0.01,time+0.2);
+                        n.connect(nf).connect(ng).connect(trkGains[0]); n.start(time); n.stop(time+0.2);
+                    } else if(idx===7){ // Crash
+                        g.gain.value = 0;
+                        const n=ctx.createBufferSource(), nf=ctx.createBiquadFilter(), ng=ctx.createGain(); n.buffer=nBuf; nf.type='highpass'; nf.frequency.value=4000; ng.gain.setValueAtTime(0.8,time); ng.gain.exponentialRampToValueAtTime(0.01,time+1.5);
+                        n.connect(nf).connect(ng).connect(trkGains[0]); n.start(time); n.stop(time+1.5);
+                    } else if(idx===8){ // Sub Bass
+                        o.type='sine'; o.frequency.value=50; g.gain.setValueAtTime(1,time); g.gain.exponentialRampToValueAtTime(0.01,time+0.6);
+                    }
+                    o.start(time); o.stop(time+1.5);
                 }
             };
 
@@ -526,7 +576,7 @@
                     else { document.getElementById('syn-scan').style.left = `${(st/STEPS)*100}%`; }
                 }, delay > 0 ? delay : 0);
 
-                for(let i=0; i<4; i++){ if(d_samp[i].seq[st]) playPad(i, time); }
+                for(let i=0; i<9; i++){ if(d_samp[i].seq[st]) playPad(i, time); }
 
                 if(d_synth[st].a) {
                     const root = parseInt(document.getElementById('seed-root').value);
@@ -556,11 +606,21 @@
 
                 if(state.synImgData) {
                     const sType = document.getElementById('syn-scale').value;
-                    const scale = sType==='minor' ? [48,50,51,53,55,56,58,60,63,65,67,68,70,72,75,77].reverse() : Array.from({length:16},(_,i)=>72-i);
+                    const root = parseInt(document.getElementById('syn-root').value);
+                    const wType = document.getElementById('syn-wave').value;
+                    let scale;
+                    if(sType === 'minor') scale = [0,2,3,5,7,8,10,12,14,15,17,19,20,22,24,26];
+                    else if(sType === 'major') scale = [0,2,4,5,7,9,11,12,14,16,17,19,21,23,24,26];
+                    else if(sType === 'pentatonic') scale = [0,3,5,7,10,12,15,17,19,22,24,27,29,31,34,36];
+                    else if(sType === 'phrygian') scale = [0,1,3,5,7,8,10,12,13,15,17,19,20,22,24,25];
+                    else scale = Array.from({length:16},(_,i)=>i); // Chromatic
+                    
+                    scale = scale.map(n => root + n).reverse();
+
                     for(let y=0; y<16; y++) {
                         const i = (y*16 + st)*4;
                         const bright = (state.synImgData[i]+state.synImgData[i+1]+state.synImgData[i+2])/3;
-                        if(bright > 128) playSynth(scale[y], time, 'sine', 5);
+                        if(bright > 128) playSynth(scale[y], time, wType, 5);
                     }
                 }
 
@@ -575,8 +635,7 @@
             const scheduler = () => {
                 while(state.nextTime < ctx.currentTime + 0.1) {
                     scheduleStep(state.step, state.nextTime);
-                    const speed = parseFloat(document.getElementById('seed-speed').value);
-                    state.nextTime += (0.25 * (60.0 / state.bpm)) / speed;
+                    state.nextTime += (0.25 * (60.0 / state.bpm)); // Global Speed is strictly BPM now
                     state.step = (state.step + 1) % STEPS;
                 }
                 state.timer = setTimeout(scheduler, 25);
@@ -594,13 +653,16 @@
                     th.innerHTML = `
                         <div class="track-header-inner">
                             <div class="track-top"><span class="track-name" style="color:${t.c}">${t.name}</span><div class="track-controls"><button class="btn-mini m">M</button><button class="btn-mini s">S</button></div></div>
-                            <div class="track-bottom"><span style="font-size:10px;color:#666">Vol</span><input type="range" class="vol-slider tv" value="${t.vol*100}"></div>
+                            <div class="track-bottom">
+                                <span style="font-size:9px;color:#666;width:15px">VOL</span><input type="range" class="vol-slider tv" value="${t.vol*100}">
+                                <span style="font-size:9px;color:#666;width:15px;margin-left:4px;">REV</span><input type="range" class="vol-slider tr" value="${t.rev*100}">
+                            </div>
                         </div>
                     `;
                     
                     if(i===0 || i===7) {
                         const shl = document.createElement('div'); shl.className = 'sub-header-list';
-                        const labels = i===0 ? ['Q - Kick','W - Snare','E - Hihat','A - Perc'] : ['Канал 1','Канал 2','Канал 3','Канал 4','Канал 5','Канал 6'];
+                        const labels = i===0 ? ['Q - Kick','W - Snare','E - Hat C','A - Hat O','S - Perc 1','D - Perc 2','Z - Clap','X - Crash','C - Sub'] : ['Канал 1','Канал 2','Канал 3','Канал 4','Канал 5','Канал 6'];
                         labels.forEach(n => {
                             const sh = document.createElement('div'); sh.className = 'sub-header'; sh.textContent = n; shl.appendChild(sh);
                         });
@@ -612,8 +674,8 @@
                         document.querySelectorAll('.track-header').forEach(h=>h.classList.remove('selected'));
                         th.classList.add('selected');
                         
-                        if(i===0) { th.classList.add('expanded-4'); document.querySelector('.lane-drums').classList.add('expanded-4'); }
-                        else { document.querySelector('.track-header[data-track="0"]').classList.remove('expanded-4'); document.querySelector('.lane-drums').classList.remove('expanded-4'); }
+                        if(i===0) { th.classList.add('expanded-9'); document.querySelector('.lane-drums').classList.add('expanded-9'); }
+                        else { document.querySelector('.track-header[data-track="0"]').classList.remove('expanded-9'); document.querySelector('.lane-drums').classList.remove('expanded-9'); }
 
                         if(i===7) { th.classList.add('expanded-6'); document.querySelector('.lane-audio').classList.add('expanded-6'); }
                         else if(document.querySelector('.track-header[data-track="7"]')) { document.querySelector('.track-header[data-track="7"]').classList.remove('expanded-6'); document.querySelector('.lane-audio').classList.remove('expanded-6'); }
@@ -626,20 +688,21 @@
                     th.querySelector('.m').addEventListener('click', function(e) { e.stopPropagation(); this.classList.toggle('active-m'); t.mute = !t.mute; updateVols(); });
                     th.querySelector('.s').addEventListener('click', function(e) { e.stopPropagation(); this.classList.toggle('active-s'); t.solo = !t.solo; updateVols(); });
                     th.querySelector('.tv').addEventListener('input', function(e) { e.stopPropagation(); t.vol = parseFloat(this.value)/100; updateVols(); });
+                    th.querySelector('.tr').addEventListener('input', function(e) { e.stopPropagation(); t.rev = parseFloat(this.value)/100; updateVols(); });
 
                     headers.appendChild(th);
 
                     // LANE
                     if(i===0 || i===1 || i===7) {
                         const tl = document.createElement('div'); 
-                        tl.className = `track-lane ${i===0?'lane-drums expanded-4': i===7?'lane-audio':'lane-synth'}`; tl.dataset.track=i;
+                        tl.className = `track-lane ${i===0?'lane-drums expanded-9': i===7?'lane-audio':'lane-synth'}`; tl.dataset.track=i;
                         const lm = document.createElement('div'); lm.className='lane-main';
                         for(let c=0; c<STEPS; c++){ const s=document.createElement('div'); s.className='lane-step'; lm.appendChild(s); }
                         tl.appendChild(lm);
 
                         if(i===0 || i===7) {
                             const slc = document.createElement('div'); slc.className = 'sub-lanes-container';
-                            const rows = i===0 ? 4 : 6;
+                            const rows = i===0 ? 9 : 6;
                             const dArr = i===0 ? d_samp : d_audio;
                             for(let r=0; r<rows; r++) {
                                 const sl = document.createElement('div'); sl.className = 'sub-lane';
@@ -666,7 +729,7 @@
                 for(let i=0;i<STEPS;i++){ const s = document.createElement('div'); s.className='ruler-step'; s.textContent=i+1; r.appendChild(s); }
 
                 const dp = document.getElementById('sampler-pads');
-                ['Q','W','E','A'].forEach((k,i)=>{
+                ['Q','W','E','A','S','D','Z','X','C'].forEach((k,i)=>{
                     const p = document.createElement('div'); p.className='pad'; if(i===0)p.classList.add('selected');
                     p.innerHTML = `<span class="pad-key">${k}</span><span class="pad-name">Pad ${i+1}</span>`;
                     p.addEventListener('mousedown', ()=>{
@@ -703,7 +766,7 @@
                 const sLm = document.querySelector('.lane-synth .lane-main').children;
                 for(let i=0;i<STEPS;i++) sLm[i].innerHTML = d_synth[i].a ? '<div class="note"></div>' : '';
                 const slc = document.querySelector('.lane-drums .sub-lanes-container').children;
-                for(let r=0;r<4;r++){
+                for(let r=0;r<9;r++){
                     const sl = slc[r].children;
                     for(let c=0;c<STEPS;c++) sl[c].innerHTML = d_samp[r].seq[c] ? '<div class="note"></div>' : '';
                 }
@@ -817,7 +880,7 @@
                     } catch(err){ alert('No Mic'); }
                 });
 
-                // Audio Tracks (NEW)
+                // Audio Tracks
                 document.getElementById('audio-select-chan').addEventListener('change', e=>{
                     const i = parseInt(e.target.value); state.activeAudio = i;
                     document.getElementById('audio-active-name').textContent = i+1;
@@ -858,7 +921,7 @@
                 window.addEventListener('keydown', e=>{
                     if(e.code==='Space' && e.target.tagName!=='INPUT'){ e.preventDefault(); document.getElementById('btn-play').click(); }
                     if(!e.repeat && e.target.tagName!=='INPUT'){
-                        const pm={'KeyQ':0,'KeyW':1,'KeyE':2,'KeyA':3};
+                        const pm={'KeyQ':0,'KeyW':1,'KeyE':2,'KeyA':3,'KeyS':4,'KeyD':5,'KeyZ':6,'KeyX':7,'KeyC':8};
                         if(pm[e.code]!==undefined){ playPad(pm[e.code], 0); const p=document.getElementById('sampler-pads').children[pm[e.code]]; if(p){ p.classList.add('playing'); setTimeout(()=>p.classList.remove('playing'),100); } }
                     }
                 });
