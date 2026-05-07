@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinetic Lab (Air-Synth) | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="theme-color" content="#ffffff">
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --bg-color: #050505; --card-bg: #111111; --accent-color: #ffffff;
+            --border-light: rgba(255, 255, 255, 0.1); --control-bg: #1a1a1a;
+            --active-color: #f97316; --danger-color: #ff3333; --font-main: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        a { color: inherit; text-decoration: none; }
+
+        body {
+            background-color: var(--bg-color); color: var(--accent-color); font-family: var(--font-main);
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            padding: 6rem 2rem 2rem 2rem; overflow-x: hidden; position: relative;
+        }
+
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.05; pointer-events: none; z-index: 9999;
+        }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+            display: flex; justify-content: center; align-items: center; z-index: 10001;
+            transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+        .knife-svg-main { width: 120px; height: 120px; fill: none; stroke: white; stroke-width: 1.2; animation: rotate-knife 1.5s linear infinite; }
+        @keyframes rotate-knife { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loaded #loader { transform: translateY(-100%); }
+
+        .app-container {
+            background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 24px;
+            padding: 2rem; width: 100%; max-width: 1000px; position: relative; z-index: 10;
+            display: flex; flex-direction: column; gap: 2rem; backdrop-filter: blur(10px);
+        }
+
+        .subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: gray; font-weight: 700; margin-bottom: 0.5rem; }
+        .title { font-size: 2rem; font-weight: 900; text-transform: uppercase; line-height: 1.1; letter-spacing: -0.02em; }
+
+        .editor-grid { display: grid; grid-template-columns: 1fr 300px; gap: 2rem; }
+        @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
+
+        .control-panel { background: rgba(5,5,5,0.8); border: 1px solid var(--border-light); border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; height: fit-content; }
+
+        /* Kinetic Feedback Area (Video/Canvas Container) */
+        .feedback-area {
+            width: 100%; aspect-ratio: 16/9; background: #0a0a0a; border: 1px solid var(--border-light);
+            border-radius: 12px; position: relative; overflow: hidden;
+        }
+        /* Скрытый видео элемент для захвата */
+        video#webcam-input { visibility: hidden; width: 100%; height: 100%; position: absolute; }
+        /* Канвас для отображения видео + скелета */
+        canvas#feedback-canvas { width: 100%; height: 100%; transform: scaleX(-1); /* Зеркало */ object-fit: cover; }
+
+        .status-badge {
+            position: absolute; top: 1rem; right: 1rem; font-size: 10px; font-weight: 900;
+            text-transform: uppercase; padding: 0.25rem 0.75rem; border-radius: 12px;
+            background: #222; color: gray; transition: all 0.3s; z-index: 20;
+        }
+        .status-badge.active { background: rgba(249, 115, 22, 0.2); color: var(--active-color); border: 1px solid var(--active-color); }
+        .status-badge.error { background: rgba(255, 0, 0, 0.2); color: #ff3333; border: 1px solid #ff3333; }
+
+        /* Waveform */
+        .waveform-container { width: 100%; height: 100px; background: #000; border-radius: 8px; border: 1px solid var(--border-light); overflow: hidden; }
+        canvas#waveform-canvas { width: 100%; height: 100%; }
+
+        .param-display { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .param-display span { color: var(--active-color); }
+
+        /* Оверлей разблокировки */
+        #init-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(17,17,17,0.85); backdrop-filter: blur(12px); z-index: 50;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 24px;
+            transition: opacity 0.3s;
+        }
+        .btn-init { font-size: 1.2rem; padding: 1.5rem 3rem; background: var(--active-color); color: #000; border: none; border-radius: 12px; font-weight: 900; text-transform: uppercase; cursor: pointer; box-shadow: 0 0 30px rgba(249, 115, 22, 0.4);}
+        .loader-dots { display: flex; gap: 8px; margin-top: 1rem; }
+        .dot { width: 10px; height: 10px; background: white; border-radius: 50%; animation: dotPulse 1.5s infinite alternate; }
+        .dot:nth-child(2) { animation-delay: 0.3s; }
+        .dot:nth-child(3) { animation-delay: 0.6s; }
+        @keyframes dotPulse { from { opacity: 0.3; } to { opacity: 1; transform: scale(1.1); } }
+    </style>
+</head>
+<body class="noise">
+
+    <div id="loader">
+        <svg class="knife-svg-main" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
+    </div>
+
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">Владислав Ножиков</a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="index#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="mujiclab" class="hover:opacity-50 transition">Мuжiclab</a>
+        </div>
+    </nav>
+
+    <main class="w-full flex justify-center relative z-10">
+        <div class="app-container">
+            
+            <div id="init-overlay">
+                <button class="btn-init" id="btn-init-audio">🎤 Разрешить камеру & Звук</button>
+                <div class="loader-dots hidden" id="overlay-loader">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+                <p class="text-gray-400 text-xs mt-4 uppercase tracking-widest" id="init-p">Требуется разрешение на запуск Audio API и доступ к камере</p>
+            </div>
+
+            <div class="header-section">
+                <div class="subtitle">Interactive Lab / Kinect</div>
+                <h1 class="title">Kinetic Lab (Air-Synth)</h1>
+                <p class="text-xs text-gray-500 mt-2 max-w-xl font-medium">Бесконтактный синтезатор на базе Google MediaPipe Hands. Указательный палец: X = Высота тона (Pitch), Y = Яркость (Cutoff). Звук только когда держишь щепотку.</p>
+            </div>
+
+            <div class="editor-grid">
+                
+                <div class="control-panel p-0 overflow-hidden" style="background: transparent; border: none;">
+                    <div class="feedback-area">
+                        <div class="status-badge" id="tune-status">Микрофон: ВЫКЛ</div>
+                        <video id="webcam-input" autoplay></video>
+                        <canvas id="feedback-canvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-6">
+                    <div class="control-panel">
+                        <div class="subtitle">Текущие Параметры</div>
+                        
+                        <div class="flex flex-col gap-4 mt-2">
+                            <div class="param-display">Pitch (X): <span id="val-pitch">--- Hz</span></div>
+                            <div class="param-display">Cutoff (Y): <span id="val-cutoff">--- Hz</span></div>
+                            <div class="param-display">Рука в кадре: <span id="val-hand-status">Нет</span></div>
+                        </div>
+
+                    </div>
+
+                    <div class="control-panel">
+                        <div class="subtitle">Осциллограф</div>
+                        <div class="waveform-container">
+                            <canvas id="waveform-canvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-12 pt-8 border-t border-white/10 flex flex-col items-center text-center gap-4 relative z-10 w-full max-w-[1000px]">
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">© <span id="current-year">2026</span> ВЛАДИСЛАВ НОжиков</p>        
+            <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">Политика конфиденциальности</a>
+        </div>
+    </footer>
+
+    <script>
+        window.onload = () => { setTimeout(() => { document.body.classList.add('loaded'); }, 500); };
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        const KineticLab = (() => {
+            const DOM = {
+                videoInput: document.getElementById('webcam-input'),
+                canvasFeedback: document.getElementById('feedback-canvas'),
+                valPitch: document.getElementById('val-pitch'),
+                valCutoff: document.getElementById('val-cutoff'),
+                valHand: document.getElementById('val-hand-status'),
+                canvasWave: document.getElementById('waveform-canvas'),
+                overlayBtn: document.getElementById('btn-init-audio'),
+                overlayBtnP: document.getElementById('init-p'),
+                overlayBtnDots: document.getElementById('overlay-loader'),
+                overlay: document.getElementById('init-overlay'),
+                statusBadge: document.getElementById('tune-status')
+            };
+
+            const ctxFeedback = DOM.canvasFeedback.getContext('2d');
+            const ctxWave = DOM.canvasWave.getContext('2d');
+            
+            // Audio Nodes
+            let audioCtx = null;
+            let osc = null;
+            let filter = null;
+            let masterGain = null;
+            let analyser = null;
+            const dataArray = new Uint8Array(2048);
+
+            // MediaPipe Objects
+            let hands = null;
+            let camera = null;
+
+            let smoothedPitch = 200;
+            let smoothedCutoff = 1000;
+
+            // Настройка Audio Graph
+            const initAudio = () => {
+                if (audioCtx) return;
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                osc = audioCtx.createOscillator();
+                osc.type = 'sawtooth';
+                
+                filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.Q.value = 8; 
+                
+                masterGain = audioCtx.createGain();
+                masterGain.gain.setValueAtTime(0, audioCtx.currentTime); // Тишина по умолчанию
+                
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 2048;
+
+                osc.connect(filter).connect(masterGain).connect(analyser).connect(audioCtx.destination);
+                osc.start();
+
+                drawWaveform();
+            };
+
+            // Настройка Google MediaPipe Hands
+            const initMediaPipe = async () => {
+                try {
+                    DOM.statusBadge.textContent = 'КАМЕРА: ЗАПУСК...';
+                    DOM.statusBadge.className = 'status-badge';
+
+                    hands = new Hands({
+                        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+                    });
+
+                    // Оптимальные настройки для веб-камеры
+                    hands.setOptions({
+                        maxNumHands: 1, // Один пользователь - меньше нагрузки
+                        modelComplexity: 0, // Уменьшает CPU нагрузку (0 - быстрее, 1 - точнее)
+                        minDetectionConfidence: 0.5,
+                        minTrackingConfidence: 0.5
+                    });
+
+                    hands.onResults(onResults);
+
+                    camera = new Camera(DOM.videoInput, {
+                        onFrame: async () => {
+                            await hands.send({image: DOM.videoInput});
+                        },
+                        width: 640,
+                        height: 360
+                    });
+
+                    await camera.start();
+                    
+                    DOM.statusBadge.textContent = 'КАМЕРА: ON';
+                    DOM.statusBadge.className = 'status-badge active';
+                    DOM.overlay.style.opacity = '0';
+                    setTimeout(() => DOM.overlay.remove(), 300);
+
+                } catch (err) {
+                    DOM.statusBadge.textContent = 'КАМЕРА: ОШИБКА';
+                    DOM.statusBadge.className = 'status-badge error';
+                    DOM.overlayBtn.style.display = 'flex';
+                    DOM.overlayBtnDots.style.display = 'none';
+                    DOM.overlayBtnP.textContent = `Ошибка доступа к камере: ${err.message}`;
+                    console.error("MediaPipe Init Error:", err);
+                }
+            };
+
+            // Callback MediaPipe (Получение результатов)
+            function onResults(results) {
+                if (!audioCtx) return;
+
+                // Подгоняем размер канваса под контейнер
+                const rect = DOM.canvasFeedback.parentElement.getBoundingClientRect();
+                if(DOM.canvasFeedback.width !== rect.width || DOM.canvasFeedback.height !== rect.height) {
+                    DOM.canvasFeedback.width = rect.width; DOM.canvasFeedback.height = rect.height;
+                }
+
+                // Рисуем зеркальный видеопоток
+                ctxFeedback.save();
+                ctxFeedback.clearRect(0, 0, DOM.canvasFeedback.width, DOM.canvasFeedback.height);
+                ctxFeedback.translate(DOM.canvasFeedback.width, 0); ctxFeedback.scale(-1, 1);
+                ctxFeedback.drawImage(results.image, 0, 0, DOM.canvasFeedback.width, DOM.canvasFeedback.height);
+                ctxFeedback.restore();
+
+                let isHandTracked = false;
+
+                if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                    isHandTracked = true;
+                    const landmarks = results.multiHandLandmarks[0];
+
+                    // Отрисовка скелета (using Mediapipe drawing_utils)
+                    drawConnectors(ctxFeedback, landmarks, HAND_CONNECTIONS, {color: '#555', lineWidth: 1});
+                    drawLandmarks(ctxFeedback, landmarks, {color: '#f97316', lineWidth: 0.5, radius: 2});
+
+                    // --- МАППИНГ ЗВУКА ---
+                    
+                    // Ключевые точки: 8 - Указательный (tip), 4 - Большой (tip)
+                    const indexFingerTip = landmarks[8];
+                    const thumbTip = landmarks[4];
+
+                    // Ось X (Горизонталь) - Указательный (высота тона)
+                    // Координаты landmarks нормализованы от 0 до 1
+                    let normX = indexFingerTip.x;
+                    const minPitch = 80;
+                    const maxPitch = 880; // Чуть шире диапазон
+                    const targetPitch = minPitch + (normX * (maxPitch - minPitch));
+
+                    // Ось Y (Вертикаль) - Указательный (фильтр)
+                    // MediaPipe Y=0 это верх. Маппим: Низ (Y=1) -> Cutoff min, Верх (Y=0) -> Cutoff max
+                    let normY = indexFingerTip.y;
+                    const minCutoff = 150;
+                    const maxCutoff = 12000; // Весь спектр
+                    const targetCutoff = minCutoff + ((1 - normY) * (maxCutoff - minCutoff));
+
+                    // Громкость: сжатие Большого + Указательного (Щепотка)
+                    // Считаем расстояние между кончиками пальцев (в 3D)
+                    const distance = Math.sqrt(
+                        Math.pow(indexFingerTip.x - thumbTip.x, 2) +
+                        Math.pow(indexFingerTip.y - thumbTip.y, 2) +
+                        Math.pow(indexFingerTip.z - thumbTip.z, 2)
+                    );
+                    
+                    // Жест: расстояние < 0.08 (нормализованное)
+                    const isPinched = distance < 0.08;
+
+                    // Сглаживание звука (сильное, для вебки)
+                    smoothedPitch = (smoothedPitch * 0.9) + (targetPitch * 0.1);
+                    smoothedCutoff = (smoothedCutoff * 0.8) + (targetCutoff * 0.2);
+
+                    // Automate Web Audio Parameters (setTargetAtTime - самый плавный)
+                    osc.frequency.setTargetAtTime(smoothedPitch, audioCtx.currentTime, 0.03);
+                    filter.frequency.setTargetAtTime(smoothedCutoff, audioCtx.currentTime, 0.03);
+                    
+                    const targetGain = isPinched ? 0.3 : 0; // Включен или выключен
+                    masterGain.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.01);
+
+                    // Обновление текста UI
+                    DOM.valPitch.textContent = `${Math.round(smoothedPitch)} Hz`;
+                    DOM.valCutoff.textContent = `${Math.round(smoothedCutoff)} Hz`;
+                    DOM.valHand.textContent = isPinched ? 'Да, Щепотка!' : 'Да, Тяни Щепотку!';
+                    DOM.valHand.style.color = isPinched ? 'var(--tuned-color)' : '#fff';
+
+                    // Показываем активную точку
+                    ctxFeedback.beginPath(); ctxFeedback.arc(indexFingerTip.x * DOM.canvasFeedback.width, indexFingerTip.y * DOM.canvasFeedback.height, 10, 0, 2*Math.PI);
+                    ctxFeedback.fillStyle = isPinched ? 'var(--tuned-color)' : 'transparent';
+                    ctxFeedback.strokeStyle = 'white'; ctxFeedback.lineWidth=2; ctxFeedback.stroke(); if(isPinched) ctxFeedback.fill();
+
+                } else {
+                    // Руки нет - гасим звук плавно
+                    if(masterGain) masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+                    DOM.valPitch.textContent = `--- Hz`; DOM.valCutoff.textContent = `--- Hz`; DOM.valHand.textContent = 'Нет'; DOM.valHand.style.color = '#fff';
+                }
+            }
+
+            // Инициализация по кнопке (AudioContext & Camera permission)
+            DOM.overlayBtn.addEventListener('click', async () => {
+                DOM.overlayBtn.style.display = 'none';
+                DOM.overlayBtnP.textContent = 'Запускаю камеру и загружаю модели MediaPipe...';
+                DOM.overlayBtnDots.style.display = 'flex';
+                
+                initAudio();
+                await initMediaPipe();
+            });
+
+            // Отрисовка осциллографа
+            const drawWaveform = () => {
+                requestAnimationFrame(drawWaveform);
+                if (!analyser || masterGain.gain.value === 0) {
+                    ctxWave.clearRect(0,0,DOM.canvasWave.width,DOM.canvasWave.height); return;
+                }
+
+                // Подгоняем размер канваса под контейнер
+                const rect = DOM.canvasWave.parentElement.getBoundingClientRect();
+                if(DOM.canvasWave.width !== rect.width || DOM.canvasWave.height !== rect.height) {
+                    DOM.canvasWave.width = rect.width; DOM.canvasWave.height = rect.height;
+                }
+
+                analyser.getByteTimeDomainData(dataArray);
+
+                ctxWave.fillStyle = '#000';
+                ctxWave.fillRect(0, 0, DOM.canvasWave.width, DOM.canvasWave.height);
+
+                ctxWave.lineWidth = 2;
+                ctxWave.strokeStyle = '#f97316';
+                ctxWave.beginPath();
+
+                const sliceWidth = DOM.canvasWave.width * 1.0 / dataArray.length;
+                let x = 0;
+
+                for (let i = 0; i < dataArray.length; i++) {
+                    const v = dataArray[i] / 128.0;
+                    const y = v * (DOM.canvasWave.height / 2);
+                    if (i === 0) ctxWave.moveTo(x, y); else ctxWave.lineTo(x, y);
+                    x += sliceWidth;
+                }
+                ctxWave.lineTo(DOM.canvasWave.width, DOM.canvasWave.height / 2);
+                ctxWave.stroke();
+            };
+
+        })();
+    </script>
+</body>
+</html>
