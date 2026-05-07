@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кварто-квинтовый круг | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="theme-color" content="#ffffff">
+
+    <style>
+        :root {
+            --bg-color: #050505; --card-bg: #111111; --accent-color: #ffffff;
+            --border-light: rgba(255, 255, 255, 0.1); --control-bg: #1a1a1a;
+            --active-color: #f97316; --danger-color: #ff3333; --font-main: 'Inter', sans-serif;
+            --mem-color: #00aaff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        a { color: inherit; text-decoration: none; }
+
+        body {
+            background-color: var(--bg-color); color: var(--accent-color); font-family: var(--font-main);
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            padding: 6rem 2rem 2rem 2rem; overflow-x: hidden; position: relative;
+        }
+
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.05; pointer-events: none; z-index: 9999;
+        }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+            display: flex; justify-content: center; align-items: center; z-index: 10001;
+            transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+        .knife-svg-main { width: 120px; height: 120px; fill: none; stroke: white; stroke-width: 1.2; animation: rotate-knife 1.5s linear infinite; }
+        @keyframes rotate-knife { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loaded #loader { transform: translateY(-100%); }
+
+        .app-container {
+            background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 24px;
+            padding: 2rem; width: 100%; max-width: 1100px; position: relative; z-index: 10;
+            display: flex; flex-direction: column; gap: 2rem; backdrop-filter: blur(10px);
+        }
+
+        .subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: gray; font-weight: 700; margin-bottom: 0.5rem; }
+        .title { font-size: 2rem; font-weight: 900; text-transform: uppercase; line-height: 1.1; letter-spacing: -0.02em; }
+
+        .editor-grid { display: grid; grid-template-columns: 1fr 450px; gap: 2rem; align-items: start; }
+        @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; flex-direction: column-reverse; display: flex;} }
+
+        .control-panel { background: rgba(5,5,5,0.8); border: 1px solid var(--border-light); border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; }
+
+        /* SVG Circle Styles */
+        .circle-container {
+            width: 100%; aspect-ratio: 1; position: relative; display: flex; justify-content: center; align-items: center;
+        }
+        svg#circle-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 20px rgba(0,0,0,0.5)); }
+        
+        .slice { cursor: pointer; transition: all 0.3s ease; }
+        .slice path { fill: #111; stroke: #333; stroke-width: 0.5; transition: fill 0.2s, stroke 0.2s; }
+        .slice text { fill: #888; font-family: 'Inter', sans-serif; font-weight: 900; text-anchor: middle; dominant-baseline: middle; transition: fill 0.2s, transform 0.2s; pointer-events: none; }
+        
+        .slice:hover path { fill: #1a1a1a; }
+        .slice:hover text { fill: #fff; transform: scale(1.1); }
+        
+        /* Цвета активных и запомненных секторов переделаны под оранжевый */
+        .slice.active path { fill: var(--active-color); stroke: var(--active-color); }
+        .slice.active text { fill: #000; }
+        
+        .slice.memory path { fill: rgba(249, 115, 22, 0.2); stroke: var(--active-color); }
+        .slice.memory.active path { fill: var(--active-color); stroke: white; }
+        .slice.memory text { fill: #fff; }
+
+        .slice.minor path { fill: #0a0a0a; }
+        .slice.minor:hover path { fill: #151515; }
+        .slice.minor.active path { fill: #d05b0d; stroke: #d05b0d; }
+        .slice.minor.memory path { fill: rgba(208, 91, 13, 0.3); stroke: #d05b0d; }
+        .slice.minor.memory.active path { fill: #d05b0d; stroke: white; }
+
+        .center-text { font-family: 'Inter', sans-serif; text-anchor: middle; dominant-baseline: middle; pointer-events: none; }
+        .center-title { font-size: 8px; fill: gray; font-weight: 700; letter-spacing: 0.1em; }
+        .center-acc { font-size: 14px; fill: white; font-weight: 900; }
+
+        /* Chord Palette */
+        .chord-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px; }
+        .chord-card {
+            background: #111; border: 1px solid #333; border-radius: 8px; padding: 1rem 0.5rem;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.1s; user-select: none;
+        }
+        .chord-card:hover { background: #1a1a1a; border-color: #555; }
+        .chord-card:active { background: var(--active-color); border-color: var(--active-color); transform: scale(0.95); }
+        
+        .chord-num { font-size: 10px; color: gray; font-weight: 700; margin-bottom: 2px; pointer-events: none; }
+        .chord-name { font-size: 16px; font-weight: 900; color: white; pointer-events: none; }
+        .chord-card:active .chord-num, .chord-card:active .chord-name { color: black; }
+
+        .btn {
+            background: var(--control-bg); color: var(--accent-color); border: 1px solid var(--border-light);
+            border-radius: 8px; padding: 0.75rem 1rem; font-size: 12px; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.3s ease;
+            text-align: center; width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem;
+        }
+        .btn:hover { background: var(--accent-color); color: #000; }
+        
+        .btn-rec { border-color: var(--danger-color); color: var(--danger-color); }
+        .btn-rec:hover { background: var(--danger-color); color: white; }
+        .btn-rec.recording { background: var(--danger-color); color: white; animation: rec-pulse 1.5s infinite; }
+        @keyframes rec-pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); } }
+
+        .btn-play-mem { border-color: var(--active-color); color: var(--active-color); }
+        .btn-play-mem:hover { background: var(--active-color); color: #000; }
+
+        /* Memory Sequence Display */
+        .memory-seq {
+            display: flex; flex-wrap: wrap; gap: 8px; min-height: 40px; padding: 10px;
+            background: #000; border: 1px solid var(--border-light); border-radius: 8px; align-items: center;
+        }
+        .mem-step {
+            background: #111; border: 1px solid #333; color: white; font-size: 10px; font-weight: 900;
+            padding: 4px 8px; border-radius: 4px; transition: all 0.2s;
+        }
+        .mem-step.playing { background: var(--active-color); color: #000; border-color: var(--active-color); transform: scale(1.1); }
+
+        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .control-label { display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; font-weight: 900; color: gray; }
+        select { background: var(--control-bg); color: white; border: 1px solid var(--border-light); padding: 0.75rem; border-radius: 8px; font-size: 12px; outline: none; cursor: pointer; text-transform: uppercase; font-weight: 900; width: 100%; }
+
+        /* Оверлей разблокировки */
+        #init-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(17,17,17,0.85); backdrop-filter: blur(8px); z-index: 50;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 24px;
+            transition: opacity 0.3s;
+        }
+        .btn-init { font-size: 1.2rem; padding: 1.5rem 3rem; background: var(--active-color); color: #000; border: none; border-radius: 12px; font-weight: 900; text-transform: uppercase; cursor: pointer; box-shadow: 0 0 30px rgba(249, 115, 22, 0.4);}
+
+    </style>
+</head>
+<body class="noise">
+
+    <div id="loader">
+        <svg class="knife-svg-main" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
+    </div>
+
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">Владислав Ножиков</a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="index#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="mujiclab" class="hover:opacity-50 transition">Мuжiclab</a>
+        </div>
+    </nav>
+
+    <main class="w-full flex justify-center relative z-10">
+        <div class="app-container">
+            
+            <div id="init-overlay">
+                <button class="btn-init" id="btn-init-audio">Активировать Звук</button>
+                <p class="text-gray-400 text-xs mt-4 uppercase tracking-widest">Включи Audio API, чтобы слушать аккорды</p>
+            </div>
+
+            <div class="header-section">
+                <div class="subtitle">Theory Lab / Гармония</div>
+                <h1 class="title">Circle Lab</h1>
+                <p class="text-xs text-gray-500 mt-2 max-w-xl font-medium">Интерактивный кварто-квинтовый круг. Кликни по сектору или аккорду для озвучки. Используй REC для записи гармонической прогрессии.</p>
+            </div>
+
+            <div class="editor-grid">
+                
+                <div class="flex flex-col gap-6">
+                    <div class="control-panel" id="info-panel">
+                        <div class="subtitle">Выбранная Тональность</div>
+                        <div class="flex items-baseline gap-4 mt-2">
+                            <h2 class="text-4xl font-black text-white" id="display-maj">C Major</h2>
+                            <span class="text-xl font-bold text-gray-500" id="display-min">a minor</span>
+                        </div>
+                        <p class="text-sm text-[#f97316] font-bold mt-1" id="display-acc">0 знаков</p>
+                    </div>
+
+                    <div class="control-panel">
+                        <div class="subtitle flex justify-between">
+                            <span>Диатонические Аккорды</span>
+                        </div>
+                        <div class="chord-grid mt-2" id="chord-grid">
+                            </div>
+                    </div>
+
+                    <div class="control-panel">
+                        <div class="subtitle text-[#f97316]">Аккордовая Память</div>
+                        
+                        <div class="control-group">
+                            <select id="ctrl-synth">
+                                <option value="triangle" selected>Синт: Soft (Triangle)</option>
+                                <option value="sine">Синт: Deep (Sine)</option>
+                                <option value="sawtooth">Синт: Bright (Sawtooth)</option>
+                                <option value="square">Синт: Retro (Square)</option>
+                            </select>
+                        </div>
+
+                        <div class="flex gap-2 mt-2">
+                            <button class="btn btn-rec" id="btn-rec">⏺ REC</button>
+                            <button class="btn btn-play-mem" id="btn-play-seq">▶ PLAY</button>
+                        </div>
+                        
+                        <button class="btn mt-2" id="btn-clear" style="border-color: #333; color: gray;">Очистить Память</button>
+
+                        <div class="control-group mt-4">
+                            <div class="control-label">Секвенция:</div>
+                            <div class="memory-seq" id="memory-seq">
+                                <span class="text-gray-600 text-[10px] uppercase">Пусто. Нажмите REC и кликайте по кругу.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-panel flex justify-center items-center p-2 sm:p-8">
+                    <div class="circle-container" id="circle-container">
+                        <svg id="circle-svg" viewBox="0 0 400 400"></svg>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-12 pt-8 border-t border-white/10 flex flex-col items-center text-center gap-4 relative z-10 w-full max-w-[1100px]">
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">© <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ</p>        
+            <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">Политика конфиденциальности</a>
+        </div>
+    </footer>
+
+    <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
+        <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" style="border-bottom-left-radius: 120px 100%; border-top-left-radius: 0;">
+            <div class="relative z-10 flex items-center justify-end w-full text-right"><p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight">Мы собираем <span class="text-white font-bold">Cookie</span><br><a href="privacy" class="underline hover:text-white transition">Политика</a></p></div>
+        </div>
+        <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm relative z-10 pointer-events-none shadow-sm"></div>
+        <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center relative px-4 md:px-6 hover:bg-white hover:text-black transition-colors cursor-pointer group"><span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap z-20 relative">Принять</span></button>
+    </div>
+
+    <script>
+        window.onload = () => { setTimeout(() => { document.body.classList.add('loaded'); }, 500); };
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const cookieKnife = document.getElementById('cookie-knife');
+            if (!localStorage.getItem('cookieAccepted')) { setTimeout(() => { cookieKnife.classList.remove('translate-y-40', 'opacity-0'); cookieKnife.classList.add('translate-y-0', 'opacity-100'); }, 2500); }
+            document.getElementById('accept-cookie-btn').addEventListener('click', () => { localStorage.setItem('cookieAccepted', 'true'); cookieKnife.classList.remove('translate-y-0', 'opacity-100'); cookieKnife.classList.add('translate-y-40', 'opacity-0'); });
+        });
+
+        const CircleLab = (() => {
+            // Данные кварто-квинтового круга (По часовой стрелке, начиная с C)
+            const keysData = [
+                { id: 0, maj: 'C', min: 'a', acc: '0', rootMidi: 60 },
+                { id: 1, maj: 'G', min: 'e', acc: '1#', rootMidi: 67 },
+                { id: 2, maj: 'D', min: 'b', acc: '2#', rootMidi: 62 },
+                { id: 3, maj: 'A', min: 'f#', acc: '3#', rootMidi: 69 },
+                { id: 4, maj: 'E', min: 'c#', acc: '4#', rootMidi: 64 },
+                { id: 5, maj: 'B', min: 'g#', acc: '5#', rootMidi: 59 },
+                { id: 6, maj: 'F# / Gb', min: 'd# / eb', acc: '6# / 6b', rootMidi: 66 },
+                { id: 7, maj: 'Db', min: 'bb', acc: '5b', rootMidi: 61 },
+                { id: 8, maj: 'Ab', min: 'f', acc: '4b', rootMidi: 68 },
+                { id: 9, maj: 'Eb', min: 'c', acc: '3b', rootMidi: 63 },
+                { id: 10, maj: 'Bb', min: 'g', acc: '2b', rootMidi: 58 },
+                { id: 11, maj: 'F', min: 'd', acc: '1b', rootMidi: 65 }
+            ];
+
+            const numerals = ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°'];
+            const majorScaleIntervals = [0, 2, 4, 5, 7, 9, 11];
+            
+            const midiToNoteStr = (midi, keyIndex) => {
+                const notesSharp = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+                const notesFlat = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+                const useSharp = keyIndex >= 1 && keyIndex <= 6;
+                return useSharp ? notesSharp[midi % 12] : notesFlat[midi % 12];
+            };
+
+            const DOM = {
+                svg: document.getElementById('circle-svg'),
+                synthSelect: document.getElementById('ctrl-synth'),
+                btnRec: document.getElementById('btn-rec'),
+                btnPlay: document.getElementById('btn-play-seq'),
+                btnClear: document.getElementById('btn-clear'),
+                seqContainer: document.getElementById('memory-seq'),
+                dispMaj: document.getElementById('display-maj'),
+                dispMin: document.getElementById('display-min'),
+                dispAcc: document.getElementById('display-acc'),
+                chordGrid: document.getElementById('chord-grid'),
+                overlayBtn: document.getElementById('btn-init-audio'),
+                overlay: document.getElementById('init-overlay')
+            };
+
+            let activeKeyIndex = 0;
+            let audioCtx = null;
+            let masterGain = null;
+
+            // Memory State
+            let isRecording = false;
+            let sequence = [];
+            let isPlayingSeq = false;
+            let playbackTimers = [];
+
+            // --- AUDIO ENGINE ---
+            const initAudio = () => {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                if (!masterGain) {
+                    masterGain = audioCtx.createGain();
+                    masterGain.gain.value = 0.4;
+                    masterGain.connect(audioCtx.destination);
+                }
+            };
+
+            DOM.overlayBtn.addEventListener('click', () => {
+                initAudio();
+                DOM.overlay.style.opacity = '0';
+                setTimeout(() => DOM.overlay.remove(), 300);
+            });
+
+            const playChord = (rootMidi, type, timeOffset = 0, duration = 1.0) => {
+                if (!audioCtx) return;
+                const time = audioCtx.currentTime + timeOffset;
+                
+                let intervals = [];
+                if (type === 'major') intervals = [0, 4, 7];
+                else if (type === 'minor') intervals = [0, 3, 7];
+                else if (type === 'dim') intervals = [0, 3, 6];
+
+                intervals.forEach((interval, i) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = DOM.synthSelect.value;
+                    osc.frequency.value = 440 * Math.pow(2, (rootMidi + interval - 69) / 12);
+                    
+                    const noteStart = time + (i * 0.03); 
+                    osc.connect(gain);
+                    gain.connect(masterGain);
+
+                    gain.gain.setValueAtTime(0, noteStart);
+                    gain.gain.linearRampToValueAtTime(0.3, noteStart + 0.05); 
+                    gain.gain.exponentialRampToValueAtTime(0.001, noteStart + duration); 
+
+                    osc.start(noteStart);
+                    osc.stop(noteStart + duration);
+                });
+            };
+
+            // --- SVG GENERATOR ---
+            const polarToCartesian = (cx, cy, r, angleDeg) => {
+                const angleRad = (angleDeg - 90) * Math.PI / 180.0;
+                return { x: cx + (r * Math.cos(angleRad)), y: cy + (r * Math.sin(angleRad)) };
+            };
+
+            const describeArc = (x, y, innerRadius, outerRadius, startAngle, endAngle) => {
+                const startOuter = polarToCartesian(x, y, outerRadius, endAngle - 0.5); 
+                const endOuter = polarToCartesian(x, y, outerRadius, startAngle + 0.5);
+                const startInner = polarToCartesian(x, y, innerRadius, endAngle - 0.5);
+                const endInner = polarToCartesian(x, y, innerRadius, startAngle + 0.5);
+                const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+                return [
+                    "M", startOuter.x, startOuter.y,
+                    "A", outerRadius, outerRadius, 0, largeArcFlag, 0, endOuter.x, endOuter.y,
+                    "L", endInner.x, endInner.y,
+                    "A", innerRadius, innerRadius, 0, largeArcFlag, 1, startInner.x, startInner.y,
+                    "Z"
+                ].join(" ");
+            };
+
+            const drawCircle = () => {
+                DOM.svg.innerHTML = '';
+                const cx = 200, cy = 200;
+                const outerR = 180, midR = 110, innerR = 40;
+                const step = 360 / 12;
+
+                let svgHTML = `
+                    <g id="center-display">
+                        <text x="${cx}" y="${cy - 6}" class="center-text center-title">SIGNATURE</text>
+                        <text x="${cx}" y="${cy + 6}" class="center-text center-acc" id="svg-acc">0</text>
+                    </g>
+                `;
+
+                keysData.forEach((key, i) => {
+                    const startAngle = (i * step) - (step / 2);
+                    const endAngle = startAngle + step;
+                    const textAngle = startAngle + (step / 2);
+                    
+                    const majPath = describeArc(cx, cy, midR, outerR, startAngle, endAngle);
+                    const majTextPos = polarToCartesian(cx, cy, midR + (outerR - midR)/2, textAngle);
+                    
+                    const minPath = describeArc(cx, cy, innerR, midR, startAngle, endAngle);
+                    const minTextPos = polarToCartesian(cx, cy, innerR + (midR - innerR)/2, textAngle);
+
+                    svgHTML += `
+                        <g class="slice" id="slice-maj-${i}" data-id="${i}" data-type="major" data-midi="${key.rootMidi}" data-name="${key.maj}">
+                            <path d="${majPath}"></path>
+                            <text x="${majTextPos.x}" y="${majTextPos.y}" font-size="10">${key.maj}</text>
+                        </g>
+                        <g class="slice minor" id="slice-min-${i}" data-id="${i}" data-type="minor" data-midi="${key.rootMidi - 3}" data-name="${key.min}m">
+                            <path d="${minPath}"></path>
+                            <text x="${minTextPos.x}" y="${minTextPos.y}" font-size="7">${key.min}</text>
+                        </g>
+                    `;
+                });
+
+                DOM.svg.innerHTML = svgHTML;
+
+                // Center deco
+                const centerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                centerCircle.setAttribute('cx', cx); centerCircle.setAttribute('cy', cy);
+                centerCircle.setAttribute('r', innerR - 2);
+                centerCircle.setAttribute('fill', '#050505');
+                DOM.svg.appendChild(centerCircle);
+
+                // Add Listeners to Slices
+                document.querySelectorAll('.slice').forEach(el => {
+                    const handleSectorClick = () => {
+                        const id = parseInt(el.getAttribute('data-id'));
+                        const type = el.getAttribute('data-type');
+                        const midi = parseInt(el.getAttribute('data-midi'));
+                        const name = el.getAttribute('data-name');
+                        
+                        updateActiveKey(id);
+                        playChord(midi, type);
+                        
+                        // Visual bump
+                        el.classList.add('active');
+                        setTimeout(() => el.classList.remove('active'), 200);
+
+                        // Memory logic
+                        if (isRecording) {
+                            sequence.push({ name, midi, type, pathId: el.id });
+                            el.classList.add('memory');
+                            updateMemoryUI();
+                        }
+                    };
+                    
+                    el.addEventListener('mousedown', handleSectorClick);
+                    el.addEventListener('touchstart', (e) => { e.preventDefault(); handleSectorClick(); }, {passive: false});
+                });
+            };
+
+            // --- LOGIC & UI ---
+            const updateActiveKey = (index) => {
+                activeKeyIndex = index;
+                const data = keysData[index];
+
+                document.getElementById('svg-acc').textContent = data.acc;
+                
+                // Подсвечиваем активный сектор мажора и минора
+                document.querySelectorAll('.slice').forEach(el => {
+                    if (parseInt(el.getAttribute('data-id')) === index && !el.classList.contains('memory')) {
+                        el.classList.add('active');
+                    } else {
+                        el.classList.remove('active');
+                    }
+                });
+
+                DOM.dispMaj.textContent = `${data.maj} Major`;
+                DOM.dispMin.textContent = `${data.min} minor`;
+                DOM.dispAcc.textContent = `Знаки: ${data.acc}`;
+
+                // Generate Chord Grid
+                DOM.chordGrid.innerHTML = '';
+                majorScaleIntervals.forEach((interval, idx) => {
+                    let type = 'major'; let suffix = '';
+                    if (idx === 1 || idx === 2 || idx === 5) { type = 'minor'; suffix = 'm'; }
+                    else if (idx === 6) { type = 'dim'; suffix = 'dim'; }
+
+                    const chordMidi = data.rootMidi + interval;
+                    const noteStr = midiToNoteStr(chordMidi, index);
+
+                    const card = document.createElement('div');
+                    card.className = 'chord-card';
+                    card.innerHTML = `
+                        <div class="chord-num">${numerals[idx]}</div>
+                        <div class="chord-name">${noteStr}${suffix}</div>
+                    `;
+
+                    const handleCardClick = () => {
+                        playChord(chordMidi, type);
+                        if (isRecording) {
+                            sequence.push({ name: `${noteStr}${suffix}`, midi: chordMidi, type: type, pathId: null });
+                            updateMemoryUI();
+                        }
+                    };
+
+                    card.addEventListener('mousedown', handleCardClick);
+                    card.addEventListener('touchstart', (e) => { e.preventDefault(); handleCardClick(); }, {passive: false});
+                    DOM.chordGrid.appendChild(card);
+                });
+            };
+
+            // --- MEMORY CONTROLS ---
+            const updateMemoryUI = () => {
+                if (sequence.length === 0) {
+                    DOM.seqContainer.innerHTML = '<span class="text-gray-600 text-[10px] uppercase">Пусто. Нажмите REC и кликайте по кругу.</span>';
+                    return;
+                }
+                DOM.seqContainer.innerHTML = '';
+                sequence.forEach((chord, idx) => {
+                    const el = document.createElement('div');
+                    el.className = 'mem-step';
+                    el.id = `mem-step-${idx}`;
+                    el.textContent = chord.name;
+                    DOM.seqContainer.appendChild(el);
+                });
+            };
+
+            DOM.btnRec.addEventListener('click', () => {
+                isRecording = !isRecording;
+                if (isRecording) {
+                    DOM.btnRec.classList.add('recording');
+                    DOM.btnRec.textContent = '⏹ STOP REC';
+                } else {
+                    DOM.btnRec.classList.remove('recording');
+                    DOM.btnRec.textContent = '⏺ REC';
+                }
+            });
+
+            DOM.btnClear.addEventListener('click', () => {
+                sequence = [];
+                updateMemoryUI();
+                document.querySelectorAll('.slice.memory').forEach(el => el.classList.remove('memory'));
+            });
+
+            DOM.btnPlay.addEventListener('click', () => {
+                if (sequence.length === 0 || !audioCtx) return;
+                if (isPlayingSeq) return; 
+                
+                isPlayingSeq = true;
+                DOM.btnPlay.textContent = '...ИГРАЕТ...';
+                
+                const beatDuration = 1.0; 
+
+                sequence.forEach((chord, idx) => {
+                    const timeOffset = idx * beatDuration;
+                    playChord(chord.midi, chord.type, timeOffset, beatDuration);
+
+                    const timer = setTimeout(() => {
+                        document.querySelectorAll('.mem-step').forEach(el => el.classList.remove('playing'));
+                        const stepEl = document.getElementById(`mem-step-${idx}`);
+                        if(stepEl) stepEl.classList.add('playing');
+
+                        if (chord.pathId) {
+                            document.querySelectorAll('.slice').forEach(el => el.classList.remove('active'));
+                            const pathEl = document.getElementById(chord.pathId);
+                            if(pathEl) pathEl.classList.add('active');
+                        }
+
+                        if (idx === sequence.length - 1) {
+                            setTimeout(() => {
+                                document.querySelectorAll('.mem-step').forEach(el => el.classList.remove('playing'));
+                                document.querySelectorAll('.slice').forEach(el => el.classList.remove('active'));
+                                isPlayingSeq = false;
+                                DOM.btnPlay.textContent = '▶ PLAY';
+                                updateActiveKey(activeKeyIndex); // Restore circle state
+                            }, beatDuration * 1000);
+                        }
+                    }, timeOffset * 1000);
+
+                    playbackTimers.push(timer);
+                });
+            });
+
+            // Initialize
+            drawCircle();
+            updateActiveKey(0); // Start with C Major
+
+        })();
+    </script>
+</body>
+</html>
