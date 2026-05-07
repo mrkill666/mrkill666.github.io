@@ -131,8 +131,9 @@
                     <div class="control-group">
                         <div class="control-label">Тип Эффекта</div>
                         <select id="ctrl-type">
+                            <option value="kick" selected>Techno Kick (Глубокая бочка + Rumble)</option>
                             <option value="swoosh">Swoosh (Вжух / Свип)</option>
-                            <option value="sub" selected>Sub (Глубокий гул / Воууу)</option>
+                            <option value="sub">Sub (Глубокий гул / Воууу)</option>
                             <option value="impact">Impact (Пшшш / Удар)</option>
                             <option value="riser">Riser (Разгон / Взлет)</option>
                             <option value="drop">Sub Drop (Бас / Спад)</option>
@@ -140,14 +141,14 @@
                     </div>
 
                     <div class="control-group mt-2">
-                        <div class="control-label"><span>Длина (Секунды)</span><span class="control-val" id="val-len">3.0s</span></div>
-                        <input type="range" id="ctrl-len" min="0.5" max="8.0" step="0.1" value="3.0">
+                        <div class="control-label"><span>Длина (Секунды)</span><span class="control-val" id="val-len">2.0s</span></div>
+                        <input type="range" id="ctrl-len" min="0.5" max="8.0" step="0.1" value="2.0">
                     </div>
 
                     <div class="control-group">
                         <div class="control-label"><span>Характер (Тембр)</span><span class="control-val" id="val-char">50%</span></div>
                         <input type="range" id="ctrl-char" min="0" max="100" value="50">
-                        <p class="text-[9px] text-gray-500 mt-1">Меняет частоты фильтров и агрессивность</p>
+                        <p class="text-[9px] text-gray-500 mt-1">Влияет на агрессивность, сатурацию и фильтры</p>
                     </div>
 
                     <div class="control-group">
@@ -315,6 +316,14 @@
                 masterGain.gain.value = 0.8; // Headroom
                 masterGain.connect(oCtx.destination);
 
+                // Вспомогательная функция сатурации (Distortion Curve)
+                function makeDistCurve(amount) {
+                    if(amount === 0) return new Float32Array([-1,0,1]);
+                    const k = amount * 2, n = 44100, curve = new Float32Array(n), deg = Math.PI / 180;
+                    for (let i = 0; i < n; ++i) { const x = i * 2 / n - 1; curve[i] = (3 + k) * x * 20 * deg / (Math.PI + k * Math.abs(x)); }
+                    return curve;
+                }
+
                 // --- REVERB SETUP ---
                 let convolver, revGainNode;
                 if (revAmt > 0) {
@@ -340,36 +349,85 @@
                 // --- GENERATORS ---
                 const t = 0; // Start time
                 
-                if (type === 'sub') {
+                if (type === 'kick') {
+                    // ТЕХНО БОЧКА С ХВОСТОМ: Punch + Rumble
+                    const osc = oCtx.createOscillator();
+                    osc.type = 'sine';
+
+                    const punch = oCtx.createOscillator();
+                    punch.type = char > 0.5 ? 'triangle' : 'sine'; // Хруст в зависимости от характера
+
+                    const tPunch = 0.1; // Длительность самого удара (щелчка)
+                    
+                    // Питч бочки (быстро падает вниз для панча, затем плавно сползает)
+                    const startFreq = 150 + (char * 150); // От 150 до 300 Гц
+                    const midFreq = 40; // Ядро бочки
+                    const tailFreq = 10 + (char * 15); // Хвост уходит в 10-25 Гц
+                    
+                    osc.frequency.setValueAtTime(startFreq, t);
+                    osc.frequency.exponentialRampToValueAtTime(midFreq, t + tPunch);
+                    osc.frequency.exponentialRampToValueAtTime(tailFreq, t + dur);
+
+                    punch.frequency.setValueAtTime(startFreq * 3, t);
+                    punch.frequency.exponentialRampToValueAtTime(20, t + tPunch);
+
+                    // Огибающая громкости (Sidechain эффект для хвоста)
+                    const amp = oCtx.createGain();
+                    amp.gain.setValueAtTime(1, t); // УДАР
+                    amp.gain.exponentialRampToValueAtTime(0.2, t + tPunch); // Провал после удара
+                    amp.gain.linearRampToValueAtTime(0.4 + (char * 0.2), t + tPunch + 0.2); // Хвост выплывает
+                    amp.gain.exponentialRampToValueAtTime(0.001, t + dur); // Хвост затухает
+
+                    const punchAmp = oCtx.createGain();
+                    punchAmp.gain.setValueAtTime(char * 0.5, t); // Клик зависит от характера
+                    punchAmp.gain.exponentialRampToValueAtTime(0.001, t + tPunch);
+
+                    osc.connect(amp);
+                    punch.connect(punchAmp).connect(amp);
+
+                    // Добавляем сатурацию для техно-гула
+                    const drive = oCtx.createWaveShaper();
+                    drive.curve = makeDistCurve(char * 50); // Легкий/средний перегруз
+                    drive.oversample = '4x';
+                    
+                    // Срезаем ядовитый верх с хвоста, оставляя жир
+                    const filter = oCtx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.value = 200 + (char * 400);
+
+                    amp.connect(drive).connect(filter);
+                    connectToMaster(filter);
+
+                    osc.start(t); punch.start(t);
+                    osc.stop(t + dur); punch.stop(t + dur);
+                }
+                else if (type === 'sub') {
                     // СУБ-БАС (Воуууу): Симметричная огибающая с плавным изменением питча
                     const osc = oCtx.createOscillator();
                     osc.type = 'sine';
 
-                    // Добавочная гармоника для читаемости
                     const oscHarmonic = oCtx.createOscillator();
-                    oscHarmonic.type = 'triangle'; // Треугольник мягче пилы, но дает нужный хруст
+                    oscHarmonic.type = 'triangle'; 
 
-                    // Питч-конверт: от 35Гц, плавно вверх и плавно вниз
                     const baseFreq = 35;
-                    const peakFreq = baseFreq + (char * 25); // От 35 до 60 Гц на пике
+                    const peakFreq = baseFreq + (char * 25); 
                     
                     osc.frequency.setValueAtTime(baseFreq, t);
                     osc.frequency.exponentialRampToValueAtTime(peakFreq, t + dur * 0.5);
                     osc.frequency.exponentialRampToValueAtTime(baseFreq, t + dur);
 
-                    oscHarmonic.frequency.setValueAtTime(baseFreq * 2, t); // На октаву выше
+                    oscHarmonic.frequency.setValueAtTime(baseFreq * 2, t);
                     oscHarmonic.frequency.exponentialRampToValueAtTime(peakFreq * 2, t + dur * 0.5);
                     oscHarmonic.frequency.exponentialRampToValueAtTime(baseFreq * 2, t + dur);
 
-                    // Симметричная огибающая громкости _/ \_
                     const amp = oCtx.createGain();
                     amp.gain.setValueAtTime(0.001, t);
-                    amp.gain.linearRampToValueAtTime(1, t + dur * 0.3); // Плавно входим
-                    amp.gain.setValueAtTime(1, t + dur * 0.7);          // Держим жир
-                    amp.gain.linearRampToValueAtTime(0.001, t + dur);   // Плавно выходим
+                    amp.gain.linearRampToValueAtTime(1, t + dur * 0.3); 
+                    amp.gain.setValueAtTime(1, t + dur * 0.7);          
+                    amp.gain.linearRampToValueAtTime(0.001, t + dur);   
 
                     const harmonicAmp = oCtx.createGain();
-                    harmonicAmp.gain.value = char * 0.15; // Подмешиваем гармонику (до 15%)
+                    harmonicAmp.gain.value = char * 0.15; 
 
                     osc.connect(amp);
                     oscHarmonic.connect(harmonicAmp).connect(amp);
