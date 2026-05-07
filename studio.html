@@ -3,21 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MuжicLab Studio | DAW</title>
+    <title>MuжicLab Studio | Pro DAW</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
-
-            <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
-    <link rel="manifest" href="/icons/site.webmanifest">
-    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
-    <link rel="shortcut icon" href="/icons/favicon.ico">
-    <meta name="apple-mobile-web-app-title" content="Nozhikov">
-    <meta name="application-name" content="Nozhikov">
-    <meta name="msapplication-TileColor" content="#da532c">
-    <meta name="msapplication-config" content="/icons/browserconfig.xml">
-    <meta name="theme-color" content="#ffffff">
     <style>
         :root {
             --bg-dark: #121212; --bg-panel: #1e1e1e; --bg-track: #252525; --bg-track-alt: #1f1f1f;
@@ -26,7 +14,7 @@
             
             --t-drums: #e11d48; --t-synth: #2563eb; --t-chaos: #16a34a; --t-vibe: #9333ea;
             --t-noise: #eab308; --t-synest: #06b6d4; --t-rhythm: #f43f5e;
-            --t-audio: #14b8a6; /* Цвет нового Аудио-трека */
+            --t-audio: #14b8a6;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
@@ -88,7 +76,7 @@
         .lane-step:hover { background: rgba(255,255,255,0.05); }
         .lane-step:nth-child(4n+1) { border-left: 1px solid rgba(255,255,255,0.1); }
         
-        /* EXPANDED LANES (4 и 6 рядов) */
+        /* EXPANDED LANES */
         .track-lane.expanded-4 { height: 220px; }
         .track-lane.expanded-6 { height: 300px; }
         .sub-lanes-container { display: none; flex-direction: column; }
@@ -137,8 +125,8 @@
 <body>
 
     <div id="init-overlay">
-        <h1 class="text-4xl font-black mb-8">MuжicLab <span class="text-transparent" style="-webkit-text-stroke: 1px white;">Studio beta</span></h1>
-        <button class="btn-init" id="btn-init">Включить</button>
+        <h1 class="text-4xl font-black mb-8">MuжicLab <span class="text-transparent" style="-webkit-text-stroke: 1px white;">Studio</span></h1>
+        <button class="btn-init" id="btn-init">Включить питание</button>
     </div>
 
     <!-- TRANSPORT -->
@@ -164,7 +152,6 @@
         
         <!-- TIMELINE -->
         <div class="timeline-area" id="timeline-area">
-            <!-- Обертка для синхронизации плейхеда по горизонтали -->
             <div style="position: relative; min-width: 800px; display: flex; flex-direction: column; min-height: 100%;">
                 <div class="ruler" id="ruler"></div>
                 <div class="playhead-line" id="playhead"></div>
@@ -217,9 +204,10 @@
                 <div class="editor-col">
                     <div class="ctrl-group">
                         <span class="ctrl-label">Текстовый Сид</span>
-                        <input type="text" id="seed-val" value="NOZHIKOV" style="font-size: 1.5rem; text-align:center;">
+                        <input type="text" id="seed-val" value="LOGIC" style="font-size: 1.5rem; text-align:center;">
                     </div>
-                    <button class="btn-action" id="seed-rand">Сгенерировать случайно</button>
+                    <button class="btn-action" id="seed-rand">Сгенерировать мелодию</button>
+                    <p style="font-size:0.7rem; color:#888; margin-top: 0.5rem;">Кликай по дорожке таймлайна, чтобы расставить триггеры.</p>
                 </div>
                 <div class="editor-col">
                     <div class="ctrl-group"><span class="ctrl-label">Форма волны</span><select id="seed-wave"><option value="sawtooth">Acid (Saw)</option><option value="square">8-Bit (Square)</option><option value="triangle">Pluck (Tri)</option><option value="sine">Deep (Sine)</option></select></div>
@@ -325,7 +313,7 @@
                     <div class="ctrl-group">
                         <span class="ctrl-label">Источник для Канала <span id="audio-active-name" style="color:var(--accent)">1</span></span>
                         <div style="display: flex; gap: 0.5rem;">
-                            <button class="btn-action rec" id="audio-rec">🎤 Запись</button>
+                            <button class="btn-action rec" id="audio-rec">🎤 Запись (ВКЛ/ВЫКЛ)</button>
                             <label class="btn-action" style="flex:1; text-align:center;">📁 Файл<input type="file" id="audio-file" accept="audio/*,video/webm" style="display:none;"></label>
                         </div>
                         <div style="font-size:0.6rem; color:#888; margin-top:4px;">Статус: <span id="audio-status" style="color:var(--accent)">Нет буфера</span></div>
@@ -373,7 +361,7 @@
 
             // DATA
             let d_samp = Array(4).fill().map(() => ({ buf: null, s: 0, e: 1, seq: Array(STEPS).fill(false) }));
-            let d_synth = Array(STEPS).fill({a:false, n:60});
+            let d_synth = Array(STEPS).fill().map(()=>({a:false, n:60})); // Initialize inactive
             let d_chaos = Array(16).fill().map(()=>Array(16).fill(false));
             let d_audio = Array(6).fill().map(() => ({ buf: null, s: 0, e: 1, seq: Array(STEPS).fill(false) }));
             
@@ -409,7 +397,7 @@
                 for(let i=0; i<l; i++){ imp.getChannelData(0)[i] = (Math.random()*2-1)*Math.pow(1-i/l,2); imp.getChannelData(1)[i] = (Math.random()*2-1)*Math.pow(1-i/l,2); }
                 mRev.buffer = imp;
 
-                for(let i=0; i<8; i++){ let g = ctx.createGain(); g.gain.value = 0.8; g.connect(mDist); trkGains.push(g); }
+                for(let i=0; i<8; i++){ let g = ctx.createGain(); g.connect(mDist); trkGains.push(g); }
 
                 mDist.connect(rDry); mDist.connect(mRev).connect(rWet);
                 rDry.connect(master); rWet.connect(master);
@@ -418,7 +406,7 @@
                 nBuf = ctx.createBuffer(1, ctx.sampleRate*2, ctx.sampleRate);
                 for(let i=0; i<nBuf.length; i++) nBuf.getChannelData(0)[i] = Math.random()*2-1;
 
-                initVibes(); updateMasterFX(); drawMaster();
+                initVibes(); updateMasterFX(); updateVols(); drawMaster();
                 document.getElementById('init-overlay').style.opacity=0; setTimeout(()=>document.getElementById('init-overlay').remove(), 500);
             };
 
@@ -458,6 +446,16 @@
                     mDist.curve = c;
                 }
                 rWet.gain.value = parseInt(document.getElementById('m-rev').value)/100;
+            };
+
+            const updateVols = () => {
+                if(!ctx) return;
+                const anyS = TRACKS.some(t=>t.solo);
+                TRACKS.forEach((t,i) => {
+                    let v = t.mute ? 0 : t.vol;
+                    if(anyS && !t.solo) v=0;
+                    trkGains[i].gain.setValueAtTime(v, ctx.currentTime);
+                });
             };
 
             // --- SOUND GENERATORS ---
@@ -625,9 +623,9 @@
                         document.getElementById(`ed-${i}`).classList.add('active');
                     });
 
-                    th.querySelector('.m').addEventListener('click', function() { this.classList.toggle('active-m'); t.mute = !t.mute; updateVols(); });
-                    th.querySelector('.s').addEventListener('click', function() { this.classList.toggle('active-s'); t.solo = !t.solo; updateVols(); });
-                    th.querySelector('.tv').addEventListener('input', function() { t.vol = this.value/100; updateVols(); });
+                    th.querySelector('.m').addEventListener('click', function(e) { e.stopPropagation(); this.classList.toggle('active-m'); t.mute = !t.mute; updateVols(); });
+                    th.querySelector('.s').addEventListener('click', function(e) { e.stopPropagation(); this.classList.toggle('active-s'); t.solo = !t.solo; updateVols(); });
+                    th.querySelector('.tv').addEventListener('input', function(e) { e.stopPropagation(); t.vol = this.value/100; updateVols(); });
 
                     headers.appendChild(th);
 
@@ -701,16 +699,6 @@
                 });
             };
 
-            const updateVols = () => {
-                if(!ctx) return;
-                const anyS = TRACKS.some(t=>t.solo);
-                TRACKS.forEach((t,i) => {
-                    let v = t.mute ? 0 : t.vol;
-                    if(anyS && !t.solo) v=0;
-                    trkGains[i].gain.setTargetAtTime(v, ctx.currentTime, 0.05);
-                });
-            };
-
             const drawLanes = () => {
                 const sLm = document.querySelector('.lane-synth .lane-main').children;
                 for(let i=0;i<STEPS;i++) sLm[i].innerHTML = d_synth[i].a ? '<div class="note"></div>' : '';
@@ -732,7 +720,7 @@
                 const rand = ()=>{ h^=h<<13; h^=h>>>17; h^=h<<5; return ((h>>>0)/4294967296); };
                 const sType = document.getElementById('seed-scale').value;
                 const sc = sType==='minor'?[48,50,51,53,55,56,58,60] : sType==='pentatonic'?[48,51,53,55,58,60,63,65] : sType==='major'?[48,50,52,53,55,57,59,60] : [48,49,51,53,55,56,58,60];
-                for(let i=0;i<STEPS;i++) d_synth[i] = { a: rand()>0.5, n: sc[Math.floor(rand()*sc.length)] };
+                for(let i=0;i<STEPS;i++) d_synth[i].n = sc[Math.floor(rand()*sc.length)];
                 drawLanes();
             };
 
@@ -742,7 +730,7 @@
                 const draw = () => {
                     requestAnimationFrame(draw); masterAnalyser.getByteTimeDomainData(d);
                     c2.fillStyle='#000'; c2.fillRect(0,0,cvs.width,cvs.height);
-                    c2.lineWidth=2; c2.strokeStyle=state.rec?'#ef4444':'var(--accent)'; c2.beginPath();
+                    c2.lineWidth=2; c2.strokeStyle=state.rec?'#ef4444':'#f97316'; c2.beginPath();
                     let sw = cvs.width*1.0/bl, x=0;
                     for(let i=0;i<bl;i++){ let v=d[i]/128.0, y=v*cvs.height/2; if(i===0)c2.moveTo(x,y); else c2.lineTo(x,y); x+=sw; }
                     c2.lineTo(cvs.width, cvs.height/2); c2.stroke();
