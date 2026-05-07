@@ -132,6 +132,7 @@
                         <div class="control-label">Тип Эффекта</div>
                         <select id="ctrl-type">
                             <option value="swoosh">Swoosh (Вжух / Свип)</option>
+                            <option value="sub" selected>Sub (Глубокий гул / Воууу)</option>
                             <option value="impact">Impact (Пшшш / Удар)</option>
                             <option value="riser">Riser (Разгон / Взлет)</option>
                             <option value="drop">Sub Drop (Бас / Спад)</option>
@@ -139,8 +140,8 @@
                     </div>
 
                     <div class="control-group mt-2">
-                        <div class="control-label"><span>Длина (Секунды)</span><span class="control-val" id="val-len">2.0s</span></div>
-                        <input type="range" id="ctrl-len" min="0.5" max="8.0" step="0.1" value="2.0">
+                        <div class="control-label"><span>Длина (Секунды)</span><span class="control-val" id="val-len">3.0s</span></div>
+                        <input type="range" id="ctrl-len" min="0.5" max="8.0" step="0.1" value="3.0">
                     </div>
 
                     <div class="control-group">
@@ -339,7 +340,46 @@
                 // --- GENERATORS ---
                 const t = 0; // Start time
                 
-                if (type === 'swoosh') {
+                if (type === 'sub') {
+                    // СУБ-БАС (Воуууу): Симметричная огибающая с плавным изменением питча
+                    const osc = oCtx.createOscillator();
+                    osc.type = 'sine';
+
+                    // Добавочная гармоника для читаемости
+                    const oscHarmonic = oCtx.createOscillator();
+                    oscHarmonic.type = 'triangle'; // Треугольник мягче пилы, но дает нужный хруст
+
+                    // Питч-конверт: от 35Гц, плавно вверх и плавно вниз
+                    const baseFreq = 35;
+                    const peakFreq = baseFreq + (char * 25); // От 35 до 60 Гц на пике
+                    
+                    osc.frequency.setValueAtTime(baseFreq, t);
+                    osc.frequency.exponentialRampToValueAtTime(peakFreq, t + dur * 0.5);
+                    osc.frequency.exponentialRampToValueAtTime(baseFreq, t + dur);
+
+                    oscHarmonic.frequency.setValueAtTime(baseFreq * 2, t); // На октаву выше
+                    oscHarmonic.frequency.exponentialRampToValueAtTime(peakFreq * 2, t + dur * 0.5);
+                    oscHarmonic.frequency.exponentialRampToValueAtTime(baseFreq * 2, t + dur);
+
+                    // Симметричная огибающая громкости _/ \_
+                    const amp = oCtx.createGain();
+                    amp.gain.setValueAtTime(0.001, t);
+                    amp.gain.linearRampToValueAtTime(1, t + dur * 0.3); // Плавно входим
+                    amp.gain.setValueAtTime(1, t + dur * 0.7);          // Держим жир
+                    amp.gain.linearRampToValueAtTime(0.001, t + dur);   // Плавно выходим
+
+                    const harmonicAmp = oCtx.createGain();
+                    harmonicAmp.gain.value = char * 0.15; // Подмешиваем гармонику (до 15%)
+
+                    osc.connect(amp);
+                    oscHarmonic.connect(harmonicAmp).connect(amp);
+                    
+                    connectToMaster(amp);
+
+                    osc.start(t); oscHarmonic.start(t);
+                    osc.stop(t + dur); oscHarmonic.stop(t + dur);
+                }
+                else if (type === 'swoosh') {
                     // ВЖУХ: White noise + Bandpass sweeping up and swelling
                     const bufferSize = sampleRate * dur;
                     const noiseBuffer = oCtx.createBuffer(1, bufferSize, sampleRate);
@@ -351,9 +391,8 @@
                     
                     const filter = oCtx.createBiquadFilter();
                     filter.type = 'bandpass';
-                    filter.Q.value = 1 + (char * 10); // Character makes resonance sharper
+                    filter.Q.value = 1 + (char * 10); 
                     
-                    // Sweep logic
                     const baseFreq = 100 + (char * 400);
                     const peakFreq = 2000 + (char * 6000);
                     filter.frequency.setValueAtTime(baseFreq, t);
@@ -362,7 +401,7 @@
 
                     const amp = oCtx.createGain();
                     amp.gain.setValueAtTime(0, t);
-                    amp.gain.linearRampToValueAtTime(1, t + dur * 0.8); // Swell
+                    amp.gain.linearRampToValueAtTime(1, t + dur * 0.8); 
                     amp.gain.exponentialRampToValueAtTime(0.001, t + dur);
 
                     noise.connect(filter).connect(amp);
@@ -381,11 +420,9 @@
 
                     const filter = oCtx.createBiquadFilter();
                     filter.type = 'lowpass';
-                    // Character makes it brighter
                     filter.frequency.setValueAtTime(1000 + (char * 10000), t);
                     filter.frequency.exponentialRampToValueAtTime(100, t + dur);
 
-                    // Add a sub punch
                     const sub = oCtx.createOscillator();
                     sub.type = 'sine';
                     sub.frequency.setValueAtTime(150, t);
@@ -393,7 +430,7 @@
                     
                     const amp = oCtx.createGain();
                     amp.gain.setValueAtTime(0, t);
-                    amp.gain.linearRampToValueAtTime(1, t + 0.05); // Punch!
+                    amp.gain.linearRampToValueAtTime(1, t + 0.05); 
                     amp.gain.exponentialRampToValueAtTime(0.001, t + dur);
 
                     noise.connect(filter).connect(amp);
@@ -407,24 +444,22 @@
                 else if (type === 'riser') {
                     // РАЗГОН: Oscillator sweeping pitch UP
                     const osc = oCtx.createOscillator();
-                    // Character changes waveform
                     osc.type = char > 0.5 ? 'sawtooth' : 'square';
                     
                     osc.frequency.setValueAtTime(50, t);
                     osc.frequency.exponentialRampToValueAtTime(1000 + (char * 5000), t + dur);
 
-                    // Add LFO for tension
                     const lfo = oCtx.createOscillator();
                     lfo.type = 'sine';
                     lfo.frequency.setValueAtTime(1, t);
                     lfo.frequency.exponentialRampToValueAtTime(15 + (char * 20), t + dur);
                     const lfoGain = oCtx.createGain();
-                    lfoGain.gain.value = 50; // Pitch modulation depth
+                    lfoGain.gain.value = 50; 
                     lfo.connect(lfoGain).connect(osc.frequency);
 
                     const amp = oCtx.createGain();
                     amp.gain.setValueAtTime(0, t);
-                    amp.gain.exponentialRampToValueAtTime(1, t + dur); // Volume swells up
+                    amp.gain.exponentialRampToValueAtTime(1, t + dur); 
                     amp.gain.linearRampToValueAtTime(0.001, t + dur + 0.1);
 
                     osc.connect(amp);
@@ -436,17 +471,15 @@
                 else if (type === 'drop') {
                     // SUB DROP: Sine sweeping pitch DOWN
                     const osc = oCtx.createOscillator();
-                    // Character adds harmonics (saw) or keeps it deep (sine)
                     osc.type = char > 0.5 ? 'triangle' : 'sine';
                     
                     osc.frequency.setValueAtTime(200 + (char * 200), t);
-                    osc.frequency.exponentialRampToValueAtTime(10, t + dur); // Drop to sub audio
+                    osc.frequency.exponentialRampToValueAtTime(10, t + dur);
 
                     const amp = oCtx.createGain();
-                    amp.gain.setValueAtTime(1, t); // Start loud
-                    amp.gain.exponentialRampToValueAtTime(0.001, t + dur); // Fade out
+                    amp.gain.setValueAtTime(1, t); 
+                    amp.gain.exponentialRampToValueAtTime(0.001, t + dur);
 
-                    // Add a tiny bit of noise/click at the start for definition
                     const clickBuffer = oCtx.createBuffer(1, sampleRate * 0.1, sampleRate);
                     for(let i=0; i<clickBuffer.length; i++) clickBuffer.getChannelData(0)[i] = Math.random()*2-1;
                     const click = oCtx.createBufferSource();
