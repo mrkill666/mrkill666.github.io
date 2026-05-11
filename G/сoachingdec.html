@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoachingLab | Декриптор и Аналитика</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #050505;
+            --card-bg: #111111;
+            --accent-color: #f97316;
+            --border-light: rgba(255, 255, 255, 0.05);
+            --border-hover: rgba(255, 255, 255, 0.15);
+            --font-main: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-color);
+            color: #ffffff;
+            font-family: var(--font-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .filter-btn {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 700;
+            padding: 0.75rem 1.25rem;
+            border: 1px solid var(--border-light);
+            border-radius: 9999px;
+            color: gray;
+            background: rgba(17, 17, 17, 0.5);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            display: inline-block;
+        }
+
+        .filter-btn:hover {
+            color: #ffffff;
+            border-color: var(--border-hover);
+            background: #141414;
+        }
+
+        .filter-btn.active {
+            color: #000;
+            background: #ffffff;
+            border-color: #ffffff;
+        }
+
+        .hub-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 24px;
+            padding: 2.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-tag {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: gray;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 900;
+            line-height: 1.4;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+        }
+
+        .scale-bar-container {
+            width: 100%;
+            height: 6px;
+            background: #222;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .scale-bar {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 1s ease-in-out;
+        }
+
+        .scale-green { background: #22c55e; }
+        .scale-yellow { background: #eab308; }
+        .scale-orange { background: #f97316; }
+        .scale-red { background: #ef4444; }
+
+        .trait-pill {
+            display: inline-block;
+            font-size: 11px;
+            padding: 4px 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            margin: 4px;
+            color: #ccc;
+        }
+
+        /* Drag and drop styling */
+        #drop-zone {
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        #drop-zone.dragover {
+            border-color: var(--accent-color);
+            background: rgba(249, 115, 22, 0.05);
+        }
+    </style>
+</head>
+<body class="p-6 md:p-12">
+
+    <header class="max-w-6xl mx-auto mb-12 relative z-10 flex justify-between items-end">
+        <div>
+            <h1 class="text-4xl md:text-6xl font-black tracking-tighter uppercase mb-2">
+                Coaching<span class="text-transparent" style="-webkit-text-stroke: 1px white;">Decoder</span>
+            </h1>
+            <p class="text-gray-400 text-sm md:text-base max-w-xl">
+                Аналитическая панель психолога-коуча. Загрузите файл или вставьте хэш для получения подробного профиля клиента.
+            </p>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto relative z-10 space-y-6">
+        
+        <!-- БЛОК ВВОДА ДАННЫХ -->
+        <div class="hub-card" id="input-section">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Файловый загрузчик -->
+                <div id="drop-zone" class="rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer">
+                    <svg class="w-12 h-12 text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                    <p class="text-sm font-bold uppercase tracking-widest mb-2 text-white">Перетащите .txt файл сюда</p>
+                    <p class="text-xs text-gray-500 mb-6">или нажмите для выбора файла</p>
+                    <input type="file" id="fileInput" accept=".txt" class="hidden" />
+                    <label for="fileInput" class="filter-btn">Выбрать файл</label>
+                </div>
+
+                <!-- Текстовый ввод -->
+                <div class="flex flex-col">
+                    <p class="text-xs font-bold uppercase tracking-widest mb-4 text-gray-500">Либо вставьте Hash-код вручную:</p>
+                    <textarea id="hash-input" class="w-full flex-grow bg-[#141414] border border-white/10 rounded-xl p-4 text-xs font-mono text-gray-300 outline-none focus:border-[#f97316] transition-colors resize-none" placeholder="JTdCJTIydGltZXN0YW..."></textarea>
+                    <button onclick="processManualHash()" class="filter-btn active w-full py-4 text-center mt-4">Анализировать код</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- БЛОК ОШИБКИ -->
+        <div id="error-message" class="hidden bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-xl text-sm font-bold uppercase tracking-widest text-center">
+            Неверный формат хэша или файла.
+        </div>
+
+        <!-- БЛОК РЕЗУЛЬТАТОВ (Скрыт по умолчанию) -->
+        <div id="results-section" class="hidden space-y-6">
+            
+            <!-- Сводка и Валидность -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="hub-card md:col-span-1">
+                    <div class="card-tag">Проверка на честность</div>
+                    <h3 class="text-2xl font-black uppercase mb-4" id="validity-status">Валиден</h3>
+                    <div class="space-y-3 text-sm text-gray-400">
+                        <div class="flex justify-between">
+                            <span>Шкала лжи (Идеализация):</span>
+                            <span id="lie-score" class="text-white font-bold">0/10</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Ошибки повторений:</span>
+                            <span id="repeat-errors" class="text-white font-bold">0/10</span>
+                        </div>
+                    </div>
+                    <p id="validity-desc" class="text-xs mt-6 leading-relaxed text-gray-500"></p>
+                </div>
+
+                <div class="hub-card md:col-span-2">
+                    <div class="card-tag text-[#f97316]">Фокус для коучинга</div>
+                    <h3 class="text-2xl font-black uppercase mb-4">Направления работы</h3>
+                    <div id="coaching-focus-list" class="space-y-4">
+                        <!-- Сюда вставятся рекомендации -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Клинические шкалы (Прогресс-бары) -->
+            <div class="hub-card">
+                <div class="card-tag">Профиль состояния (Шкалы)</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8 mt-6" id="scales-container">
+                    <!-- Шкалы генерируются JS -->
+                </div>
+            </div>
+
+            <!-- Анализ личности и паттерны -->
+            <div class="hub-card">
+                <div class="card-tag">Глубинный анализ</div>
+                <h3 class="card-title text-xl">Выявленные паттерны и черты характера</h3>
+                <div id="traits-container" class="mt-4 flex flex-wrap">
+                    <!-- Черты генерируются JS -->
+                </div>
+                <p class="text-sm text-gray-400 mt-6 leading-relaxed bg-[#1a1a1a] p-4 rounded-xl border border-white/5" id="personality-summary">
+                    <!-- Описание -->
+                </p>
+            </div>
+
+            <!-- Красные флаги -->
+            <div class="hub-card border-red-500/30" id="red-flags-card">
+                <div class="card-tag text-red-500">Сигнальные маркеры (Красные флаги)</div>
+                <div id="red-flags-container" class="space-y-3 mt-4 text-sm text-gray-300">
+                    <!-- Флаги -->
+                </div>
+            </div>
+
+            <button onclick="resetDecoder()" class="filter-btn w-full py-4 text-center">Загрузить новый тест</button>
+        </div>
+
+    </main>
+
+    <script>
+        // --- ЛОГИКА ЗАГРУЗКИ ФАЙЛА ---
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.name.endsWith('.txt')) {
+                showError("Пожалуйста, загрузите файл формата .txt");
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                // Ищем длинную строку Base64 (без пробелов, длина > 100 символов)
+                const base64Regex = /([A-Za-z0-9+/=]{100,})/;
+                const match = content.match(base64Regex);
+                if (match && match[1]) {
+                    document.getElementById('hash-input').value = match[1];
+                    processManualHash();
+                } else {
+                    showError("В файле не найден действительный хэш-код теста.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- ЛОГИКА ДЕКОДИРОВАНИЯ ---
+        function processManualHash() {
+            const hash = document.getElementById('hash-input').value.trim();
+            if (!hash) {
+                showError("Введите хэш-код.");
+                return;
+            }
+            try {
+                const decodedJson = JSON.parse(decodeURIComponent(atob(hash)));
+                buildAnalytics(decodedJson);
+            } catch (err) {
+                console.error(err);
+                showError("Ошибка расшифровки. Убедитесь, что код скопирован полностью и без лишних пробелов.");
+            }
+        }
+
+        function showError(msg) {
+            const errDiv = document.getElementById('error-message');
+            errDiv.innerText = msg;
+            errDiv.classList.remove('hidden');
+            setTimeout(() => errDiv.classList.add('hidden'), 4000);
+        }
+
+        // --- ПОСТРОЕНИЕ АНАЛИТИКИ ---
+        const scaleNames = {
+            "Depression_B2": "Депрессивный радикал (Энергия)",
+            "Anxiety_B3": "Тревожность и Страхи",
+            "Relationships_B4": "Созависимость и Границы",
+            "SelfEsteem_B5": "Негативная самооценка",
+            "Somatic_B6": "Психосоматика и Зависимости",
+            "Career_B7": "Профессиональное выгорание",
+            "Trauma_B8": "Травматический опыт (Прошлое)"
+        };
+
+        const redFlagDict = {
+            42: "Высокий риск: Присутствуют суицидальные мысли («Уснуть и не проснуться»).",
+            196: "Риск селфхарма: Зафиксировано намеренное причинение себе физического вреда.",
+            74: "Панические атаки: Выраженные физиологические приступы страха.",
+            118: "Панический страх расставаний: Признак острой тревожной привязанности.",
+            204: "Сексуальная дисфункция: Выраженное снижение либидо/проблемы в интимной сфере.",
+            194: "Склонность к ПАВ/Алкоголю: Высокая зависимость от веществ для снятия стресса."
+        };
+
+        function buildAnalytics(data) {
+            document.getElementById('input-section').classList.add('hidden');
+            document.getElementById('results-section').classList.remove('hidden');
+
+            // 1. Валидность
+            const valStatus = document.getElementById('validity-status');
+            const lieScore = data.validity.lie_score_out_of_10;
+            const repErrors = data.validity.repeat_errors;
+            
+            document.getElementById('lie-score').innerText = `${lieScore}/10`;
+            document.getElementById('repeat-errors').innerText = `${repErrors}/10`;
+
+            if (data.validity.is_valid) {
+                valStatus.innerText = "Валиден";
+                valStatus.className = "text-2xl font-black uppercase mb-4 text-green-500";
+                document.getElementById('validity-desc').innerText = "Тест пройден честно и вдумчиво. Результатам можно доверять для построения стратегии коучинга.";
+            } else {
+                valStatus.innerText = "Искажен";
+                valStatus.className = "text-2xl font-black uppercase mb-4 text-red-500";
+                document.getElementById('validity-desc').innerText = "Внимание: Клиент склонен к социально-желательным ответам или случайному прокликиванию. Рекомендуется прояснять острые вопросы на сессии устно.";
+            }
+
+            // 2. Построение шкал
+            const scalesContainer = document.getElementById('scales-container');
+            scalesContainer.innerHTML = '';
+            
+            const scales = data.clinical_scales_percent;
+            
+            for (const [key, value] of Object.entries(scales)) {
+                let colorClass = 'scale-green';
+                let interpretation = 'Норма / Адаптивно';
+                
+                if (value > 20 && value <= 45) { colorClass = 'scale-yellow'; interpretation = 'Легкая степень (субклиника)'; }
+                else if (value > 45 && value <= 75) { colorClass = 'scale-orange'; interpretation = 'Выраженная проблема'; }
+                else if (value > 75) { colorClass = 'scale-red'; interpretation = 'Критический уровень (острое состояние)'; }
+
+                scalesContainer.innerHTML += `
+                    <div>
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-sm font-bold uppercase tracking-widest text-gray-300">${scaleNames[key] || key}</span>
+                            <span class="text-xs font-mono text-gray-500">${value}%</span>
+                        </div>
+                        <div class="text-[10px] text-gray-500 mb-2 uppercase">${interpretation}</div>
+                        <div class="scale-bar-container">
+                            <div class="scale-bar ${colorClass}" style="width: ${value}%"></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 3. Черты характера и Паттерны
+            const traitsContainer = document.getElementById('traits-container');
+            let traits = [];
+            
+            if (scales.SelfEsteem_B5 > 50) traits.push("Внутренний критик", "Синдром самозванца", "Потребность в одобрении");
+            if (scales.Relationships_B4 > 60) traits.push("Размытые личные границы", "Склонность к слиянию", "Жертвенность");
+            if (scales.Anxiety_B3 > 55) traits.push("Потребность в гиперконтроле", "Страх неопределенности", "Катастрофизация");
+            if (scales.Career_B7 > 50) traits.push("Перфекционизм", "Трудоголизм");
+            if (scales.Depression_B2 > 60) traits.push("Апатия", "Запрет на удовольствия");
+            if (scales.Somatic_B6 > 50) traits.push("Подавление эмоций в тело", "Избегающее поведение");
+
+            if (traits.length === 0) traits.push("Адаптивная структура личности", "Высокая стрессоустойчивость");
+
+            traitsContainer.innerHTML = traits.map(t => `<span class="trait-pill">${t}</span>`).join('');
+
+            // Генерация Summary (описания)
+            let summary = "Клиент демонстрирует ";
+            if (scales.Anxiety_B3 > 50 && scales.Depression_B2 > 50) {
+                summary += "смешанную тревожно-депрессивную симптоматику. Снижение уровня энергии комбинируется с фоновым напряжением. ";
+            } else if (scales.Relationships_B4 > 60) {
+                summary += "сильную фиксацию на сфере отношений, что указывает на проблемы с сепарацией и личными границами. ";
+            } else if (scales.Career_B7 > 60) {
+                summary += "признаки глубокого профессионального истощения и кризиса смыслов. ";
+            } else {
+                summary += "умеренный уровень дискомфорта, ресурсы для самостоятельного решения проблем сохранены. ";
+            }
+
+            if (scales.Trauma_B8 > 50) {
+                summary += "Текущие реакции сильно обусловлены непроработанным негативным опытом прошлого (детские травмы).";
+            }
+            document.getElementById('personality-summary').innerText = summary;
+
+            // 4. Фокус коучинга
+            const focusList = document.getElementById('coaching-focus-list');
+            focusList.innerHTML = '';
+            
+            // Сортируем шкалы по убыванию
+            const sortedScales = Object.entries(scales).sort((a, b) => b[1] - a[1]);
+            const top2 = sortedScales.slice(0, 2); // Берем две самые проблемные
+
+            top2.forEach(item => {
+                if (item[1] > 45) { // Если проблема выражена
+                    let rec = "";
+                    switch(item[0]) {
+                        case "Depression_B2": rec = "Восстановление базового ресурса и энергии. Поиск мелких радостей, нормализация режима. Избегать жестких директивных задач."; break;
+                        case "Anxiety_B3": rec = "Заземление, практики осознанности. Работа с когнитивными искажениями (страх будущего). Снижение уровня гиперконтроля."; break;
+                        case "Relationships_B4": rec = "Выстраивание личных границ. Работа над экологичным отказом («умение говорить Нет»). Разделение ответственности с партнером."; break;
+                        case "SelfEsteem_B5": rec = "Снижение влияния «Внутреннего критика». Присвоение собственных достижений. Фокус на самоценность вне достижений."; break;
+                        case "Somatic_B6": rec = "Внедрение экологичных копинг-стратегий вместо зависимостей. Налаживание связи с телом (распознавание зажимов)."; break;
+                        case "Career_B7": rec = "Аудит рабочих процессов. Разделение личного времени и работы. Поиск новых профессиональных смыслов или смена вектора."; break;
+                        case "Trauma_B8": rec = "Осторожная работа с прошлым. Пересмотр родительских установок и интроектов. Рекомендуется бережный, поддерживающий подход."; break;
+                    }
+                    focusList.innerHTML += `<div class="bg-[#1a1a1a] p-4 rounded-xl border-l-2 border-[#f97316] text-sm text-gray-300">${rec}</div>`;
+                }
+            });
+            if (focusList.innerHTML === '') {
+                focusList.innerHTML = `<div class="bg-[#1a1a1a] p-4 rounded-xl text-sm text-gray-400">Клиент находится в ресурсном состоянии. Рекомендуется фокус на целеполагание и личностный рост.</div>`;
+            }
+
+            // 5. Красные флаги
+            const rfContainer = document.getElementById('red-flags-container');
+            const rfCard = document.getElementById('red-flags-card');
+            rfContainer.innerHTML = '';
+            
+            // Ищем пересечения ответов клиента (даже если их нет в массиве red_flags_ids, мы можем вытащить их из raw_scores, если клиент ответил "Да" / "Почти всегда")
+            let hasFlags = false;
+            for (const [id, desc] of Object.entries(redFlagDict)) {
+                if (data.raw_scores[id]) {
+                    // Если вопрос YN и ответ 10 (Да), либо S и больше 80, либо F и больше 7
+                    if (data.raw_scores[id].val >= 7) {
+                        hasFlags = true;
+                        rfContainer.innerHTML += `<div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            <span>${desc} (Ответ клиента: <span class="font-bold text-white">${data.raw_scores[id].raw}</span>)</span>
+                        </div>`;
+                    }
+                }
+            }
+
+            if (!hasFlags) {
+                rfCard.classList.remove('border-red-500/30');
+                rfCard.classList.add('border-green-500/30');
+                rfCard.querySelector('.card-tag').className = 'card-tag text-green-500';
+                rfContainer.innerHTML = `<span class="text-green-500">Критических маркеров и острых состояний не выявлено.</span>`;
+            } else {
+                rfCard.classList.add('border-red-500/30');
+                rfCard.classList.remove('border-green-500/30');
+                rfCard.querySelector('.card-tag').className = 'card-tag text-red-500';
+            }
+        }
+
+        function resetDecoder() {
+            document.getElementById('results-section').classList.add('hidden');
+            document.getElementById('input-section').classList.remove('hidden');
+            document.getElementById('hash-input').value = '';
+            document.getElementById('fileInput').value = '';
+            window.scrollTo(0, 0);
+        }
+    </script>
+</body>
+</html>
