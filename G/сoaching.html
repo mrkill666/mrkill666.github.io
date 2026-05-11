@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coaching Lab | Анализ состояния</title>
+    <title>CoachingLab | Тестирование</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
-    
     <style>
+        /* ОБЩИЕ СТИЛИ */
         :root {
             --bg-color: #050505;
             --card-bg: #111111;
-            --accent-color: #ffffff;
-            --accent-orange: #f97316;
+            --accent-color: #f97316; /* Оранжевый акцент */
+            --accent-hover: #ea580c;
             --border-light: rgba(255, 255, 255, 0.05);
             --border-hover: rgba(255, 255, 255, 0.15);
-            --border-error: rgba(249, 115, 22, 0.5);
             --font-main: 'Inter', sans-serif;
         }
 
@@ -23,14 +22,13 @@
 
         body {
             background-color: var(--bg-color);
-            color: var(--accent-color);
+            color: #ffffff;
             font-family: var(--font-main);
             min-height: 100vh;
             overflow-x: hidden;
-            display: flex;
-            flex-direction: column;
         }
 
+        /* Эффект зернистости фона */
         body::before {
             content: "";
             position: fixed;
@@ -42,286 +40,236 @@
             z-index: 9999;
         }
 
-        .q-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-light);
-            border-radius: 16px;
-            padding: 2rem;
-            margin-bottom: 1.5rem;
-            transition: border-color 0.3s;
-        }
-
-        .q-card.error {
-            border-color: var(--border-error);
-            box-shadow: 0 0 15px rgba(249, 115, 22, 0.1);
-        }
-
-        .q-num {
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: gray;
-            font-weight: 700;
-            margin-bottom: 1rem;
-        }
-
-        .q-text {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-            line-height: 1.4;
-        }
-
-        /* Кастомные радио-кнопки (как фильтры) */
-        .options-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-        }
-
-        .opt-btn {
+        /* ФИЛЬТРЫ / КНОПКИ */
+        .filter-btn {
             font-size: 12px;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.1em;
             font-weight: 700;
             padding: 0.75rem 1.25rem;
             border: 1px solid var(--border-light);
             border-radius: 9999px;
-            color: #888;
+            color: gray;
             background: rgba(17, 17, 17, 0.5);
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             cursor: pointer;
-            user-select: none;
-            flex-grow: 1;
-            text-align: center;
+            backdrop-filter: blur(4px);
         }
 
-        .opt-btn:hover {
-            color: var(--accent-color);
+        .filter-btn:hover {
+            color: #ffffff;
             border-color: var(--border-hover);
-            background: #1a1a1a;
+            background: #141414;
         }
 
-        .opt-btn.selected {
+        .filter-btn.active {
+            color: #000;
+            background: #ffffff;
+            border-color: #ffffff;
+        }
+        
+        .filter-btn.orange-active {
             color: #000;
             background: var(--accent-color);
             border-color: var(--accent-color);
         }
 
-        /* Кастомный Range Slider */
-        .slider-container {
-            width: 100%;
-            padding: 1rem 0;
+        /* КАРТОЧКИ ВОПРОСОВ */
+        .hub-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 24px;
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
             position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
         
-        .slider-value-display {
-            position: absolute;
-            top: -10px;
-            right: 0;
-            font-size: 14px;
-            font-weight: 900;
-            color: var(--accent-orange);
+        .hub-card.error {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 20px rgba(249, 115, 22, 0.1);
+            animation: shake 0.5s ease;
         }
 
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .card-tag {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: gray;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 1.5rem;
+        }
+
+        /* СЛАЙДЕРЫ */
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
             background: transparent;
+            margin: 15px 0;
         }
-
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 20px;
-            width: 20px;
-            border-radius: 50%;
-            background: var(--accent-orange);
-            cursor: pointer;
-            margin-top: -8px;
-            box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
-        }
-
+        input[type=range]:focus { outline: none; }
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
             height: 4px;
             cursor: pointer;
-            background: var(--border-light);
+            background: #333;
             border-radius: 2px;
         }
-
-        input[type=range]:focus {
-            outline: none;
+        input[type=range]::-webkit-slider-thumb {
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -8px;
+            box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
+            transition: transform 0.1s;
         }
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
-        /* Прогресс-бар */
+        /* ПРОГРЕСС БАР */
         .progress-container {
-            position: sticky;
-            top: 80px;
-            background: var(--bg-color);
-            padding: 1rem 0;
-            z-index: 40;
-            border-bottom: 1px solid var(--border-light);
-            margin-bottom: 2rem;
-        }
-
-        .progress-bar {
-            height: 2px;
-            background: var(--border-light);
             width: 100%;
-            border-radius: 2px;
-            overflow: hidden;
+            height: 4px;
+            background: #222;
+            position: fixed;
+            top: 0; left: 0;
+            z-index: 100;
         }
-
-        .progress-fill {
+        .progress-bar {
             height: 100%;
-            background: var(--accent-orange);
+            background: var(--accent-color);
             width: 0%;
             transition: width 0.3s ease;
         }
-
-        .nav-btn {
-            background: var(--accent-color);
-            color: #000;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            padding: 1rem 2rem;
-            border-radius: 9999px;
-            border: none;
-            cursor: pointer;
-            transition: transform 0.2s, opacity 0.2s;
-            font-size: 14px;
-        }
-
-        .nav-btn:hover {
-            transform: scale(1.02);
-        }
         
-        .nav-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .nav-btn-outline {
-            background: transparent;
-            color: var(--accent-color);
-            border: 1px solid var(--border-light);
-        }
-        .nav-btn-outline:hover {
-            background: var(--border-light);
-        }
-
-        textarea.terminal-output {
-            background: #0a0a0a;
-            border: 1px solid var(--border-light);
-            color: #10b981; /* Hacker green just for fun/contrast */
-            font-family: monospace;
-            width: 100%;
-            height: 200px;
-            padding: 1rem;
-            border-radius: 8px;
-            resize: none;
-            font-size: 12px;
+        #auth-screen {
+            backdrop-filter: blur(10px);
         }
     </style>
 </head>
 <body>
 
-    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
-        <a href="#" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">
-            Coaching<span class="text-transparent" style="-webkit-text-stroke: 1px white;">Lab</span>
-        </a>
-        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
-            <span class="opacity-50">Диагностика</span>
+    <!-- ЭКРАН АВТОРИЗАЦИИ -->
+    <div id="auth-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-[#050505]">
+        <div class="hub-card max-w-md w-full mx-4 relative overflow-hidden">
+            <h2 class="card-title text-3xl font-black uppercase mb-2">Coaching<span class="text-transparent" style="-webkit-text-stroke: 1px white;">Lab</span></h2>
+            <p class="text-sm text-gray-400 mb-8 leading-relaxed">Система закрытого тестирования. Пожалуйста, введите ключ доступа для начала сессии.</p>
+            
+            <input type="password" id="password-input" class="w-full bg-[#141414] border border-white/10 rounded-xl p-4 text-white outline-none focus:border-[#f97316] transition-colors font-mono mb-6" placeholder="Введите пароль">
+            
+            <button onclick="checkPassword()" class="filter-btn active w-full py-4 text-center text-sm">Получить доступ</button>
+            <p id="auth-error" class="text-[#f97316] text-[10px] mt-4 hidden uppercase tracking-widest text-center font-bold">Неверный пароль</p>
         </div>
-    </nav>
+    </div>
 
-    <main class="flex-grow pt-32 px-4 md:px-12 pb-24 max-w-4xl mx-auto w-full relative z-10">
-        
-        <!-- Стартовый экран -->
-        <div id="intro-screen" class="text-center py-20">
-            <h1 class="text-5xl md:text-7xl font-black tracking-tighter uppercase mb-6">
-                Анализ <br><span class="text-transparent" style="-webkit-text-stroke: 1px white;">Состояния</span>
-            </h1>
-            <p class="text-gray-400 mb-12 max-w-xl mx-auto leading-relaxed">
-                Комплексный клинический опросник из 300 вопросов. Он выявляет ядро запроса, уровень стресса и скрытые паттерны. Отвечайте быстро, первое пришедшее в голову — самое верное.
-            </p>
-            <button onclick="startQuiz()" class="nav-btn">Начать тест</button>
+    <!-- ОСНОВНОЙ КОНТЕНТ (Скрыт до ввода пароля) -->
+    <div id="main-wrapper" class="hidden">
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
         </div>
 
-        <!-- Контейнер Опросника -->
-        <div id="quiz-screen" style="display: none;">
-            <div class="progress-container">
-                <div class="flex justify-between items-end mb-2">
-                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Прогресс</span>
-                    <span id="progress-text" class="text-xs font-bold text-white">0 / 300</span>
-                </div>
-                <div class="progress-bar">
-                    <div id="progress-fill" class="progress-fill"></div>
-                </div>
+        <nav class="w-full p-6 md:p-8 flex justify-between items-center z-50">
+            <div class="font-black text-sm md:text-base uppercase tracking-widest whitespace-nowrap">
+                Muжic<span class="text-transparent" style="-webkit-text-stroke: 1px white;">Lab</span>
             </div>
+            <div class="font-medium text-[10px] md:text-sm uppercase tracking-widest text-gray-400" id="step-counter">
+                Страница 1 / 30
+            </div>
+        </nav>
 
-            <div id="questions-container">
-                <!-- Вопросы будут рендериться здесь через JS -->
-            </div>
+        <main class="px-4 md:px-12 pb-24 max-w-4xl mx-auto relative z-10" id="quiz-container">
+            <!-- Вопросы генерируются здесь -->
+        </main>
 
-            <div class="flex justify-between mt-8">
-                <button id="btn-prev" onclick="prevPage()" class="nav-btn nav-btn-outline hidden">← Назад</button>
-                <div class="flex-grow"></div>
-                <button id="btn-next" onclick="nextPage()" class="nav-btn">Далее →</button>
+        <main class="px-4 md:px-12 pb-24 max-w-4xl mx-auto relative z-10 hidden" id="result-container">
+            <div class="hub-card">
+                <div class="card-tag text-green-500">Завершено</div>
+                <h2 class="card-title text-3xl md:text-5xl uppercase font-black">Тест пройден</h2>
+                <p class="card-desc mb-6 text-gray-400">Спасибо за честность. Ваши ответы зашифрованы в уникальный хэш-код. Пожалуйста, скопируйте его или скачайте текстовый файл и отправьте вашему психологу-коучу для расшифровки.</p>
+                
+                <textarea id="hash-output" class="w-full h-32 bg-[#141414] border border-white/10 rounded-xl p-4 text-xs font-mono text-gray-500 outline-none mb-6 resize-none" readonly></textarea>
+                
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button onclick="copyHash()" class="filter-btn active flex-1 py-4 text-center">Скопировать хэш</button>
+                    <button onclick="downloadTxt()" class="filter-btn flex-1 py-4 text-center">Скачать .txt</button>
+                </div>
             </div>
+            
+            <div class="mt-8">
+                <h3 class="text-sm font-bold uppercase tracking-widest text-gray-500 mb-4">Ваши ответы (Лог)</h3>
+                <div id="raw-answers-list" class="space-y-2"></div>
+            </div>
+        </main>
+
+        <!-- НАВИГАЦИЯ -->
+        <div class="fixed bottom-0 left-0 w-full p-4 bg-[#050505]/90 backdrop-blur-md border-t border-white/10 z-50 flex justify-center gap-4" id="nav-controls">
+            <button onclick="prevPage()" class="filter-btn" id="btn-prev" style="display: none;">Назад</button>
+            <button onclick="nextPage()" class="filter-btn active" id="btn-next">Следующая страница</button>
+            <button onclick="finishQuiz()" class="filter-btn orange-active hidden" id="btn-finish">Завершить тест</button>
         </div>
-
-        <!-- Экран Результатов -->
-        <div id="result-screen" style="display: none;" class="pb-20">
-            <h2 class="text-4xl font-black uppercase mb-4 text-center">Протокол <span class="text-[#f97316]">Завершен</span></h2>
-            <p class="text-gray-400 mb-10 text-center max-w-2xl mx-auto">
-                Ваши ответы зафиксированы. Скопируйте зашифрованный ключ ниже и отправьте его вашему специалисту.
-            </p>
-
-            <div class="bg-[#111] border border-white/10 rounded-2xl p-6 md:p-8 mb-8">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold uppercase tracking-widest text-sm">Зашифрованный пакет</h3>
-                    <button onclick="copyHash()" class="text-xs font-bold bg-white text-black px-4 py-2 rounded-full hover:bg-gray-200 transition">Скопировать</button>
-                </div>
-                <textarea id="hash-output" class="terminal-output" readonly></textarea>
-            </div>
-
-            <div class="bg-[#111] border border-white/10 rounded-2xl p-6 md:p-8">
-                <h3 class="font-bold uppercase tracking-widest text-sm mb-4">Журнал ответов (Для вас)</h3>
-                <div id="answers-log" class="text-sm text-gray-400 h-64 overflow-y-auto pr-4 space-y-2 border border-white/5 p-4 rounded-lg bg-[#050505]">
-                    <!-- Лог ответов -->
-                </div>
-            </div>
-        </div>
-
-    </main>
-
-    <footer class="mt-auto pt-8 pb-8 border-t border-white/10 flex justify-center text-center relative z-10">
-        <p class="text-[10px] text-gray-500 uppercase tracking-widest">
-            © 2026 Владислав Ножиков
-        </p>
-    </footer>
+    </div>
 
     <script>
-        // --- DATA STRUCTURE ---
-        // Типы: 'YN' (Да/Нет), 'F' (Частота 1-4), 'S' (Слайдер 0-100)
-        // Массив: [ИД, "Текст", "Тип", БлокID, "Лейбл Минимума (для S)", "Лейбл Максимума (для S)"]
-        
+        // --- АВТОРИЗАЦИЯ ---
+        function checkPassword() {
+            const input = document.getElementById('password-input').value;
+            const errorMsg = document.getElementById('auth-error');
+            
+            // ВАШ ПАРОЛЬ ЗДЕСЬ
+            const VALID_PASSWORD = "FjPDyE72%ZWJOKubn"; 
+            
+            if (input === VALID_PASSWORD) {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('main-wrapper').classList.remove('hidden');
+                renderPage(); // Запускаем рендер после авторизации
+            } else {
+                errorMsg.classList.remove('hidden');
+                document.getElementById('password-input').classList.add('border-[#f97316]');
+                setTimeout(() => {
+                    document.getElementById('password-input').classList.remove('border-[#f97316]');
+                }, 1000);
+            }
+        }
+
+        // Позволяем войти по Enter
+        document.getElementById('password-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
+
+        // --- БАЗА ВОПРОСОВ (300 штук) ---
+        // Формат: [ИД, Текст, Тип, Блок, Лейбл_Мин, Лейбл_Макс]
         const rawQuestions = [
             // Блок 1: Запрос (1-30)
             [1, "Оцените уровень вашей неудовлетворенности жизнью на данный момент.", "S", 1, "Полностью доволен", "Крайне не удовлетворен"],
             [2, "Моя главная проблема сейчас связана с отношениями.", "YN", 1],
             [3, "Моя главная проблема сейчас связана с карьерой или учебой.", "YN", 1],
-            [4, "Я ищу психолога, чтобы справиться с острой кризисной ситуацией (развод, потеря).", "YN", 1],
-            [5, "Я обращаюсь к психологу для самопознания и личностного роста.", "YN", 1],
+            [4, "Я ищу психолога-коуча, чтобы справиться с острой кризисной ситуацией (развод, потеря).", "YN", 1],
+            [5, "Я обращаюсь к психологу-коучу для самопознания и личностного роста.", "YN", 1],
             [6, "Как часто вы чувствуете, что не справляетесь с жизнью?", "F", 1],
             [7, "Я знаю, в чем корень моей проблемы.", "YN", 1],
             [8, "Оцените вашу готовность к изменениям, даже если они будут болезненными.", "S", 1, "Совершенно не готов", "Полностью готов"],
-            [9, "Я жду от психолога конкретных инструкций и советов.", "YN", 1],
-            [10, "Мне важно, чтобы психолог просто выслушал и поддержал меня.", "YN", 1],
-            [11, "Я уже имел(а) опыт работы с психологом в прошлом.", "YN", 1],
+            [9, "Я жду от психолога-коуча конкретных инструкций и советов.", "YN", 1],
+            [10, "Мне важно, чтобы психолог-коуч просто выслушал и поддержал меня.", "YN", 1],
+            [11, "Я уже имел(а) опыт работы с психологом-коучем в прошлом.", "YN", 1],
             [12, "Как часто вы чувствуете себя в тупике?", "F", 1],
             [13, "Оцените уровень вашей мотивации решить проблему.", "S", 1, "Мотивации нет", "Максимально мотивирован"],
             [14, "Мое состояние мешает мне нормально работать.", "YN", 1],
@@ -330,13 +278,13 @@
             [17, "У меня есть четкая цель на терапию.", "YN", 1],
             [18, "Я сомневаюсь, что психотерапия мне поможет.", "YN", 1],
             [19, "Как часто вы обсуждаете свои проблемы с друзьями?", "F", 1],
-            [20, "Оцените, насколько тяжело вам далось решение пойти к психологу.", "S", 1, "Далось очень легко", "Было невероятно тяжело"],
+            [20, "Оцените, насколько тяжело вам далось решение пойти к психологу-коучу.", "S", 1, "Далось очень легко", "Было невероятно тяжело"],
             [21, "Я хочу изменить поведение другого человека (партнера, ребенка).", "YN", 1],
-            [22, "Я готов(а) выполнять домашние задания от психолога.", "YN", 1],
-            [23, "Меня заставили/уговорили пройти этот тест и пойти к психологу.", "YN", 1],
+            [22, "Я готов(а) выполнять домашние задания от психолога-коуча.", "YN", 1],
+            [23, "Меня заставили/уговорили пройти этот тест и пойти к психологу-коучу.", "YN", 1],
             [24, "Как часто вы ищете информацию о психологии в интернете?", "F", 1],
             [25, "У меня есть финансовые страхи относительно стоимости терапии.", "YN", 1],
-            [26, "Я боюсь, что психолог меня осудит.", "YN", 1],
+            [26, "Я боюсь, что психолог-коуч меня осудит.", "YN", 1],
             [27, "Я хочу разобраться в своих эмоциях.", "YN", 1],
             [28, "Я хочу научиться принимать решения.", "YN", 1],
             [29, "Как часто вы чувствуете, что живете «не свою» жизнь?", "F", 1],
@@ -614,13 +562,13 @@
             [285, "Я иногда откладываю неприятные дела на потом.", "YN", 9],
             [286, "Я никогда не опаздывал(а) ни на одну встречу в своей жизни.", "YN", 9],
             [287, "Иногда я могу сказать что-то, о чем потом жалею.", "YN", 9],
-            [288, "Меня перестали радовать вещи, которые нравились раньше.", "YN", 9],
-            [289, "У меня есть страх потери контроля над собственным разумом.", "YN", 9],
+            [288, "(Повтор) Меня перестали радовать вещи, которые нравились раньше.", "YN", 9],
+            [289, "(Повтор) У меня есть страх потери контроля над собственным разумом.", "YN", 9],
             [290, "Для меня крайне важно, что обо мне подумают другие люди.", "YN", 9],
             [291, "Мне неловко и дискомфортно, когда меня хвалят.", "YN", 9],
             [292, "Мне часто снятся тяжелые и пугающие сны.", "YN", 9],
             [293, "Мне страшно заговорить с руководством о повышении моего дохода.", "YN", 9],
-            [294, "Я замечаю, что в последнее время плачу чаще обычного.", "YN", 9],
+            [294, "(Повтор) Я замечаю, что в последнее время плачу чаще обычного.", "YN", 9],
             [295, "Я с трудом отказываю, когда меня о чем-либо просят.", "YN", 9],
             [296, "Я всегда готов(а) пожертвовать всем ради малознакомого человека.", "YN", 9],
             [297, "Я никогда в жизни не нарушал(а) ни одного правила.", "YN", 9],
@@ -629,254 +577,269 @@
             [300, "Мне свойственно по несколько раз проверять, закрыта ли дверь.", "YN", 9]
         ];
 
-        const blockNames = ["", "Запрос", "Депрессивный фон", "Тревожность", "Отношения", "Самооценка", "Соматика", "Работа", "Травмы", "Валидность"];
+        let questions = rawQuestions.map(q => ({
+            id: q[0], text: q[1], type: q[2], block: q[3], labelMin: q[4], labelMax: q[5]
+        }));
 
-        // Конфиги шкал
-        const TRAPS = [281, 282, 283, 284, 286, 296, 297]; // Yes = Lie
-        const NORMS = [285, 287, 298]; // No = Lie
-        const REPEATS = { 288: 31, 294: 34 }; // ключ - дубль, значение - оригинал
-        const RED_FLAGS = [42]; // Суицидальные мысли
+        const itemsPerPage = 10;
+        let currentPage = 1;
+        const totalPages = Math.ceil(questions.length / itemsPerPage);
+        let answers = {};
+        window.resultData = null; // Для экспорта в txt
 
-        const questions = rawQuestions.map(q => {
-            let labels = ["Не согласен", "Полностью согласен"];
-            if (q[2] === 'S') {
-                if (q.length >= 6) {
-                    labels = [q[4], q[5]]; // Берем кастомные подписи
-                } else {
-                    labels = ["Минимум", "Максимум"];
-                }
-            }
-            return {
-                id: q[0], text: q[1], type: q[2], block: q[3], labels: labels
-            };
-        });
-
-        const QUESTIONS_PER_PAGE = 10;
-        let currentPage = 0;
-        let totalPages = Math.ceil(questions.length / QUESTIONS_PER_PAGE);
-        let answers = {}; // { qId: { val: score_0_to_10, raw: text_answer } }
-
-        function startQuiz() {
-            document.getElementById('intro-screen').style.display = 'none';
-            document.getElementById('quiz-screen').style.display = 'block';
-            renderPage();
-        }
-
+        // Отрисовка страницы
         function renderPage() {
-            const container = document.getElementById('questions-container');
+            const container = document.getElementById('quiz-container');
             container.innerHTML = '';
             
-            let startIdx = currentPage * QUESTIONS_PER_PAGE;
-            let endIdx = Math.min(startIdx + QUESTIONS_PER_PAGE, questions.length);
-            
-            const pageQuestions = questions.slice(startIdx, endIdx);
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageQuestions = questions.slice(start, end);
 
             pageQuestions.forEach(q => {
                 const card = document.createElement('div');
-                card.className = 'q-card';
+                card.className = 'hub-card mb-6';
                 card.id = `card-${q.id}`;
                 
-                let inputHtml = '';
-                let answeredVal = answers[q.id] !== undefined ? answers[q.id].val : null;
-
+                let controlsHtml = '';
+                
                 if (q.type === 'YN') {
-                    inputHtml = `
-                        <div class="options-grid">
-                            <button type="button" class="opt-btn ${answeredVal === 10 ? 'selected' : ''}" data-val="10" onclick="setAnswer(${q.id}, 10, 'Да')">Да</button>
-                            <button type="button" class="opt-btn ${answeredVal === 0 ? 'selected' : ''}" data-val="0" onclick="setAnswer(${q.id}, 0, 'Нет')">Нет</button>
-                        </div>`;
-                } else if (q.type === 'F') {
-                    inputHtml = `
-                        <div class="options-grid">
-                            <button type="button" class="opt-btn ${answeredVal === 0 ? 'selected' : ''}" data-val="0" onclick="setAnswer(${q.id}, 0, 'Никогда')">Никогда</button>
-                            <button type="button" class="opt-btn ${answeredVal === 3 ? 'selected' : ''}" data-val="3" onclick="setAnswer(${q.id}, 3, 'Редко')">Редко</button>
-                            <button type="button" class="opt-btn ${answeredVal === 7 ? 'selected' : ''}" data-val="7" onclick="setAnswer(${q.id}, 7, 'Часто')">Часто</button>
-                            <button type="button" class="opt-btn ${answeredVal === 10 ? 'selected' : ''}" data-val="10" onclick="setAnswer(${q.id}, 10, 'Почти всегда')">Почти всегда</button>
-                        </div>`;
-                } else if (q.type === 'S') {
-                    let sVal = answeredVal !== null ? answeredVal * 10 : 50; // default 50
-                    inputHtml = `
-                        <div class="slider-container">
-                            <span class="slider-value-display" id="s-val-${q.id}">${sVal}</span>
-                            <input type="range" min="0" max="100" value="${sVal}" 
-                                oninput="document.getElementById('s-val-${q.id}').innerText = this.value"
-                                onchange="setAnswer(${q.id}, this.value / 10, this.value)">
+                    const saved = answers[q.id]?.val;
+                    controlsHtml = `
+                        <div class="flex gap-4">
+                            <button type="button" class="filter-btn flex-1 ${saved === 10 ? 'orange-active' : ''}" onclick="setAnswer(${q.id}, 10, 'Да', this)">Да</button>
+                            <button type="button" class="filter-btn flex-1 ${saved === 0 ? 'orange-active' : ''}" onclick="setAnswer(${q.id}, 0, 'Нет', this)">Нет</button>
                         </div>
-                        <div class="flex justify-between text-[10px] text-gray-500 uppercase font-bold mt-1">
-                            <span class="w-1/2 text-left pr-2 leading-tight">${q.labels[0]}</span>
-                            <span class="w-1/2 text-right pl-2 leading-tight">${q.labels[1]}</span>
-                        </div>`;
+                    `;
+                } else if (q.type === 'F') {
+                    const saved = answers[q.id]?.val;
+                    controlsHtml = `
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <button type="button" class="filter-btn flex-1 ${saved === 0 ? 'orange-active' : ''}" onclick="setAnswer(${q.id}, 0, 'Никогда', this)">Никогда</button>
+                            <button type="button" class="filter-btn flex-1 ${saved === 3 ? 'orange-active' : ''}" onclick="setAnswer(${q.id}, 3, 'Редко', this)">Редко</button>
+                            <button type="button" class="filter-btn flex-1 ${saved === 7 ? 'orange-active' : ''}" onclick="setAnswer(${q.id}, 7, 'Часто', this)">Часто</button>
+                            <button type="button" class="filter-btn flex-1 ${saved === 10 ? 'orange-active' : ''}" onclick="setAnswer(${q.id}, 10, 'Почти всегда', this)">Почти всегда</button>
+                        </div>
+                    `;
+                } else if (q.type === 'S') {
+                    const val = answers[q.id] ? answers[q.id].raw : 50;
+                    controlsHtml = `
+                        <div class="mt-4">
+                            <input type="range" min="0" max="100" value="${val}" id="slider-${q.id}" onchange="setSliderAnswer(${q.id}, this.value)">
+                            <div class="flex justify-between text-[10px] text-gray-500 uppercase tracking-widest mt-2 font-bold">
+                                <span>${q.labelMin || '0'}</span>
+                                <span id="val-${q.id}" class="text-white text-sm">${val}</span>
+                                <span>${q.labelMax || '100'}</span>
+                            </div>
+                        </div>
+                    `;
+                    // Инициализация дефолтного значения слайдера, если еще не трогали
+                    if (!answers[q.id]) {
+                        answers[q.id] = { val: 5, raw: '50' };
+                    }
                 }
 
                 card.innerHTML = `
-                    <div class="q-num">Вопрос ${q.id} / ${questions.length}</div>
-                    <div class="q-text">${q.text}</div>
-                    ${inputHtml}
+                    <div class="card-tag">Вопрос ${q.id} из ${questions.length}</div>
+                    <div class="card-title">${q.text}</div>
+                    ${controlsHtml}
                 `;
                 container.appendChild(card);
             });
 
-            // Update Progress UI
-            document.getElementById('progress-text').innerText = `${endIdx} / ${questions.length}`;
-            document.getElementById('progress-fill').style.width = `${(endIdx / questions.length) * 100}%`;
-
-            // Buttons visibility
-            document.getElementById('btn-prev').style.display = currentPage === 0 ? 'none' : 'block';
-            document.getElementById('btn-next').innerText = currentPage === totalPages - 1 ? 'Завершить Анализ' : 'Далее →';
+            document.getElementById('step-counter').innerText = `Страница ${currentPage} / ${totalPages}`;
+            document.getElementById('progress-bar').style.width = `${(currentPage / totalPages) * 100}%`;
             
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.getElementById('btn-prev').style.display = currentPage === 1 ? 'none' : 'block';
+            
+            if (currentPage === totalPages) {
+                document.getElementById('btn-next').classList.add('hidden');
+                document.getElementById('btn-finish').classList.remove('hidden');
+            } else {
+                document.getElementById('btn-next').classList.remove('hidden');
+                document.getElementById('btn-finish').classList.add('hidden');
+            }
+            window.scrollTo(0, 0);
         }
 
-        window.setAnswer = function(qId, val, rawText) {
-            answers[qId] = { val: val, raw: rawText };
+        // Установка ответов
+        function setAnswer(qId, score, rawText, btn) {
+            answers[qId] = { val: score, raw: rawText };
             
-            // UI Update for buttons
             const card = document.getElementById(`card-${qId}`);
-            if (card) {
-                card.classList.remove('error'); // remove error if answered
-                
-                const btns = card.querySelectorAll('.opt-btn');
-                if (btns.length > 0) {
-                    btns.forEach(b => {
-                        b.classList.remove('selected');
-                        // Сравниваем через data-val атрибут (надежнее чем innerText)
-                        if (b.getAttribute('data-val') === String(val)) {
-                            b.classList.add('selected');
-                        }
-                    });
-                }
-            }
-        };
+            card.classList.remove('error');
+            
+            const buttons = card.querySelectorAll('button');
+            buttons.forEach(b => b.classList.remove('orange-active'));
+            btn.classList.add('orange-active');
+        }
 
-        window.nextPage = function() {
-            // Validate current page
-            let startIdx = currentPage * QUESTIONS_PER_PAGE;
-            let endIdx = Math.min(startIdx + QUESTIONS_PER_PAGE, questions.length);
+        function setSliderAnswer(qId, val) {
+            document.getElementById(`val-${qId}`).innerText = val;
+            answers[qId] = { val: Math.round(val / 10), raw: val.toString() };
+            document.getElementById(`card-${qId}`).classList.remove('error');
+        }
+
+        // Валидация страницы
+        function validatePage() {
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageQuestions = questions.slice(start, end);
             let allAnswered = true;
 
-            for (let i = startIdx; i < endIdx; i++) {
-                const qId = questions[i].id;
-                if (answers[qId] === undefined) {
-                    if (questions[i].type !== 'S') { // Sliders have default, buttons don't
-                        document.getElementById(`card-${qId}`).classList.add('error');
-                        allAnswered = false;
-                    } else {
-                        // Auto-set default slider value if untouched
-                        setAnswer(qId, 5, "50"); 
-                    }
-                }
-            }
-
-            if (!allAnswered) {
-                alert("Пожалуйста, ответьте на все вопросы на странице.");
-                return;
-            }
-
-            if (currentPage < totalPages - 1) {
-                currentPage++;
-                renderPage();
-            } else {
-                finishQuiz();
-            }
-        };
-
-        window.prevPage = function() {
-            if (currentPage > 0) {
-                currentPage--;
-                renderPage();
-            }
-        };
-
-        function finishQuiz() {
-            document.getElementById('quiz-screen').style.display = 'none';
-            document.getElementById('result-screen').style.display = 'block';
-
-            // 1. Вычисляем Шкалу Лжи
-            let lieScore = 0;
-            TRAPS.forEach(id => { if (answers[id] && answers[id].val === 10) lieScore++; });
-            NORMS.forEach(id => { if (answers[id] && answers[id].val === 0) lieScore++; });
-
-            let repeatsErrors = 0;
-            for (let dupId in REPEATS) {
-                let origId = REPEATS[dupId];
-                if (answers[dupId] && answers[origId]) {
-                    // Разница больше 3 баллов (30%) считается ошибкой согласованности
-                    if (Math.abs(answers[dupId].val - answers[origId].val) > 3) {
-                        repeatsErrors++;
-                    }
-                }
-            }
-
-            // 2. Считаем Блоки
-            let blockScores = { 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0 };
-            let blockMax = { 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0 };
-            let foundRedFlags = [];
-
-            questions.forEach(q => {
-                if (q.block >= 2 && q.block <= 8 && answers[q.id]) {
-                    blockScores[q.block] += answers[q.id].val;
-                    blockMax[q.block] += 10;
-                }
-                if (RED_FLAGS.includes(q.id) && answers[q.id] && answers[q.id].val >= 7) {
-                    foundRedFlags.push(q.id);
+            pageQuestions.forEach(q => {
+                if (!answers[q.id]) {
+                    document.getElementById(`card-${q.id}`).classList.add('error');
+                    allAnswered = false;
                 }
             });
 
-            let blockPercentages = {};
-            for(let b=2; b<=8; b++) {
-                blockPercentages[b] = blockMax[b] > 0 ? Math.round((blockScores[b] / blockMax[b]) * 100) : 0;
+            if (!allAnswered) {
+                // Вибрация или уведомление можно добавить
+            }
+            return allAnswered;
+        }
+
+        // Навигация
+        function nextPage() {
+            if (validatePage()) {
+                currentPage++;
+                renderPage();
+            }
+        }
+
+        function prevPage() {
+            currentPage--;
+            renderPage();
+        }
+
+        // Завершение и расчет
+        function finishQuiz() {
+            if (!validatePage()) return;
+            
+            document.getElementById('quiz-container').style.display = 'none';
+            document.getElementById('nav-controls').style.display = 'none';
+            document.getElementById('result-container').classList.remove('hidden');
+            
+            // 1. Проверка на ложь
+            const lieQuestions = [281, 282, 283, 284, 286, 296, 297]; // Ловушки (Идеал)
+            const normQuestions = [285, 287, 298]; // Ловушки (Норма)
+            let lieScore = 0;
+            
+            lieQuestions.forEach(id => { if (answers[id]?.val === 10) lieScore++; });
+            normQuestions.forEach(id => { if (answers[id]?.val === 0) lieScore++; });
+            
+            // 2. Проверка на повторения (10 пар)
+            const repeats = [[31,288], [75,289], [115,290], [155,291], [190,292], [230,293], [34,294], [111,295], [170,299], [80,300]];
+            let repeatErrors = 0;
+            repeats.forEach(pair => {
+                if (answers[pair[0]]?.val !== answers[pair[1]]?.val) repeatErrors++;
+            });
+
+            // 3. Расчет шкал (Блоки 2-8)
+            const scaleScores = { 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0 };
+            const scaleMax = { 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0 };
+            
+            questions.forEach(q => {
+                if (q.block >= 2 && q.block <= 8) {
+                    scaleScores[q.block] += answers[q.id]?.val || 0;
+                    scaleMax[q.block] += 10;
+                }
+            });
+
+            const scaleNames = { 2:"Depression_B2", 3:"Anxiety_B3", 4:"Relationships_B4", 5:"SelfEsteem_B5", 6:"Somatic_B6", 7:"Career_B7", 8:"Trauma_B8" };
+            const percentScores = {};
+            for (let b = 2; b <= 8; b++) {
+                percentScores[scaleNames[b]] = Math.round((scaleScores[b] / scaleMax[b]) * 100);
             }
 
-            // 3. Формируем объект для специалиста
-            const resultPayload = {
+            // 4. Red Flags (Критические вопросы)
+            const redFlagTriggers = {
+                42: 10, // Мысли о смерти
+                196: 10 // Селфхарм
+            };
+            const triggeredFlags = [];
+            for (let id in redFlagTriggers) {
+                if (answers[id]?.val === redFlagTriggers[id]) triggeredFlags.push(parseInt(id));
+            }
+
+            // Формирование JSON
+            window.resultData = {
                 timestamp: new Date().toISOString(),
                 validity: {
                     lie_score_out_of_10: lieScore,
-                    is_valid: lieScore < 5 && repeatsErrors < 3,
-                    repeat_errors: repeatsErrors
+                    is_valid: lieScore < 5 && repeatErrors <= 3,
+                    repeat_errors: repeatErrors
                 },
-                clinical_scales_percent: {
-                    "Depression_B2": blockPercentages[2],
-                    "Anxiety_B3": blockPercentages[3],
-                    "Relationships_B4": blockPercentages[4],
-                    "SelfEsteem_B5": blockPercentages[5],
-                    "Somatic_B6": blockPercentages[6],
-                    "Career_B7": blockPercentages[7],
-                    "Trauma_B8": blockPercentages[8]
-                },
-                red_flags_ids: foundRedFlags,
-                raw_scores: answers // Полный дамп
+                clinical_scales_percent: percentScores,
+                red_flags_ids: triggeredFlags,
+                raw_scores: answers
             };
 
-            // Шифруем (Base64)
-            const jsonStr = JSON.stringify(resultPayload);
-            // encodeURIComponent для поддержки кириллицы, если она есть в raw
-            const hash = btoa(encodeURIComponent(jsonStr));
+            const jsonString = JSON.stringify(window.resultData);
+            // Кодируем в Base64 (защита от кириллицы)
+            const base64Hash = btoa(encodeURIComponent(jsonString));
             
-            // Вывод Hash
-            document.getElementById('hash-output').value = hash;
+            document.getElementById('hash-output').value = base64Hash;
 
-            // Вывод лога для пользователя
-            const logContainer = document.getElementById('answers-log');
-            let logHtml = '';
+            // Вывод сырых ответов для юзера на экран
+            const rawList = document.getElementById('raw-answers-list');
             questions.forEach(q => {
-                if(answers[q.id]) {
-                    logHtml += `<div class="mb-2"><span class="text-white">Q${q.id}:</span> ${q.text} <br><span class="text-orange-500">➜ ${answers[q.id].raw}</span></div>`;
-                }
+                const ans = answers[q.id]?.raw || '-';
+                const div = document.createElement('div');
+                div.className = 'text-xs text-gray-400 py-2 border-b border-white/5';
+                div.innerHTML = `<span class="text-white font-bold">В${q.id}:</span> ${q.text}<br><span class="text-[#f97316]">Ответ: ${ans}</span>`;
+                rawList.appendChild(div);
             });
-            logContainer.innerHTML = logHtml;
-            
-            window.scrollTo(0,0);
         }
 
+        // Копирование хэша
         window.copyHash = function() {
             const textarea = document.getElementById('hash-output');
             textarea.select();
             document.execCommand('copy');
             alert('Хэш скопирован в буфер обмена!');
         }
+        
+        // Экспорт в TXT
+        window.downloadTxt = function() {
+            if (!window.resultData) return;
+            
+            const hash = btoa(encodeURIComponent(JSON.stringify(window.resultData)));
+            
+            let txtContent = `=== CoachingLab | Результаты Тестирования ===\r\n`;
+            txtContent += `Дата: ${new Date().toLocaleString()}\r\n\r\n`;
+            
+            txtContent += `[ КЛЮЧ ДЛЯ ПСИХОЛОГА-КОУЧА ]\r\n`;
+            txtContent += `Скопируйте этот блок текста (хэш) и вставьте в декодер:\r\n`;
+            txtContent += `----------------------------------------------------------\r\n`;
+            txtContent += `${hash}\r\n`;
+            txtContent += `----------------------------------------------------------\r\n\r\n\r\n`;
+            
+            txtContent += `=== ВАШИ ОТВЕТЫ ===\r\n`;
+            
+            rawQuestions.forEach(q => {
+                const qId = q[0];
+                const qText = q[1];
+                if (answers[qId]) {
+                    txtContent += `Вопрос ${qId}: ${qText}\r\n`;
+                    txtContent += `Ответ: ${answers[qId].raw}\r\n\r\n`;
+                }
+            });
+            
+            // Создаем Blob и скачиваем
+            const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `CoachingLab_Result_${new Date().toISOString().slice(0,10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
 
-        // КОНСОЛЬНАЯ КОМАНДА ДЛЯ ТЕСТИРОВАНИЯ
+        // КОНСОЛЬНАЯ КОМАНДА ДЛЯ ТЕСТА (randomizeTest)
         window.randomizeTest = function() {
             questions.forEach(q => {
                 let val, rawText;
@@ -890,16 +853,20 @@
                     val = options[r];
                     rawText = texts[r];
                 } else if (q.type === 'S') {
-                    val = Math.floor(Math.random() * 11); // от 0 до 10
+                    val = Math.floor(Math.random() * 11);
                     rawText = String(val * 10);
                 }
                 answers[q.id] = { val: val, raw: rawText };
             });
             
             alert('Все 300 вопросов заполнены случайными значениями! Генерируем результат...');
+            
+            // Если экран входа активен, скрываем его
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('main-wrapper').classList.remove('hidden');
+            
             finishQuiz();
         };
-
     </script>
 </body>
 </html>
