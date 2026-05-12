@@ -192,9 +192,9 @@
                     
                     <div class="control-panel">
                         <p class="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">
-                            <span class="text-white font-bold">Архитектура 2.0 (Intelligibility Update):</span><br>
-                            Используется <b>параллельная фильтрация формант</b>. В отличие от последовательных фильтров (которые звучат как синусоида), параллельные пропускают базовый жужжащий спектр, усиливая нужные гармоники.<br><br>
-                            <b>Огибающие (Артикуляция):</b> Взрывные согласные (п, т, к) теперь генерируют 30мс тишины (смыкание рта), за которым следует резкий шумовой импульс нужной частоты, имитирующий настоящий физический хлопок.
+                            <span class="text-white font-bold">Архитектура 3.0 (Distinct Consonants):</span><br>
+                            <b>Dynamic Noise Resonance (nQ):</b> Согласные больше не звучат как одинаковый белый шум. Скрипт управляет шириной (Q-фактором) шумового фильтра на лету: «С» имеет острый резонанс, а «Ф» — широкое дыхание.<br><br>
+                            <b>Мягкая Артикуляция:</b> Взрывные звуки (К, Т, П) больше не «стреляют». Их амплитуда снижена вдвое, а огибающая стала фиксированной по времени — теперь это аккуратный щелчок языка, а не удар по барабану.
                         </p>
                     </div>
                 </div>
@@ -246,77 +246,80 @@
             DOM.gMale.onclick = () => { currentGender = 'male'; DOM.gMale.classList.add('active'); DOM.gFemale.classList.remove('active'); };
             DOM.gFemale.onclick = () => { currentGender = 'female'; DOM.gFemale.classList.add('active'); DOM.gMale.classList.remove('active'); };
 
-            // --- ОБНОВЛЕННЫЙ СЛОВАРЬ (Разборчивость + Правильные шумы) ---
+            // --- ОБНОВЛЕННЫЙ СЛОВАРЬ (nQ для резкости, снижен nA для взрывных) ---
             const PHONEMES = {
                 // Гласные (чистый голос)
-                'а': { t: 'v', d: 1.0, f1: 700, f2: 1200, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000 },
-                'a': { t: 'v', d: 1.0, f1: 700, f2: 1200, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000 },
-                'о': { t: 'v', d: 1.0, f1: 400, f2: 800, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000 },
-                'o': { t: 'v', d: 1.0, f1: 400, f2: 800, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000 },
-                'у': { t: 'v', d: 1.0, f1: 300, f2: 600, f3: 2600, vA: 0.9, nA: 0.0, nF: 1000 },
-                'u': { t: 'v', d: 1.0, f1: 300, f2: 600, f3: 2600, vA: 0.9, nA: 0.0, nF: 1000 },
-                'э': { t: 'v', d: 1.0, f1: 400, f2: 1600, f3: 2600, vA: 0.9, nA: 0.0, nF: 1000 },
-                'e': { t: 'v', d: 1.0, f1: 400, f2: 1600, f3: 2600, vA: 0.9, nA: 0.0, nF: 1000 },
-                'е': { t: 'v', d: 1.0, f1: 400, f2: 1600, f3: 2600, vA: 0.9, nA: 0.0, nF: 1000 },
-                'и': { t: 'v', d: 1.0, f1: 300, f2: 2200, f3: 3000, vA: 0.8, nA: 0.0, nF: 1000 },
-                'i': { t: 'v', d: 1.0, f1: 300, f2: 2200, f3: 3000, vA: 0.8, nA: 0.0, nF: 1000 },
-                'ы': { t: 'v', d: 1.0, f1: 400, f2: 1600, f3: 2600, vA: 0.8, nA: 0.0, nF: 1000 },
-                'я': { t: 'v', d: 1.2, f1: 600, f2: 1400, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000 }, 
-                'ю': { t: 'v', d: 1.2, f1: 300, f2: 800, f3: 2600, vA: 0.9, nA: 0.0, nF: 1000 },
+                'а': { t: 'v', d: 1.0, f1: 700, f2: 1200, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000, nQ: 1 },
+                'a': { t: 'v', d: 1.0, f1: 700, f2: 1200, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000, nQ: 1 },
+                'о': { t: 'v', d: 1.0, f1: 400, f2: 800, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000, nQ: 1 },
+                'o': { t: 'v', d: 1.0, f1: 400, f2: 800, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000, nQ: 1 },
+                'у': { t: 'v', d: 1.0, f1: 300, f2: 600, f3: 2600, vA: 0.9, nA: 0.0, nF: 1000, nQ: 1 },
+                'u': { t: 'v', d: 1.0, f1: 300, f2: 600, f3: 2600, vA: 0.9, nA: 0.0, nF: 1000, nQ: 1 },
+                'э': { t: 'v', d: 1.0, f1: 400, f2: 1600, f3: 2600, vA: 0.9, nA: 0.0, nF: 1000, nQ: 1 },
+                'e': { t: 'v', d: 1.0, f1: 400, f2: 1600, f3: 2600, vA: 0.9, nA: 0.0, nF: 1000, nQ: 1 },
+                'е': { t: 'v', d: 1.0, f1: 400, f2: 1600, f3: 2600, vA: 0.9, nA: 0.0, nF: 1000, nQ: 1 },
+                'и': { t: 'v', d: 1.0, f1: 300, f2: 2200, f3: 3000, vA: 0.8, nA: 0.0, nF: 1000, nQ: 1 },
+                'i': { t: 'v', d: 1.0, f1: 300, f2: 2200, f3: 3000, vA: 0.8, nA: 0.0, nF: 1000, nQ: 1 },
+                'ы': { t: 'v', d: 1.0, f1: 400, f2: 1600, f3: 2600, vA: 0.8, nA: 0.0, nF: 1000, nQ: 1 },
+                'я': { t: 'v', d: 1.2, f1: 600, f2: 1400, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000, nQ: 1 }, 
+                'ю': { t: 'v', d: 1.2, f1: 300, f2: 800, f3: 2600, vA: 0.9, nA: 0.0, nF: 1000, nQ: 1 },
                 
                 // Сонорные (голос тише)
-                'м': { t: 'v', d: 0.8, f1: 250, f2: 1200, f3: 2600, vA: 0.5, nA: 0.0, nF: 1000 },
-                'm': { t: 'v', d: 0.8, f1: 250, f2: 1200, f3: 2600, vA: 0.5, nA: 0.0, nF: 1000 },
-                'н': { t: 'v', d: 0.8, f1: 250, f2: 1800, f3: 2600, vA: 0.5, nA: 0.0, nF: 1000 },
-                'n': { t: 'v', d: 0.8, f1: 250, f2: 1800, f3: 2600, vA: 0.5, nA: 0.0, nF: 1000 },
-                'р': { t: 'v', d: 0.6, f1: 400, f2: 1200, f3: 2600, vA: 0.6, nA: 0.0, nF: 1000 },
-                'r': { t: 'v', d: 0.6, f1: 400, f2: 1200, f3: 2600, vA: 0.6, nA: 0.0, nF: 1000 },
-                'л': { t: 'v', d: 0.8, f1: 300, f2: 1200, f3: 2600, vA: 0.6, nA: 0.0, nF: 1000 },
-                'l': { t: 'v', d: 0.8, f1: 300, f2: 1200, f3: 2600, vA: 0.6, nA: 0.0, nF: 1000 },
-                'й': { t: 'v', d: 0.5, f1: 300, f2: 2200, f3: 3000, vA: 0.7, nA: 0.0, nF: 1000 },
-                'y': { t: 'v', d: 0.5, f1: 300, f2: 2200, f3: 3000, vA: 0.7, nA: 0.0, nF: 1000 },
+                'м': { t: 'v', d: 0.8, f1: 250, f2: 1200, f3: 2600, vA: 0.5, nA: 0.0, nF: 1000, nQ: 1 },
+                'm': { t: 'v', d: 0.8, f1: 250, f2: 1200, f3: 2600, vA: 0.5, nA: 0.0, nF: 1000, nQ: 1 },
+                'н': { t: 'v', d: 0.8, f1: 250, f2: 1800, f3: 2600, vA: 0.5, nA: 0.0, nF: 1000, nQ: 1 },
+                'n': { t: 'v', d: 0.8, f1: 250, f2: 1800, f3: 2600, vA: 0.5, nA: 0.0, nF: 1000, nQ: 1 },
+                'р': { t: 'v', d: 0.6, f1: 400, f2: 1200, f3: 2600, vA: 0.6, nA: 0.0, nF: 1000, nQ: 1 },
+                'r': { t: 'v', d: 0.6, f1: 400, f2: 1200, f3: 2600, vA: 0.6, nA: 0.0, nF: 1000, nQ: 1 },
+                'л': { t: 'v', d: 0.8, f1: 300, f2: 1200, f3: 2600, vA: 0.6, nA: 0.0, nF: 1000, nQ: 1 },
+                'l': { t: 'v', d: 0.8, f1: 300, f2: 1200, f3: 2600, vA: 0.6, nA: 0.0, nF: 1000, nQ: 1 },
+                'й': { t: 'v', d: 0.5, f1: 300, f2: 2200, f3: 3000, vA: 0.7, nA: 0.0, nF: 1000, nQ: 1 },
+                'y': { t: 'v', d: 0.5, f1: 300, f2: 2200, f3: 3000, vA: 0.7, nA: 0.0, nF: 1000, nQ: 1 },
 
-                // Фрикативы (длинный шум)
-                'в': { t: 'f', d: 0.7, f1: 300, f2: 800, f3: 2000, vA: 0.3, nA: 0.4, nF: 1500 },
-                'v': { t: 'f', d: 0.7, f1: 300, f2: 800, f3: 2000, vA: 0.3, nA: 0.4, nF: 1500 },
-                'з': { t: 'f', d: 0.7, f1: 300, f2: 1200, f3: 2000, vA: 0.3, nA: 0.6, nF: 4500 },
-                'z': { t: 'f', d: 0.7, f1: 300, f2: 1200, f3: 2000, vA: 0.3, nA: 0.6, nF: 4500 },
-                'ж': { t: 'f', d: 0.8, f1: 300, f2: 1500, f3: 2500, vA: 0.4, nA: 0.5, nF: 2500 },
-                'j': { t: 'f', d: 0.8, f1: 300, f2: 1500, f3: 2500, vA: 0.4, nA: 0.5, nF: 2500 },
-                'с': { t: 'f', d: 0.9, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.8, nF: 6000 },
-                's': { t: 'f', d: 0.9, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.8, nF: 6000 },
-                'c': { t: 'f', d: 0.9, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.8, nF: 6000 },
-                'ш': { t: 'f', d: 1.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.7, nF: 2500 },
-                'щ': { t: 'f', d: 1.2, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.7, nF: 3500 },
-                'ф': { t: 'f', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.6, nF: 1500 },
-                'f': { t: 'f', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.6, nF: 1500 },
-                'х': { t: 'f', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.7, nF: 2500 },
-                'h': { t: 'f', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.7, nF: 2500 },
+                // Фрикативы (отличимые друг от друга за счет nQ и nF)
+                'в': { t: 'f', d: 0.7, f1: 300, f2: 800, f3: 2000, vA: 0.3, nA: 0.4, nF: 1500, nQ: 0.5 },
+                'v': { t: 'f', d: 0.7, f1: 300, f2: 800, f3: 2000, vA: 0.3, nA: 0.4, nF: 1500, nQ: 0.5 },
+                'з': { t: 'f', d: 0.7, f1: 300, f2: 1200, f3: 2000, vA: 0.3, nA: 0.6, nF: 4500, nQ: 1.5 },
+                'z': { t: 'f', d: 0.7, f1: 300, f2: 1200, f3: 2000, vA: 0.3, nA: 0.6, nF: 4500, nQ: 1.5 },
+                'ж': { t: 'f', d: 0.8, f1: 300, f2: 1500, f3: 2500, vA: 0.4, nA: 0.5, nF: 2500, nQ: 1.0 },
+                'j': { t: 'f', d: 0.8, f1: 300, f2: 1500, f3: 2500, vA: 0.4, nA: 0.5, nF: 2500, nQ: 1.0 },
+                // "С" - острый свист
+                'с': { t: 'f', d: 0.9, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 6500, nQ: 2.0 },
+                's': { t: 'f', d: 0.9, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 6500, nQ: 2.0 },
+                'c': { t: 'f', d: 0.9, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 6500, nQ: 2.0 },
+                // "Ш" - широкое шипение
+                'ш': { t: 'f', d: 1.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.8, nF: 2800, nQ: 0.5 },
+                'щ': { t: 'f', d: 1.2, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.8, nF: 3500, nQ: 0.8 },
+                // "Ф" - глухое дыхание
+                'ф': { t: 'f', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.7, nF: 1500, nQ: 0.2 },
+                'f': { t: 'f', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.7, nF: 1500, nQ: 0.2 },
+                'х': { t: 'f', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.8, nF: 2000, nQ: 1.0 },
+                'h': { t: 'f', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.8, nF: 2000, nQ: 1.0 },
                 
-                // Взрывные и короткие (plosives) - nA выкручен для щелчка
-                'п': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 2.0, nF: 800 },
-                'p': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 2.0, nF: 800 },
-                'т': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 2.0, nF: 4000 },
-                't': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 2.0, nF: 4000 },
-                'к': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 2.0, nF: 2000 },
-                'k': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 2.0, nF: 2000 },
-                'ц': { t: 'p', d: 0.6, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.5, nF: 5000 },
-                'ч': { t: 'p', d: 0.6, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.5, nF: 4000 },
+                // Взрывные (plosives) - амплитуда снижена с 2.0 до ~0.9, Q-фактор регулирует резкость
+                'п': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 800, nQ: 0.5 },
+                'p': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 800, nQ: 0.5 },
+                'т': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 4500, nQ: 1.0 },
+                't': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 4500, nQ: 1.0 },
+                'к': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.0, nF: 2000, nQ: 1.5 },
+                'k': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.0, nF: 2000, nQ: 1.5 },
+                'ц': { t: 'p', d: 0.6, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 5000, nQ: 1.5 },
+                'ч': { t: 'p', d: 0.6, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 4000, nQ: 1.5 },
                 
                 // Звонкие взрывные
-                'б': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 1.5, nF: 800 },
-                'b': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 1.5, nF: 800 },
-                'д': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 1.5, nF: 3500 },
-                'd': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 1.5, nF: 3500 },
-                'г': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 1.5, nF: 2000 },
-                'g': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 1.5, nF: 2000 },
+                'б': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 0.8, nF: 800, nQ: 0.5 },
+                'b': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 0.8, nF: 800, nQ: 0.5 },
+                'д': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 0.8, nF: 3500, nQ: 1.0 },
+                'd': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 0.8, nF: 3500, nQ: 1.0 },
+                'г': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 0.8, nF: 2000, nQ: 1.5 },
+                'g': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 0.8, nF: 2000, nQ: 1.5 },
 
                 // Паузы и пунктуация
-                ' ': { t: 's', d: 1.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000 },
-                '.': { t: 'punct', d: 2.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000 },
-                ',': { t: 'punct', d: 1.5, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000 },
-                '?': { t: 'punct', d: 2.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000 },
-                '!': { t: 'punct', d: 2.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000 }
+                ' ': { t: 's', d: 1.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000, nQ: 1 },
+                '.': { t: 'punct', d: 2.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000, nQ: 1 },
+                ',': { t: 'punct', d: 1.5, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000, nQ: 1 },
+                '?': { t: 'punct', d: 2.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000, nQ: 1 },
+                '!': { t: 'punct', d: 2.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000, nQ: 1 }
             };
 
             const synthesizeSpeech = async () => {
@@ -383,11 +386,10 @@
                     mixBus.connect(effectInput);
 
                     // --- GENERATORS ---
-                    // Два осциллятора для жесткой 8-битной пилы с "телом"
                     const voiceOsc1 = oCtx.createOscillator(); voiceOsc1.type = 'sawtooth';
                     const voiceOsc2 = oCtx.createOscillator(); voiceOsc2.type = 'square';
                     voiceOsc1.frequency.value = basePitch;
-                    voiceOsc2.frequency.value = basePitch / 2; // Саб-октава
+                    voiceOsc2.frequency.value = basePitch / 2;
 
                     const noiseBuf = oCtx.createBuffer(1, sampleRate, sampleRate);
                     const nd = noiseBuf.getChannelData(0);
@@ -400,8 +402,6 @@
                     const vcaVoice = oCtx.createGain(); vcaVoice.gain.value = 0;
                     const vcaNoise = oCtx.createGain(); vcaNoise.gain.value = 0;
 
-                    // ИСПРАВЛЕНИЕ: ПАРАЛЛЕЛЬНЫЕ БЭНДПАССЫ ДЛЯ ФОРМАНТ
-                    // Теперь они не вырезают все вокруг, а усиливают нужные полосы
                     const f1 = oCtx.createBiquadFilter(); f1.type = 'bandpass'; f1.Q.value = 4;
                     const f2 = oCtx.createBiquadFilter(); f2.type = 'bandpass'; f2.Q.value = 5;
                     const f3 = oCtx.createBiquadFilter(); f3.type = 'bandpass'; f3.Q.value = 6;
@@ -415,7 +415,6 @@
                     vcaVoice.connect(f2).connect(mixBus);
                     vcaVoice.connect(f3).connect(mixBus);
                     
-                    // Добавляем немного необработанного жужжания для четкости (Dry Mix)
                     const dryBuzz = oCtx.createGain(); dryBuzz.gain.value = 0.15;
                     vcaVoice.connect(dryBuzz).connect(mixBus);
 
@@ -431,41 +430,44 @@
                         const dur = item.dur;
                         const glide = 0.03; 
                         
-                        // Плавное изменение формант
                         f1.frequency.linearRampToValueAtTime(ph.f1 * formMult, t + glide);
                         f2.frequency.linearRampToValueAtTime(ph.f2 * formMult, t + glide);
                         f3.frequency.linearRampToValueAtTime(ph.f3 * formMult, t + glide);
+                        
+                        // ДИНАМИЧЕСКИЙ ФИЛЬТР ШУМА (Частота и Резонанс)
                         fNoise.frequency.linearRampToValueAtTime(ph.nF, t + glide);
+                        fNoise.Q.linearRampToValueAtTime(ph.nQ || 1, t + glide);
 
-                        // ИНТОНАЦИЯ: Легкое падение питча в конце фразы
                         let targetPitch = basePitch;
                         if (ph.t === 'punct') targetPitch = basePitch * 0.75;
                         voiceOsc1.frequency.linearRampToValueAtTime(targetPitch, t + glide);
                         voiceOsc2.frequency.linearRampToValueAtTime(targetPitch / 2, t + glide);
 
-                        // ИСПРАВЛЕНИЕ АРТИКУЛЯЦИИ
                         if (ph.t === 'p') {
-                            // ВЗРЫВНЫЕ СОГЛАСНЫЕ: Создаем тишину перед щелчком (Stop Gap)
+                            // ИСПРАВЛЕННАЯ АРТИКУЛЯЦИЯ ДЛЯ ВЗРЫВНЫХ
                             vcaVoice.gain.cancelScheduledValues(t);
                             vcaNoise.gain.cancelScheduledValues(t);
+                            
+                            // Stop Gap (тишина перед звуком)
                             vcaVoice.gain.setValueAtTime(0, t);
                             vcaNoise.gain.setValueAtTime(0, t);
 
-                            const gap = Math.min(0.03, dur * 0.4); // 30мс смыкание губ
+                            const gap = Math.min(0.04, dur * 0.5); 
                             
-                            // Резкий взрыв шума
+                            // Фиксированная короткая длина щелчка (до 50 мс), чтобы не зависело от Темпа
+                            const clickDur = Math.min(0.05, dur - gap);
+                            
+                            // Мягкий старт щелчка шума (не выстрел)
                             vcaNoise.gain.setValueAtTime(0, t + gap);
-                            vcaNoise.gain.linearRampToValueAtTime(ph.nA, t + gap + 0.01);
-                            vcaNoise.gain.exponentialRampToValueAtTime(0.01, t + dur);
+                            vcaNoise.gain.linearRampToValueAtTime(ph.nA, t + gap + 0.005);
+                            vcaNoise.gain.exponentialRampToValueAtTime(0.001, t + gap + clickDur);
 
-                            // Взрыв голоса (если буква звонкая, как Б или Д)
                             vcaVoice.gain.setValueAtTime(0, t + gap);
                             if(ph.vA > 0) {
                                 vcaVoice.gain.linearRampToValueAtTime(ph.vA, t + gap + 0.01);
-                                vcaVoice.gain.exponentialRampToValueAtTime(0.01, t + dur);
+                                vcaVoice.gain.exponentialRampToValueAtTime(0.001, t + dur);
                             }
                         } else {
-                            // ГЛАСНЫЕ И ФРИКАТИВЫ: Плавные переходы
                             vcaVoice.gain.linearRampToValueAtTime(ph.vA, t + glide);
                             vcaNoise.gain.linearRampToValueAtTime(ph.nA, t + glide);
                             vcaVoice.gain.setValueAtTime(ph.vA, t + dur - 0.01);
