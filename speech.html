@@ -133,7 +133,7 @@
                 
                 <div class="control-panel">
                     
-                    <textarea id="text-input" placeholder="Введите текст на русском или английском...">hello world! я робот из восьмидесятых. как меня слышно?</textarea>
+                    <textarea id="text-input" placeholder="Введите текст на русском или английском...">hello world! я робот из восьмидесятых. как меня слышно? мой голос стал богаче. мам, батя дома?</textarea>
 
                     <button class="btn btn-play-big mt-2" id="btn-generate">⚡ ГЕНЕРИРОВАТЬ РЕЧЬ</button>
                     
@@ -192,9 +192,9 @@
                     
                     <div class="control-panel">
                         <p class="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">
-                            <span class="text-white font-bold">Архитектура 3.0 (Distinct Consonants):</span><br>
-                            <b>Dynamic Noise Resonance (nQ):</b> Согласные больше не звучат как одинаковый белый шум. Скрипт управляет шириной (Q-фактором) шумового фильтра на лету: «С» имеет острый резонанс, а «Ф» — широкое дыхание.<br><br>
-                            <b>Мягкая Артикуляция:</b> Взрывные звуки (К, Т, П) больше не «стреляют». Их амплитуда снижена вдвое, а огибающая стала фиксированной по времени — теперь это аккуратный щелчок языка, а не удар по барабану.
+                            <span class="text-white font-bold">Архитектура 4.0 (Overtones & Nasals Update):</span><br>
+                            <b>Богатые Обертона:</b> Вместо стандартной пилообразной волны используется кастомный 64-гармониковый Impulse Train (генератор голосовой щели). Фильтры расширены, чтобы пропускать естественный тембр.<br><br>
+                            <b>М, Н и Б:</b> Для назальных согласных (М, Н) заданы четкие отличия во 2-й форманте. А звонкие взрывные (Б, Д, Г) теперь сохраняют "Voice Bar" (тихое низкочастотное гудение голосовых связок при сомкнутых губах) прямо перед щелчком, делая их легко отличимыми от П, Т и К.
                         </p>
                     </div>
                 </div>
@@ -246,7 +246,7 @@
             DOM.gMale.onclick = () => { currentGender = 'male'; DOM.gMale.classList.add('active'); DOM.gFemale.classList.remove('active'); };
             DOM.gFemale.onclick = () => { currentGender = 'female'; DOM.gFemale.classList.add('active'); DOM.gMale.classList.remove('active'); };
 
-            // --- ОБНОВЛЕННЫЙ СЛОВАРЬ (nQ для резкости, снижен nA для взрывных) ---
+            // --- ОБНОВЛЕННЫЙ СЛОВАРЬ (Назальные M/N, Voice bar для B/D/G) ---
             const PHONEMES = {
                 // Гласные (чистый голос)
                 'а': { t: 'v', d: 1.0, f1: 700, f2: 1200, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000, nQ: 1 },
@@ -264,11 +264,11 @@
                 'я': { t: 'v', d: 1.2, f1: 600, f2: 1400, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000, nQ: 1 }, 
                 'ю': { t: 'v', d: 1.2, f1: 300, f2: 800, f3: 2600, vA: 0.9, nA: 0.0, nF: 1000, nQ: 1 },
                 
-                // Сонорные (голос тише)
-                'м': { t: 'v', d: 0.8, f1: 250, f2: 1200, f3: 2600, vA: 0.5, nA: 0.0, nF: 1000, nQ: 1 },
-                'm': { t: 'v', d: 0.8, f1: 250, f2: 1200, f3: 2600, vA: 0.5, nA: 0.0, nF: 1000, nQ: 1 },
-                'н': { t: 'v', d: 0.8, f1: 250, f2: 1800, f3: 2600, vA: 0.5, nA: 0.0, nF: 1000, nQ: 1 },
-                'n': { t: 'v', d: 0.8, f1: 250, f2: 1800, f3: 2600, vA: 0.5, nA: 0.0, nF: 1000, nQ: 1 },
+                // Сонорные (М и Н теперь имеют четкие отличия по f2 и сниженную амплитуду)
+                'м': { t: 'v', d: 0.8, f1: 250, f2: 1000, f3: 2000, vA: 0.35, nA: 0.0, nF: 1000, nQ: 1 },
+                'm': { t: 'v', d: 0.8, f1: 250, f2: 1000, f3: 2000, vA: 0.35, nA: 0.0, nF: 1000, nQ: 1 },
+                'н': { t: 'v', d: 0.8, f1: 250, f2: 1800, f3: 2600, vA: 0.35, nA: 0.0, nF: 1000, nQ: 1 },
+                'n': { t: 'v', d: 0.8, f1: 250, f2: 1800, f3: 2600, vA: 0.35, nA: 0.0, nF: 1000, nQ: 1 },
                 'р': { t: 'v', d: 0.6, f1: 400, f2: 1200, f3: 2600, vA: 0.6, nA: 0.0, nF: 1000, nQ: 1 },
                 'r': { t: 'v', d: 0.6, f1: 400, f2: 1200, f3: 2600, vA: 0.6, nA: 0.0, nF: 1000, nQ: 1 },
                 'л': { t: 'v', d: 0.8, f1: 300, f2: 1200, f3: 2600, vA: 0.6, nA: 0.0, nF: 1000, nQ: 1 },
@@ -276,27 +276,24 @@
                 'й': { t: 'v', d: 0.5, f1: 300, f2: 2200, f3: 3000, vA: 0.7, nA: 0.0, nF: 1000, nQ: 1 },
                 'y': { t: 'v', d: 0.5, f1: 300, f2: 2200, f3: 3000, vA: 0.7, nA: 0.0, nF: 1000, nQ: 1 },
 
-                // Фрикативы (отличимые друг от друга за счет nQ и nF)
+                // Фрикативы
                 'в': { t: 'f', d: 0.7, f1: 300, f2: 800, f3: 2000, vA: 0.3, nA: 0.4, nF: 1500, nQ: 0.5 },
                 'v': { t: 'f', d: 0.7, f1: 300, f2: 800, f3: 2000, vA: 0.3, nA: 0.4, nF: 1500, nQ: 0.5 },
                 'з': { t: 'f', d: 0.7, f1: 300, f2: 1200, f3: 2000, vA: 0.3, nA: 0.6, nF: 4500, nQ: 1.5 },
                 'z': { t: 'f', d: 0.7, f1: 300, f2: 1200, f3: 2000, vA: 0.3, nA: 0.6, nF: 4500, nQ: 1.5 },
                 'ж': { t: 'f', d: 0.8, f1: 300, f2: 1500, f3: 2500, vA: 0.4, nA: 0.5, nF: 2500, nQ: 1.0 },
                 'j': { t: 'f', d: 0.8, f1: 300, f2: 1500, f3: 2500, vA: 0.4, nA: 0.5, nF: 2500, nQ: 1.0 },
-                // "С" - острый свист
                 'с': { t: 'f', d: 0.9, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 6500, nQ: 2.0 },
                 's': { t: 'f', d: 0.9, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 6500, nQ: 2.0 },
                 'c': { t: 'f', d: 0.9, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 6500, nQ: 2.0 },
-                // "Ш" - широкое шипение
                 'ш': { t: 'f', d: 1.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.8, nF: 2800, nQ: 0.5 },
                 'щ': { t: 'f', d: 1.2, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.8, nF: 3500, nQ: 0.8 },
-                // "Ф" - глухое дыхание
                 'ф': { t: 'f', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.7, nF: 1500, nQ: 0.2 },
                 'f': { t: 'f', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.7, nF: 1500, nQ: 0.2 },
                 'х': { t: 'f', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.8, nF: 2000, nQ: 1.0 },
                 'h': { t: 'f', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.8, nF: 2000, nQ: 1.0 },
                 
-                // Взрывные (plosives) - амплитуда снижена с 2.0 до ~0.9, Q-фактор регулирует резкость
+                // Взрывные глухие (П, Т, К)
                 'п': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 800, nQ: 0.5 },
                 'p': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 800, nQ: 0.5 },
                 'т': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 4500, nQ: 1.0 },
@@ -306,13 +303,13 @@
                 'ц': { t: 'p', d: 0.6, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 5000, nQ: 1.5 },
                 'ч': { t: 'p', d: 0.6, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 4000, nQ: 1.5 },
                 
-                // Звонкие взрывные
-                'б': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 0.8, nF: 800, nQ: 0.5 },
-                'b': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 0.8, nF: 800, nQ: 0.5 },
-                'д': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 0.8, nF: 3500, nQ: 1.0 },
-                'd': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 0.8, nF: 3500, nQ: 1.0 },
-                'г': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 0.8, nF: 2000, nQ: 1.5 },
-                'g': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 0.8, nF: 2000, nQ: 1.5 },
+                // Взрывные звонкие (Б, Д, Г) - vA > 0 включит Voice Bar в паузе
+                'б': { t: 'p', d: 0.4, f1: 200, f2: 800, f3: 2000, vA: 0.4, nA: 0.8, nF: 800, nQ: 0.5 },
+                'b': { t: 'p', d: 0.4, f1: 200, f2: 800, f3: 2000, vA: 0.4, nA: 0.8, nF: 800, nQ: 0.5 },
+                'д': { t: 'p', d: 0.4, f1: 200, f2: 1500, f3: 2500, vA: 0.4, nA: 0.8, nF: 3500, nQ: 1.0 },
+                'd': { t: 'p', d: 0.4, f1: 200, f2: 1500, f3: 2500, vA: 0.4, nA: 0.8, nF: 3500, nQ: 1.0 },
+                'г': { t: 'p', d: 0.4, f1: 200, f2: 2000, f3: 3000, vA: 0.4, nA: 0.8, nF: 2000, nQ: 1.5 },
+                'g': { t: 'p', d: 0.4, f1: 200, f2: 2000, f3: 3000, vA: 0.4, nA: 0.8, nF: 2000, nQ: 1.5 },
 
                 // Паузы и пунктуация
                 ' ': { t: 's', d: 1.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000, nQ: 1 },
@@ -385,9 +382,20 @@
                     const mixBus = oCtx.createGain();
                     mixBus.connect(effectInput);
 
-                    // --- GENERATORS ---
-                    const voiceOsc1 = oCtx.createOscillator(); voiceOsc1.type = 'sawtooth';
-                    const voiceOsc2 = oCtx.createOscillator(); voiceOsc2.type = 'square';
+                    // --- GENERATORS (Импульсный генератор обертонов) ---
+                    const real = new Float32Array(64);
+                    const imag = new Float32Array(64);
+                    real[0] = 0;
+                    for (let i = 1; i < 64; i++) {
+                        real[i] = 1.0; // Идеальный спектр гармоник для богатства обертонов
+                    }
+                    const buzzWave = oCtx.createPeriodicWave(real, imag);
+
+                    const voiceOsc1 = oCtx.createOscillator(); 
+                    voiceOsc1.setPeriodicWave(buzzWave); // Богатая базовая волна
+                    const voiceOsc2 = oCtx.createOscillator(); 
+                    voiceOsc2.type = 'sawtooth'; // Саб-тон
+
                     voiceOsc1.frequency.value = basePitch;
                     voiceOsc2.frequency.value = basePitch / 2;
 
@@ -398,13 +406,14 @@
                     noiseOsc.buffer = noiseBuf;
                     noiseOsc.loop = true;
 
-                    // --- ROUTING & FILTERS ---
+                    // --- ROUTING & FILTERS (Более широкие фильтры) ---
                     const vcaVoice = oCtx.createGain(); vcaVoice.gain.value = 0;
                     const vcaNoise = oCtx.createGain(); vcaNoise.gain.value = 0;
 
-                    const f1 = oCtx.createBiquadFilter(); f1.type = 'bandpass'; f1.Q.value = 4;
-                    const f2 = oCtx.createBiquadFilter(); f2.type = 'bandpass'; f2.Q.value = 5;
-                    const f3 = oCtx.createBiquadFilter(); f3.type = 'bandpass'; f3.Q.value = 6;
+                    // Q-фактор снижен (было 4,5,6), чтобы гармоники пробивались через фильтры
+                    const f1 = oCtx.createBiquadFilter(); f1.type = 'bandpass'; f1.Q.value = 2.5;
+                    const f2 = oCtx.createBiquadFilter(); f2.type = 'bandpass'; f2.Q.value = 3.5;
+                    const f3 = oCtx.createBiquadFilter(); f3.type = 'bandpass'; f3.Q.value = 4.5;
                     
                     const fNoise = oCtx.createBiquadFilter(); fNoise.type = 'bandpass'; fNoise.Q.value = 1;
 
@@ -415,7 +424,7 @@
                     vcaVoice.connect(f2).connect(mixBus);
                     vcaVoice.connect(f3).connect(mixBus);
                     
-                    const dryBuzz = oCtx.createGain(); dryBuzz.gain.value = 0.15;
+                    const dryBuzz = oCtx.createGain(); dryBuzz.gain.value = 0.2; // Добавляем тела и жужжания
                     vcaVoice.connect(dryBuzz).connect(mixBus);
 
                     noiseOsc.connect(vcaNoise).connect(fNoise).connect(mixBus);
@@ -434,7 +443,6 @@
                         f2.frequency.linearRampToValueAtTime(ph.f2 * formMult, t + glide);
                         f3.frequency.linearRampToValueAtTime(ph.f3 * formMult, t + glide);
                         
-                        // ДИНАМИЧЕСКИЙ ФИЛЬТР ШУМА (Частота и Резонанс)
                         fNoise.frequency.linearRampToValueAtTime(ph.nF, t + glide);
                         fNoise.Q.linearRampToValueAtTime(ph.nQ || 1, t + glide);
 
@@ -444,26 +452,24 @@
                         voiceOsc2.frequency.linearRampToValueAtTime(targetPitch / 2, t + glide);
 
                         if (ph.t === 'p') {
-                            // ИСПРАВЛЕННАЯ АРТИКУЛЯЦИЯ ДЛЯ ВЗРЫВНЫХ
                             vcaVoice.gain.cancelScheduledValues(t);
                             vcaNoise.gain.cancelScheduledValues(t);
                             
-                            // Stop Gap (тишина перед звуком)
-                            vcaVoice.gain.setValueAtTime(0, t);
+                            // ЗВОНКИЕ СОГЛАСНЫЕ: Voice Bar (гудение в сомкнутом рту)
+                            const isVoiced = ph.vA > 0;
+                            const voiceBarLevel = isVoiced ? 0.15 : 0; 
+                            
+                            vcaVoice.gain.setValueAtTime(voiceBarLevel, t);
                             vcaNoise.gain.setValueAtTime(0, t);
 
                             const gap = Math.min(0.04, dur * 0.5); 
-                            
-                            // Фиксированная короткая длина щелчка (до 50 мс), чтобы не зависело от Темпа
                             const clickDur = Math.min(0.05, dur - gap);
                             
-                            // Мягкий старт щелчка шума (не выстрел)
                             vcaNoise.gain.setValueAtTime(0, t + gap);
                             vcaNoise.gain.linearRampToValueAtTime(ph.nA, t + gap + 0.005);
                             vcaNoise.gain.exponentialRampToValueAtTime(0.001, t + gap + clickDur);
 
-                            vcaVoice.gain.setValueAtTime(0, t + gap);
-                            if(ph.vA > 0) {
+                            if(isVoiced) {
                                 vcaVoice.gain.linearRampToValueAtTime(ph.vA, t + gap + 0.01);
                                 vcaVoice.gain.exponentialRampToValueAtTime(0.001, t + dur);
                             }
