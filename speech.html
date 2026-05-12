@@ -220,7 +220,7 @@
         window.onload = () => { setTimeout(() => { document.body.classList.add('loaded'); }, 500); };
         document.getElementById('current-year').textContent = new Date().getFullYear();
 
-        const SpeechLab = (() => {
+                const SpeechLab = (() => {
             const DOM = {
                 input: document.getElementById('text-input'),
                 btnGen: document.getElementById('btn-generate'),
@@ -258,7 +258,6 @@
             DOM.gFemale.onclick = () => { currentGender = 'female'; DOM.gFemale.classList.add('active'); DOM.gMale.classList.remove('active'); };
 
             // --- PHONEME DICTIONARY (Акустические модели) ---
-            // Упрощенная модель для русского языка. Частоты формант (F1, F2, F3)
             const PHONEMES = {
                 'а': { t: 'v', d: 1.0, f1: 700, f2: 1200, f3: 2600, a: 1.0 },
                 'о': { t: 'v', d: 1.0, f1: 400, f2: 800, f3: 2600, a: 1.0 },
@@ -267,12 +266,12 @@
                 'е': { t: 'v', d: 1.0, f1: 400, f2: 1600, f3: 2600, a: 0.9 },
                 'и': { t: 'v', d: 1.0, f1: 300, f2: 2200, f3: 3000, a: 0.8 },
                 'ы': { t: 'v', d: 1.0, f1: 400, f2: 1600, f3: 2600, a: 0.8 },
-                'я': { t: 'v', d: 1.2, f1: 600, f2: 1400, f3: 2600, a: 1.0 }, // Упрощение (й+а)
+                'я': { t: 'v', d: 1.2, f1: 600, f2: 1400, f3: 2600, a: 1.0 }, 
                 'ю': { t: 'v', d: 1.2, f1: 300, f2: 800, f3: 2600, a: 0.9 },
                 
                 'м': { t: 'v', d: 0.8, f1: 250, f2: 1200, f3: 2600, a: 0.5 },
                 'н': { t: 'v', d: 0.8, f1: 250, f2: 1800, f3: 2600, a: 0.5 },
-                'р': { t: 'v', d: 0.6, f1: 400, f2: 1200, f3: 2600, a: 0.6 }, // Трррр можно сделать через LFO, но тут просто гласная
+                'р': { t: 'v', d: 0.6, f1: 400, f2: 1200, f3: 2600, a: 0.6 }, 
                 'л': { t: 'v', d: 0.8, f1: 300, f2: 1200, f3: 2600, a: 0.6 },
                 'в': { t: 'v', d: 0.7, f1: 300, f2: 800, f3: 2000, a: 0.4 },
                 'з': { t: 'v', d: 0.7, f1: 300, f2: 4000, f3: 5000, a: 0.4 },
@@ -308,158 +307,162 @@
                 DOM.btnGen.textContent = '...РЕНДЕР...';
                 DOM.btnGen.style.pointerEvents = 'none';
 
-                const sampleRate = 44100;
-                
-                // Настройки из UI
-                const basePitch = (currentGender === 'female' ? 220 : 100) * parseFloat(DOM.pitch.value);
-                const formMult = (currentGender === 'female' ? 1.2 : 1.0) * parseFloat(DOM.formant.value);
-                const baseDur = 0.15 / parseFloat(DOM.speed.value); // Базовая длительность фонемы
-                
-                const bitcrushAmt = parseInt(DOM.bit.value);
-                const delayAmt = parseInt(DOM.delay.value) / 100;
-
-                // 1. Парсинг и расчет длины оффлайн-буфера
-                let sequence = [];
-                let totalTime = 0;
-                
-                for (let i = 0; i < text.length; i++) {
-                    const char = text[i];
-                    let ph = PHONEMES[char];
-                    if (!ph) ph = PHONEMES[' ']; // Неизвестные символы как паузы
+                try {
+                    const sampleRate = 44100;
                     
-                    const dur = ph.d * baseDur;
-                    sequence.push({ char, ph, start: totalTime, dur: dur });
-                    totalTime += dur;
-                }
-                
-                renderDuration = totalTime + (delayAmt > 0 ? 1.0 : 0.2); // Хвост для дилея
-                
-                const oCtx = new OfflineAudioContext(1, sampleRate * renderDuration, sampleRate);
-                
-                // Master Channel
-                const masterGain = oCtx.createGain();
-                masterGain.gain.value = 0.8;
-                masterGain.connect(oCtx.destination);
-
-                // --- EFFECTS SETUP ---
-                // Delay
-                let delayInput = masterGain;
-                if (delayAmt > 0) {
-                    const delayNode = oCtx.createDelay(1.0);
-                    delayNode.delayTime.value = 0.3; // 300ms echo
-                    const delayFeedback = oCtx.createGain();
-                    delayFeedback.gain.value = delayAmt * 0.6; // Max 60% feedback
+                    const basePitch = (currentGender === 'female' ? 220 : 100) * parseFloat(DOM.pitch.value);
+                    const formMult = (currentGender === 'female' ? 1.2 : 1.0) * parseFloat(DOM.formant.value);
+                    const baseDur = 0.15 / parseFloat(DOM.speed.value); 
                     
-                    delayNode.connect(delayFeedback);
-                    delayFeedback.connect(delayNode);
-                    delayNode.connect(masterGain);
+                    const bitcrushAmt = parseInt(DOM.bit.value);
+                    const delayAmt = parseInt(DOM.delay.value) / 100;
+
+                    let sequence = [];
+                    let totalTime = 0;
                     
-                    delayInput = oCtx.createGain();
-                    delayInput.connect(masterGain);
-                    delayInput.connect(delayNode);
-                }
-
-                // Bitcrusher (WaveShaper)
-                let bitInput = delayInput;
-                if (bitcrushAmt > 0) {
-                    const shaper = oCtx.createWaveShaper();
-                    const bits = Math.max(2, 16 - (bitcrushAmt / 100 * 14)); // от 16 до 2 бит
-                    const step = Math.pow(0.5, bits);
-                    const curve = new Float32Array(sampleRate);
-                    for (let i = 0; i < sampleRate; i++) {
-                        let x = i * 2 / sampleRate - 1;
-                        curve[i] = Math.round(x / step) * step;
-                    }
-                    shaper.curve = curve;
-                    shaper.connect(delayInput);
-                    bitInput = shaper;
-                }
-
-                const synthBus = oCtx.createGain();
-                synthBus.connect(bitInput);
-
-                // --- GENERATORS ---
-                // 1. Noise Buffer (для шипящих и взрывных)
-                const noiseBuffer = oCtx.createBuffer(1, sampleRate * renderDuration, sampleRate);
-                const noiseData = noiseBuffer.getChannelData(0);
-                for(let i=0; i<noiseData.length; i++) noiseData[i] = Math.random()*2-1;
-                const noiseSource = oCtx.createBufferSource();
-                noiseSource.buffer = noiseBuffer;
-                noiseSource.loop = true;
-                noiseSource.start(0);
-
-                // 2. Pulse Oscillator (Голосовые связки)
-                // Используем Sawtooth как основу для робо-голоса
-                const pulseOsc = oCtx.createOscillator();
-                pulseOsc.type = 'sawtooth';
-                pulseOsc.frequency.value = basePitch;
-                pulseOsc.start(0);
-
-                // --- RENDER PHONEMES ---
-                sequence.forEach(item => {
-                    const { ph, start, dur } = item;
-                    const t = start;
-
-                    if (ph.t === 'v' || ph.t === 'vp') {
-                        // VOICED (Гласные / Сонорные)
-                        const f1 = oCtx.createBiquadFilter(); f1.type = 'bandpass'; f1.frequency.value = ph.f1 * formMult; f1.Q.value = 4;
-                        const f2 = oCtx.createBiquadFilter(); f2.type = 'bandpass'; f2.frequency.value = ph.f2 * formMult; f2.Q.value = 6;
-                        const f3 = oCtx.createBiquadFilter(); f3.type = 'bandpass'; f3.frequency.value = ph.f3 * formMult; f3.Q.value = 8;
+                    for (let i = 0; i < text.length; i++) {
+                        const char = text[i];
+                        let ph = PHONEMES[char];
+                        if (!ph) ph = PHONEMES[' ']; 
                         
-                        const env = oCtx.createGain();
-                        env.gain.setValueAtTime(0, t);
-                        env.gain.linearRampToValueAtTime(ph.a * 0.8, t + (dur * 0.2)); // Атака
-                        env.gain.setValueAtTime(ph.a * 0.8, t + (dur * 0.8)); // Удержание
-                        env.gain.linearRampToValueAtTime(0, t + dur); // Спад
-
-                        pulseOsc.connect(f1).connect(env);
-                        pulseOsc.connect(f2).connect(env);
-                        pulseOsc.connect(f3).connect(env);
-                        env.connect(synthBus);
+                        const dur = ph.d * baseDur;
+                        sequence.push({ char, ph, start: totalTime, dur: dur });
+                        totalTime += dur;
                     }
                     
-                    if (ph.t === 'n' || ph.t === 'p' || ph.t === 'vp') {
-                        // NOISE (Шипящие / Взрывные)
-                        const f = oCtx.createBiquadFilter(); 
-                        f.type = 'bandpass'; 
-                        f.frequency.value = ph.f || 3000; 
-                        f.Q.value = ph.q || 1;
+                    renderDuration = totalTime + (delayAmt > 0 ? 1.0 : 0.2); 
+                    
+                    // ВАЖНО: Округляем количество фреймов в большую сторону, иначе OfflineAudioContext упадет на дробных значениях
+                    const frames = Math.max(1, Math.ceil(sampleRate * renderDuration));
+                    const oCtx = new OfflineAudioContext(1, frames, sampleRate);
+                    
+                    // Master Channel
+                    const masterGain = oCtx.createGain();
+                    masterGain.gain.value = 0.8;
+                    masterGain.connect(oCtx.destination);
 
-                        const env = oCtx.createGain();
-                        env.gain.setValueAtTime(0, t);
+                    // --- EFFECTS SETUP ---
+                    let delayInput = masterGain;
+                    if (delayAmt > 0) {
+                        const delayNode = oCtx.createDelay(1.0);
+                        delayNode.delayTime.value = 0.3; 
+                        const delayFeedback = oCtx.createGain();
+                        delayFeedback.gain.value = delayAmt * 0.6; 
                         
-                        if (ph.t === 'p' || ph.t === 'vp') {
-                            // Взрывной (короткий щелчок)
-                            env.gain.linearRampToValueAtTime(ph.a, t + 0.01);
-                            env.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
-                        } else {
-                            // Шипящий (длительный)
-                            env.gain.linearRampToValueAtTime(ph.a, t + (dur * 0.2));
-                            env.gain.setValueAtTime(ph.a, t + (dur * 0.8));
-                            env.gain.linearRampToValueAtTime(0, t + dur);
+                        delayNode.connect(delayFeedback);
+                        delayFeedback.connect(delayNode);
+                        delayNode.connect(masterGain);
+                        
+                        delayInput = oCtx.createGain();
+                        delayInput.connect(masterGain);
+                        delayInput.connect(delayNode);
+                    }
+
+                    let bitInput = delayInput;
+                    if (bitcrushAmt > 0) {
+                        const shaper = oCtx.createWaveShaper();
+                        const bits = Math.max(2, 16 - (bitcrushAmt / 100 * 14)); 
+                        const step = Math.pow(0.5, bits);
+                        const curve = new Float32Array(sampleRate);
+                        for (let i = 0; i < sampleRate; i++) {
+                            let x = i * 2 / sampleRate - 1;
+                            curve[i] = Math.round(x / step) * step;
                         }
-
-                        noiseSource.connect(f).connect(env).connect(synthBus);
+                        shaper.curve = curve;
+                        shaper.connect(delayInput);
+                        bitInput = shaper;
                     }
-                });
 
-                // STOP GENERATORS
-                pulseOsc.stop(totalTime);
-                noiseSource.stop(totalTime);
+                    const synthBus = oCtx.createGain();
+                    synthBus.connect(bitInput);
 
-                // 3. Render
-                renderedBuffer = await oCtx.startRendering();
+                    // --- GENERATORS ---
+                    const noiseBuffer = oCtx.createBuffer(1, frames, sampleRate);
+                    const noiseData = noiseBuffer.getChannelData(0);
+                    for(let i=0; i<noiseData.length; i++) noiseData[i] = Math.random()*2-1;
+                    const noiseSource = oCtx.createBufferSource();
+                    noiseSource.buffer = noiseBuffer;
+                    noiseSource.loop = true;
+                    noiseSource.start(0);
 
-                // 4. Update UI & Play
-                DOM.btnGen.textContent = '⚡ ГЕНЕРИРОВАТЬ И ИГРАТЬ';
-                DOM.btnGen.style.pointerEvents = 'auto';
-                
-                DOM.btnExport.disabled = false;
-                DOM.btnExport.style.opacity = '1';
-                DOM.btnExport.style.cursor = 'pointer';
+                    const pulseOsc = oCtx.createOscillator();
+                    pulseOsc.type = 'sawtooth';
+                    pulseOsc.frequency.value = basePitch;
+                    pulseOsc.start(0);
 
-                drawWaveform(renderedBuffer);
-                playRenderedAudio(sequence);
+                    // --- RENDER PHONEMES ---
+                    sequence.forEach(item => {
+                        const { ph, start, dur } = item;
+                        const t = start;
+
+                        if (ph.t === 'v' || ph.t === 'vp') {
+                            const f1 = oCtx.createBiquadFilter(); f1.type = 'bandpass'; f1.frequency.value = ph.f1 * formMult; f1.Q.value = 4;
+                            const f2 = oCtx.createBiquadFilter(); f2.type = 'bandpass'; f2.frequency.value = ph.f2 * formMult; f2.Q.value = 6;
+                            const f3 = oCtx.createBiquadFilter(); f3.type = 'bandpass'; f3.frequency.value = ph.f3 * formMult; f3.Q.value = 8;
+                            
+                            const env = oCtx.createGain();
+                            env.gain.setValueAtTime(0, t);
+                            env.gain.linearRampToValueAtTime(ph.a * 0.8, t + (dur * 0.2)); 
+                            env.gain.setValueAtTime(ph.a * 0.8, t + (dur * 0.8)); 
+                            env.gain.linearRampToValueAtTime(0, t + dur); 
+
+                            pulseOsc.connect(f1).connect(env);
+                            pulseOsc.connect(f2).connect(env);
+                            pulseOsc.connect(f3).connect(env);
+                            env.connect(synthBus);
+                        }
+                        
+                        if (ph.t === 'n' || ph.t === 'p' || ph.t === 'vp') {
+                            const f = oCtx.createBiquadFilter(); 
+                            f.type = 'bandpass'; 
+                            f.frequency.value = ph.f || 3000; 
+                            f.Q.value = ph.q || 1;
+
+                            const env = oCtx.createGain();
+                            env.gain.setValueAtTime(0, t);
+                            
+                            if (ph.t === 'p' || ph.t === 'vp') {
+                                env.gain.linearRampToValueAtTime(ph.a, t + 0.01);
+                                env.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+                            } else {
+                                env.gain.linearRampToValueAtTime(ph.a, t + (dur * 0.2));
+                                env.gain.setValueAtTime(ph.a, t + (dur * 0.8));
+                                env.gain.linearRampToValueAtTime(0, t + dur);
+                            }
+
+                            noiseSource.connect(f).connect(env).connect(synthBus);
+                        }
+                    });
+
+                    pulseOsc.stop(totalTime);
+                    noiseSource.stop(totalTime);
+
+                    // Рендерим аудио
+                    renderedBuffer = await oCtx.startRendering();
+
+                    // Восстанавливаем UI
+                    DOM.btnGen.textContent = '⚡ ГЕНЕРИРОВАТЬ И ИГРАТЬ';
+                    DOM.btnGen.style.pointerEvents = 'auto';
+                    
+                    DOM.btnExport.disabled = false;
+                    DOM.btnExport.style.opacity = '1';
+                    DOM.btnExport.style.cursor = 'pointer';
+
+                    drawWaveform(renderedBuffer);
+                    playRenderedAudio(sequence);
+
+                } catch (error) {
+                    console.error("Audio Render Error:", error);
+                    DOM.btnGen.textContent = 'ОШИБКА! Попробуйте другой темп.';
+                    DOM.btnGen.style.borderColor = 'var(--danger-color)';
+                    DOM.btnGen.style.color = 'var(--danger-color)';
+                    setTimeout(() => {
+                        DOM.btnGen.textContent = '⚡ ГЕНЕРИРОВАТЬ И ИГРАТЬ';
+                        DOM.btnGen.style.pointerEvents = 'auto';
+                        DOM.btnGen.style.borderColor = 'var(--active-color)';
+                        DOM.btnGen.style.color = 'var(--active-color)';
+                    }, 2500);
+                }
             };
 
             const playRenderedAudio = (sequence) => {
@@ -475,8 +478,9 @@
                 const startTime = realAudioCtx.currentTime;
                 playbackSource.start(startTime);
 
-                // Анимация текста (караоке)
+                // Караоке
                 const animateText = () => {
+                    if (!playbackSource) return;
                     const now = realAudioCtx.currentTime - startTime;
                     if (now > renderDuration) {
                         DOM.phonemeDisp.textContent = '...';
@@ -484,7 +488,6 @@
                         return;
                     }
 
-                    // Найти текущую фонему
                     const currentItem = sequence.find(item => now >= item.start && now < item.start + item.dur);
                     if (currentItem) {
                         DOM.phonemeDisp.textContent = currentItem.char === ' ' ? '_' : currentItem.char;
@@ -500,7 +503,7 @@
             const encodeWAV = (buffer) => {
                 const numChannels = buffer.numberOfChannels;
                 const sampleRate = buffer.sampleRate;
-                const format = 1; // PCM
+                const format = 1; 
                 const bitDepth = 16;
                 
                 const result = new Float32Array(buffer.length * numChannels);
@@ -539,7 +542,6 @@
                 return new Blob([view], { type: 'audio/wav' });
             };
 
-            // --- WAVEFORM DRAW ---
             const drawWaveform = (buffer) => {
                 const resizeCanvas = () => { DOM.canvas.width = DOM.canvas.parentElement.clientWidth; DOM.canvas.height = DOM.canvas.parentElement.clientHeight; };
                 resizeCanvas();
@@ -583,5 +585,6 @@
 
         })();
     </script>
+
 </body>
 </html>
