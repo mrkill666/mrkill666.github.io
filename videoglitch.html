@@ -9,6 +9,7 @@
     
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
 
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
@@ -101,7 +102,8 @@
 
         #video-hidden { display: none; }
 
-        .ai-status { font-size: 10px; font-weight: 900; color: #00aaff; text-transform: uppercase; letter-spacing: 0.1em; text-align: center; margin-top: 0.5rem; }
+        /* Оранжевый статус */
+        .ai-status { font-size: 10px; font-weight: 900; color: #f97316; text-transform: uppercase; letter-spacing: 0.1em; text-align: center; margin-top: 0.5rem; transition: color 0.3s;}
     </style>
 </head>
 <body class="noise">
@@ -128,7 +130,7 @@
             <div class="header-section">
                 <div class="subtitle">Visual Lab / Деструкция</div>
                 <h1 class="title">Glitch & AI Lab</h1>
-                <p class="text-xs text-gray-500 mt-2 max-w-xl font-medium">Модуль видеоискажений с нейросетевым трекингом. Графы и квадраты распознавания рисуются под слоем VHS, позволяя визуально разрушать интерфейс системы.</p>
+                <p class="text-xs text-gray-500 mt-2 max-w-xl font-medium">Модуль видеоискажений. Графы, рэгдолл-скелеты и квадраты распознавания рисуются под слоем VHS, позволяя визуально разрушать интерфейс системы.</p>
             </div>
 
             <div class="editor-grid">
@@ -141,30 +143,34 @@
                         <input type="file" id="file-input" accept="video/*" class="hidden">
                     </div>
 
-                    <div class="ai-status" id="ai-status">Нейросеть (AI): Ожидание...</div>
+                    <div class="ai-status" id="ai-status">Нейросеть: Ожидание...</div>
 
                     <div class="h-[1px] w-full bg-white/10 my-1"></div>
 
-                    <div class="subtitle text-[#00aaff]">Системы Слежения (HUD)</div>
+                    <div class="subtitle text-[#f97316]">Системы Слежения (HUD)</div>
                     <div class="flex flex-col gap-3 mt-2">
                         <label class="toggle-row">
-                            <span>Трекинг Людей (Квадраты)</span>
+                            <span>Объекты (Квадраты)</span>
                             <div class="switch"><input type="checkbox" id="ai-boxes" checked><span class="slider"></span></div>
                         </label>
                         <label class="toggle-row">
-                            <span>Объекты и Аномалии (Графы)</span>
+                            <span>Люди (Каркас / Ragdoll)</span>
+                            <div class="switch"><input type="checkbox" id="ai-skeleton" checked><span class="slider"></span></div>
+                        </label>
+                        <label class="toggle-row">
+                            <span>Связи (Графы / Аномалии)</span>
                             <div class="switch"><input type="checkbox" id="ai-graphs" checked><span class="slider"></span></div>
                         </label>
                         
                         <div class="control-group mt-2">
                             <div class="control-label">Цвет HUD интерфейса</div>
-                            <input type="color" id="ctrl-color" value="#00aaff">
+                            <input type="color" id="ctrl-color" value="#f97316">
                         </div>
                     </div>
 
                     <div class="h-[1px] w-full bg-white/10 my-1"></div>
 
-                    <div class="subtitle text-[#f97316]">Искажения (Glitch)</div>
+                    <div class="subtitle text-white">Искажения (Glitch)</div>
                     
                     <div class="control-group mt-2">
                         <div class="control-label"><span>Общее Искажение</span><span class="control-val" id="val-master">30%</span></div>
@@ -193,7 +199,7 @@
                 </div>
 
                 <div class="viewport">
-                    <video id="video-hidden" loop muted playsinline crossorigin="anonymous"></video>
+                    <video id="video-hidden" loop muted playsinline></video>
                     <canvas id="glitch-canvas"></canvas>
                 </div>
 
@@ -226,6 +232,7 @@
                 lines: document.getElementById('fx-lines'),
                 
                 aiBoxes: document.getElementById('ai-boxes'),
+                aiSkeleton: document.getElementById('ai-skeleton'),
                 aiGraphs: document.getElementById('ai-graphs'),
                 hudColor: document.getElementById('ctrl-color'),
                 status: document.getElementById('ai-status'),
@@ -237,39 +244,57 @@
             let isWebcam = false;
             
             // AI Variables
-            let model = null;
-            let predictions = [];
-            let anomalies = []; // Фейковые точки для крутости графов
+            let objectModel = null;
+            let poseModel = null;
+            let objectPredictions = [];
+            let poses = [];
+            let anomalies = []; 
+
+            // Структура связей скелета (Рэгдолл)
+            const SKELETON_EDGES = [
+                ['nose', 'left_eye'], ['left_eye', 'left_ear'], ['nose', 'right_eye'], ['right_eye', 'right_ear'],
+                ['left_shoulder', 'right_shoulder'], ['left_shoulder', 'left_elbow'], ['left_elbow', 'left_wrist'],
+                ['right_shoulder', 'right_elbow'], ['right_elbow', 'right_wrist'],
+                ['left_shoulder', 'left_hip'], ['right_shoulder', 'right_hip'], ['left_hip', 'right_hip'],
+                ['left_hip', 'left_knee'], ['left_knee', 'left_ankle'],
+                ['right_hip', 'right_knee'], ['right_knee', 'right_ankle']
+            ];
 
             // Инициализация Canvas
             const resize = () => {
-                // Стандартное 720p для хорошего перфоманса эффектов
                 canvas.width = 1280;
                 canvas.height = 720;
             };
             resize();
 
-            // Интерфейс
             DOM.master.oninput = (e) => DOM.valMaster.textContent = e.target.value + '%';
 
-            // Загрузка Нейросети
+            // Загрузка Нейросетей (Обе модели)
             const initAI = async () => {
                 try {
-                    DOM.status.textContent = 'Нейросеть: Загрузка модели...';
-                    DOM.status.style.color = '#f97316';
-                    model = await cocoSsd.load();
+                    DOM.status.textContent = 'Нейросеть: Загрузка моделей...';
+                    DOM.status.style.color = 'gray';
+                    
+                    // Coco-SSD для квадратов
+                    objectModel = await cocoSsd.load();
+                    
+                    // MoveNet для скелета
+                    const poseConfig = { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING };
+                    poseModel = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, poseConfig);
+                    
                     DOM.status.textContent = 'Нейросеть: АКТИВНА';
-                    DOM.status.style.color = '#00aaff';
-                    detectLoop(); // Запуск асинхронного цикла детекции
+                    DOM.status.style.color = '#ffffff';
+                    
+                    detectLoop(); // Старт трекинга
                 } catch (err) {
                     DOM.status.textContent = 'Нейросеть: Ошибка загрузки';
                     DOM.status.style.color = '#ff3333';
-                    console.error("AI Error:", err);
+                    console.error("AI Init Error:", err);
                 }
             };
             initAI();
 
-            // Источники видео
+            // Источники
             DOM.btnWebcam.onclick = async () => {
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } });
@@ -289,19 +314,20 @@
                 }
             };
 
-            // Асинхронный цикл распознавания (работает независимо от FPS отрисовки)
+            // Асинхронный цикл распознавания
             const detectLoop = async () => {
-                if (model && video.readyState >= 2 && !video.paused) {
-                    predictions = await model.detect(video);
-                    
-                    // Обновляем аномалии для графов
-                    updateAnomalies();
+                if (video.readyState >= 2 && !video.paused && video.videoWidth > 0) {
+                    try {
+                        if (objectModel) objectPredictions = await objectModel.detect(video);
+                        if (poseModel) poses = await poseModel.estimatePoses(video);
+                        updateAnomalies();
+                    } catch (e) {
+                        // Игнорируем ошибки сканирования конкретного кадра
+                    }
                 }
-                // Небольшой таймаут, чтобы не сжигать CPU
-                setTimeout(detectLoop, 100); 
+                setTimeout(detectLoop, 60); // ~15 FPS для AI, чтобы не тормозить глитч
             };
 
-            // Генерация блуждающих точек (если реальных объектов мало)
             const updateAnomalies = () => {
                 if (anomalies.length < 5) {
                     anomalies.push({
@@ -316,73 +342,104 @@
                 });
             };
 
-            // Отрисовка HUD (Под слоем глитча)
+            // Отрисовка HUD с пересчетом масштаба видео
             const drawHUD = (w, h) => {
+                const vw = video.videoWidth;
+                const vh = video.videoHeight;
+                if (!vw || !vh) return;
+
+                const scaleX = w / vw;
+                const scaleY = h / vh;
+                
                 const color = DOM.hudColor.value;
                 ctx.strokeStyle = color;
                 ctx.fillStyle = color;
                 ctx.lineWidth = 2;
                 ctx.font = "900 14px monospace";
 
-                // Списки центров для графов
                 let points = [];
 
-                predictions.forEach(pred => {
-                    const [x, y, width, height] = pred.bbox;
-                    // Адаптация координат (если видео не на весь канвас, но у нас object-fit: contain эмулируется через drawImage)
-                    // Для простоты считаем, что drawImage растягивает видео на весь canvas
-                    
-                    const cx = x + width/2;
-                    const cy = y + height/2;
+                // 1. Coco-SSD (Квадраты / Bounding Boxes)
+                if (DOM.aiBoxes.checked) {
+                    objectPredictions.forEach(pred => {
+                        const [origX, origY, origW, origH] = pred.bbox;
+                        const x = origX * scaleX;
+                        const y = origY * scaleY;
+                        const width = origW * scaleX;
+                        const height = origH * scaleY;
+                        
+                        const cx = x + width/2;
+                        const cy = y + height/2;
+                        points.push({x: cx, y: cy});
 
-                    if (pred.class === 'person' && DOM.aiBoxes.checked) {
-                        // Рисуем Sci-Fi углы вместо скучного квадрата
+                        // Квадрат вокруг объекта
                         const len = 20;
                         ctx.beginPath();
-                        // Top Left
                         ctx.moveTo(x, y + len); ctx.lineTo(x, y); ctx.lineTo(x + len, y);
-                        // Top Right
                         ctx.moveTo(x + width - len, y); ctx.lineTo(x + width, y); ctx.lineTo(x + width, y + len);
-                        // Bottom Left
                         ctx.moveTo(x, y + height - len); ctx.lineTo(x, y + height); ctx.lineTo(x + len, y + height);
-                        // Bottom Right
                         ctx.moveTo(x + width - len, y + height); ctx.lineTo(x + width, y + height); ctx.lineTo(x + width, y + height - len);
                         ctx.stroke();
 
-                        // Текст
-                        ctx.fillText(`[SUBJECT: ${Math.round(pred.score * 100)}%]`, x, y - 5);
-                    }
+                        ctx.fillText(`[OBJ: ${pred.class.toUpperCase()} ${Math.round(pred.score * 100)}%]`, x, y - 5);
+                    });
+                }
 
-                    if (DOM.aiGraphs.checked) {
-                        points.push({x: cx, y: cy});
-                        // Crosshair на объекте
+                // 2. MoveNet (Рэгдолл / Скелет)
+                if (DOM.aiSkeleton.checked) {
+                    poses.forEach(pose => {
+                        const keypoints = pose.keypoints;
+                        const kpMap = {};
+                        
+                        // Рисуем суставы
+                        keypoints.forEach(kp => {
+                            if (kp.score > 0.3) {
+                                const x = kp.x * scaleX;
+                                const y = kp.y * scaleY;
+                                kpMap[kp.name] = { x, y };
+                                
+                                ctx.beginPath();
+                                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                                ctx.fill();
+                            }
+                        });
+
+                        // Соединяем кости
                         ctx.beginPath();
-                        ctx.arc(cx, cy, 15, 0, Math.PI * 2);
+                        SKELETON_EDGES.forEach(([joint1, joint2]) => {
+                            const p1 = kpMap[joint1];
+                            const p2 = kpMap[joint2];
+                            if (p1 && p2) {
+                                ctx.moveTo(p1.x, p1.y);
+                                ctx.lineTo(p2.x, p2.y);
+                            }
+                        });
                         ctx.stroke();
-                        ctx.beginPath(); ctx.moveTo(cx - 20, cy); ctx.lineTo(cx + 20, cy); ctx.stroke();
-                        ctx.beginPath(); ctx.moveTo(cx, cy - 20); ctx.lineTo(cx, cy + 20); ctx.stroke();
-                        if (pred.class !== 'person') {
-                            ctx.fillText(`OBJ_${pred.class.toUpperCase()}`, cx + 20, cy - 20);
+                        
+                        // Добавляем центр человека в точки для графов
+                        if(kpMap['left_hip'] && kpMap['right_shoulder']) {
+                            points.push({
+                                x: (kpMap['left_hip'].x + kpMap['right_shoulder'].x) / 2,
+                                y: (kpMap['left_hip'].y + kpMap['right_shoulder'].y) / 2
+                            });
                         }
-                    }
-                });
+                    });
+                }
 
-                // Рисуем Графы
+                // 3. Аномалии и Графы
                 if (DOM.aiGraphs.checked) {
-                    // Добавляем аномалии к точкам графа
                     anomalies.forEach(a => {
                         points.push({x: a.x, y: a.y});
                         ctx.beginPath(); ctx.arc(a.x, a.y, 3, 0, Math.PI*2); ctx.fill();
                         ctx.fillText(`ANMLY`, a.x + 5, a.y - 5);
                     });
 
-                    // Соединяем все точки сетью
                     ctx.lineWidth = 1;
                     ctx.globalAlpha = 0.4;
                     for (let i = 0; i < points.length; i++) {
                         for (let j = i + 1; j < points.length; j++) {
                             const d = Math.hypot(points[i].x - points[j].x, points[i].y - points[j].y);
-                            if (d < 400) { // Максимальная длина связи
+                            if (d < 400) { 
                                 ctx.beginPath();
                                 ctx.moveTo(points[i].x, points[i].y);
                                 ctx.lineTo(points[j].x, points[j].y);
@@ -399,7 +456,7 @@
             
             function draw() {
                 requestAnimationFrame(draw);
-                if (video.paused || video.ended) return;
+                if (video.paused || video.ended || video.videoWidth === 0) return;
 
                 const master = DOM.master.value / 100;
                 const w = canvas.width;
@@ -408,23 +465,22 @@
                 // 1. Отрисовка базового видео
                 ctx.drawImage(video, 0, 0, w, h);
 
-                // 2. Отрисовка AI HUD (Трекинг и Графы ложатся ПОД глитч)
+                // 2. Отрисовка AI HUD
                 drawHUD(w, h);
 
                 // 3. ПРИМЕНЕНИЕ ГЛИТЧЕЙ
                 
-                // RGB Shift / VHS Jitter
+                // RGB Shift / VHS
                 if (DOM.rgb.checked && Math.random() < master) {
                     const offset = (Math.random() * 20 * master);
                     const imageData = ctx.getImageData(0, 0, w, h);
                     const data = imageData.data;
 
                     for (let i = 0; i < data.length; i += 4) {
-                        data[i] = data[i + Math.floor(offset * 4)] || data[i]; // Сдвиг красного
+                        data[i] = data[i + Math.floor(offset * 4)] || data[i]; 
                     }
                     ctx.putImageData(imageData, 0, 0);
                     
-                    // Горизонтальный сдвиг строк (Jitter)
                     for(let i=0; i<10 * master; i++) {
                         let sy = Math.random() * h;
                         let sh = Math.random() * 20;
@@ -432,17 +488,16 @@
                     }
                 }
 
-                // Block Artifacts (Ломает куски изображения вместе с HUD)
+                // Block Artifacts 
                 if (DOM.blocks.checked && Math.random() < master * 0.5) {
                     for (let i = 0; i < 5 * master; i++) {
                         const bx = Math.random() * w;
                         const by = Math.random() * h;
                         const bw = Math.random() * 200 * master;
                         const bh = Math.random() * 50 * master;
-                        // Копируем кусок и сдвигаем
+                        
                         ctx.drawImage(canvas, bx, by, bw, bh, bx + (Math.random()-0.5)*100, by, bw, bh);
                         
-                        // Добавляем цветной квадрат
                         if(Math.random() > 0.8) {
                             ctx.fillStyle = `rgba(249, 115, 22, ${0.2 * master})`;
                             ctx.fillRect(bx, by, bw, bh);
@@ -450,17 +505,17 @@
                     }
                 }
 
-                // Data Symbols (Ошибки в коде)
+                // Data Symbols
                 if (DOM.text.checked && Math.random() < master) {
                     ctx.font = "900 14px monospace";
-                    ctx.fillStyle = DOM.hudColor.value; // Используем цвет HUD для системных ошибок
+                    ctx.fillStyle = DOM.hudColor.value; 
                     for(let i=0; i<3 * master; i++) {
                         const txt = Array(5).fill(0).map(() => symbols[Math.floor(Math.random()*symbols.length)]).join("");
                         ctx.fillText(txt, Math.random() * w, Math.random() * h);
                     }
                 }
 
-                // Scanlines (Статика телевизора)
+                // Scanlines
                 if (DOM.lines.checked) {
                     ctx.fillStyle = "rgba(0,0,0,0.15)";
                     for (let i = 0; i < h; i += 4) {
@@ -468,14 +523,13 @@
                     }
                 }
 
-                // Финальный "белый шум"
+                // Шум
                 if (Math.random() < master * 0.1) {
                     ctx.fillStyle = `rgba(255,255,255,${0.05 * master})`;
                     ctx.fillRect(0, 0, w, h);
                 }
             }
 
-            // Старт пустого цикла отрисовки
             draw();
 
         })();
