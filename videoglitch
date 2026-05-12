@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glitch & AI Lab | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="theme-color" content="#ffffff">
+
+    <style>
+        :root {
+            --bg-color: #050505; --card-bg: #111111; --accent-color: #ffffff;
+            --border-light: rgba(255, 255, 255, 0.1); --control-bg: #1a1a1a;
+            --active-color: #f97316; --danger-color: #ff3333; --font-main: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        a { color: inherit; text-decoration: none; }
+
+        body {
+            background-color: var(--bg-color); color: var(--accent-color); font-family: var(--font-main);
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            padding: 6rem 2rem 2rem 2rem; overflow-x: hidden; position: relative;
+        }
+
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.05; pointer-events: none; z-index: 9999;
+        }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+            display: flex; justify-content: center; align-items: center; z-index: 10001;
+            transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+        .knife-svg-main { width: 120px; height: 120px; fill: none; stroke: white; stroke-width: 1.2; animation: rotate-knife 1.5s linear infinite; }
+        @keyframes rotate-knife { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loaded #loader { transform: translateY(-100%); }
+
+        .app-container {
+            background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 24px;
+            padding: 2rem; width: 100%; max-width: 1200px; position: relative; z-index: 10;
+            display: flex; flex-direction: column; gap: 2rem; backdrop-filter: blur(10px);
+        }
+
+        .subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: gray; font-weight: 700; margin-bottom: 0.5rem; }
+        .title { font-size: 2rem; font-weight: 900; text-transform: uppercase; line-height: 1.1; letter-spacing: -0.02em; }
+
+        .editor-grid { display: grid; grid-template-columns: 320px 1fr; gap: 2rem; }
+        @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
+
+        .control-panel { background: rgba(5,5,5,0.8); border: 1px solid var(--border-light); border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; height: fit-content; }
+
+        .btn {
+            background: var(--control-bg); color: var(--accent-color); border: 1px solid var(--border-light);
+            border-radius: 8px; padding: 0.75rem 1rem; font-size: 12px; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.3s ease;
+            text-align: center; width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem;
+        }
+        .btn:hover { background: var(--accent-color); color: #000; }
+        .btn.active { background: var(--active-color); color: #000; border-color: var(--active-color); }
+        
+        .viewport {
+            width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 16px; border: 1px solid var(--border-light);
+            position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center;
+        }
+        canvas { width: 100%; height: 100%; object-fit: contain; }
+
+        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .control-label { display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; font-weight: 900; color: gray; }
+        .control-val { color: var(--active-color); font-family: monospace; }
+        
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--active-color); cursor: pointer; margin-top: -6px; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #333; border-radius: 2px; }
+
+        input[type=color] {
+            -webkit-appearance: none; border: none; width: 100%; height: 32px; border-radius: 8px; cursor: pointer; background: transparent;
+        }
+        input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type=color]::-webkit-color-swatch { border: 1px solid var(--border-light); border-radius: 8px; }
+
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+        .switch { position: relative; display: inline-block; width: 34px; height: 18px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 18px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--active-color); }
+        input:checked + .slider:before { transform: translateX(16px); }
+
+        #video-hidden { display: none; }
+
+        .ai-status { font-size: 10px; font-weight: 900; color: #00aaff; text-transform: uppercase; letter-spacing: 0.1em; text-align: center; margin-top: 0.5rem; }
+    </style>
+</head>
+<body class="noise">
+
+    <div id="loader">
+        <svg class="knife-svg-main" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
+    </div>
+
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">Владислав Ножиков</a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="index#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="mujiclab" class="hover:opacity-50 transition">Мuжiclab</a>
+        </div>
+    </nav>
+
+    <main class="w-full flex justify-center relative z-10">
+        <div class="app-container">
+            
+            <div class="header-section">
+                <div class="subtitle">Visual Lab / Деструкция</div>
+                <h1 class="title">Glitch & AI Lab</h1>
+                <p class="text-xs text-gray-500 mt-2 max-w-xl font-medium">Модуль видеоискажений с нейросетевым трекингом. Графы и квадраты распознавания рисуются под слоем VHS, позволяя визуально разрушать интерфейс системы.</p>
+            </div>
+
+            <div class="editor-grid">
+                
+                <div class="control-panel">
+                    
+                    <div class="flex flex-col gap-2">
+                        <button class="btn" id="btn-webcam">📷 Веб-камера</button>
+                        <button class="btn" onclick="document.getElementById('file-input').click()">📁 Загрузить Видео</button>
+                        <input type="file" id="file-input" accept="video/*" class="hidden">
+                    </div>
+
+                    <div class="ai-status" id="ai-status">Нейросеть (AI): Ожидание...</div>
+
+                    <div class="h-[1px] w-full bg-white/10 my-1"></div>
+
+                    <div class="subtitle text-[#00aaff]">Системы Слежения (HUD)</div>
+                    <div class="flex flex-col gap-3 mt-2">
+                        <label class="toggle-row">
+                            <span>Трекинг Людей (Квадраты)</span>
+                            <div class="switch"><input type="checkbox" id="ai-boxes" checked><span class="slider"></span></div>
+                        </label>
+                        <label class="toggle-row">
+                            <span>Объекты и Аномалии (Графы)</span>
+                            <div class="switch"><input type="checkbox" id="ai-graphs" checked><span class="slider"></span></div>
+                        </label>
+                        
+                        <div class="control-group mt-2">
+                            <div class="control-label">Цвет HUD интерфейса</div>
+                            <input type="color" id="ctrl-color" value="#00aaff">
+                        </div>
+                    </div>
+
+                    <div class="h-[1px] w-full bg-white/10 my-1"></div>
+
+                    <div class="subtitle text-[#f97316]">Искажения (Glitch)</div>
+                    
+                    <div class="control-group mt-2">
+                        <div class="control-label"><span>Общее Искажение</span><span class="control-val" id="val-master">30%</span></div>
+                        <input type="range" id="ctrl-master" min="0" max="100" value="30">
+                    </div>
+
+                    <div class="flex flex-col gap-3 mt-4">
+                        <label class="toggle-row">
+                            <span>RGB Shift / VHS</span>
+                            <div class="switch"><input type="checkbox" id="fx-rgb" checked><span class="slider"></span></div>
+                        </label>
+                        <label class="toggle-row">
+                            <span>Block Артефакты</span>
+                            <div class="switch"><input type="checkbox" id="fx-blocks" checked><span class="slider"></span></div>
+                        </label>
+                        <label class="toggle-row">
+                            <span>Data Symbols</span>
+                            <div class="switch"><input type="checkbox" id="fx-text" checked><span class="slider"></span></div>
+                        </label>
+                        <label class="toggle-row">
+                            <span>Scanlines</span>
+                            <div class="switch"><input type="checkbox" id="fx-lines" checked><span class="slider"></span></div>
+                        </label>
+                    </div>
+
+                </div>
+
+                <div class="viewport">
+                    <video id="video-hidden" loop muted playsinline crossorigin="anonymous"></video>
+                    <canvas id="glitch-canvas"></canvas>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-12 pt-8 border-t border-white/10 flex flex-col items-center text-center gap-4 relative z-10 w-full max-w-[1200px]">
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">© <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ</p>        
+            <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">Политика конфиденциальности</a>
+        </div>
+    </footer>
+
+    <script>
+        window.onload = () => { setTimeout(() => { document.body.classList.add('loaded'); }, 500); };
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        const GlitchLab = (() => {
+            const video = document.getElementById('video-hidden');
+            const canvas = document.getElementById('glitch-canvas');
+            const ctx = canvas.getContext('2d', { alpha: false });
+            
+            const DOM = {
+                master: document.getElementById('ctrl-master'),
+                valMaster: document.getElementById('val-master'),
+                rgb: document.getElementById('fx-rgb'),
+                blocks: document.getElementById('fx-blocks'),
+                text: document.getElementById('fx-text'),
+                lines: document.getElementById('fx-lines'),
+                
+                aiBoxes: document.getElementById('ai-boxes'),
+                aiGraphs: document.getElementById('ai-graphs'),
+                hudColor: document.getElementById('ctrl-color'),
+                status: document.getElementById('ai-status'),
+                
+                btnWebcam: document.getElementById('btn-webcam'),
+                fileInput: document.getElementById('file-input')
+            };
+
+            let isWebcam = false;
+            
+            // AI Variables
+            let model = null;
+            let predictions = [];
+            let anomalies = []; // Фейковые точки для крутости графов
+
+            // Инициализация Canvas
+            const resize = () => {
+                // Стандартное 720p для хорошего перфоманса эффектов
+                canvas.width = 1280;
+                canvas.height = 720;
+            };
+            resize();
+
+            // Интерфейс
+            DOM.master.oninput = (e) => DOM.valMaster.textContent = e.target.value + '%';
+
+            // Загрузка Нейросети
+            const initAI = async () => {
+                try {
+                    DOM.status.textContent = 'Нейросеть: Загрузка модели...';
+                    DOM.status.style.color = '#f97316';
+                    model = await cocoSsd.load();
+                    DOM.status.textContent = 'Нейросеть: АКТИВНА';
+                    DOM.status.style.color = '#00aaff';
+                    detectLoop(); // Запуск асинхронного цикла детекции
+                } catch (err) {
+                    DOM.status.textContent = 'Нейросеть: Ошибка загрузки';
+                    DOM.status.style.color = '#ff3333';
+                    console.error("AI Error:", err);
+                }
+            };
+            initAI();
+
+            // Источники видео
+            DOM.btnWebcam.onclick = async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } });
+                    video.srcObject = stream;
+                    video.play();
+                    isWebcam = true;
+                } catch (e) { alert("Камера недоступна"); }
+            };
+
+            DOM.fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    video.srcObject = null;
+                    video.src = URL.createObjectURL(file);
+                    video.play();
+                    isWebcam = false;
+                }
+            };
+
+            // Асинхронный цикл распознавания (работает независимо от FPS отрисовки)
+            const detectLoop = async () => {
+                if (model && video.readyState >= 2 && !video.paused) {
+                    predictions = await model.detect(video);
+                    
+                    // Обновляем аномалии для графов
+                    updateAnomalies();
+                }
+                // Небольшой таймаут, чтобы не сжигать CPU
+                setTimeout(detectLoop, 100); 
+            };
+
+            // Генерация блуждающих точек (если реальных объектов мало)
+            const updateAnomalies = () => {
+                if (anomalies.length < 5) {
+                    anomalies.push({
+                        x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+                        vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5
+                    });
+                }
+                anomalies.forEach(a => {
+                    a.x += a.vx; a.y += a.vy;
+                    if(a.x < 0 || a.x > canvas.width) a.vx *= -1;
+                    if(a.y < 0 || a.y > canvas.height) a.vy *= -1;
+                });
+            };
+
+            // Отрисовка HUD (Под слоем глитча)
+            const drawHUD = (w, h) => {
+                const color = DOM.hudColor.value;
+                ctx.strokeStyle = color;
+                ctx.fillStyle = color;
+                ctx.lineWidth = 2;
+                ctx.font = "900 14px monospace";
+
+                // Списки центров для графов
+                let points = [];
+
+                predictions.forEach(pred => {
+                    const [x, y, width, height] = pred.bbox;
+                    // Адаптация координат (если видео не на весь канвас, но у нас object-fit: contain эмулируется через drawImage)
+                    // Для простоты считаем, что drawImage растягивает видео на весь canvas
+                    
+                    const cx = x + width/2;
+                    const cy = y + height/2;
+
+                    if (pred.class === 'person' && DOM.aiBoxes.checked) {
+                        // Рисуем Sci-Fi углы вместо скучного квадрата
+                        const len = 20;
+                        ctx.beginPath();
+                        // Top Left
+                        ctx.moveTo(x, y + len); ctx.lineTo(x, y); ctx.lineTo(x + len, y);
+                        // Top Right
+                        ctx.moveTo(x + width - len, y); ctx.lineTo(x + width, y); ctx.lineTo(x + width, y + len);
+                        // Bottom Left
+                        ctx.moveTo(x, y + height - len); ctx.lineTo(x, y + height); ctx.lineTo(x + len, y + height);
+                        // Bottom Right
+                        ctx.moveTo(x + width - len, y + height); ctx.lineTo(x + width, y + height); ctx.lineTo(x + width, y + height - len);
+                        ctx.stroke();
+
+                        // Текст
+                        ctx.fillText(`[SUBJECT: ${Math.round(pred.score * 100)}%]`, x, y - 5);
+                    }
+
+                    if (DOM.aiGraphs.checked) {
+                        points.push({x: cx, y: cy});
+                        // Crosshair на объекте
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, 15, 0, Math.PI * 2);
+                        ctx.stroke();
+                        ctx.beginPath(); ctx.moveTo(cx - 20, cy); ctx.lineTo(cx + 20, cy); ctx.stroke();
+                        ctx.beginPath(); ctx.moveTo(cx, cy - 20); ctx.lineTo(cx, cy + 20); ctx.stroke();
+                        if (pred.class !== 'person') {
+                            ctx.fillText(`OBJ_${pred.class.toUpperCase()}`, cx + 20, cy - 20);
+                        }
+                    }
+                });
+
+                // Рисуем Графы
+                if (DOM.aiGraphs.checked) {
+                    // Добавляем аномалии к точкам графа
+                    anomalies.forEach(a => {
+                        points.push({x: a.x, y: a.y});
+                        ctx.beginPath(); ctx.arc(a.x, a.y, 3, 0, Math.PI*2); ctx.fill();
+                        ctx.fillText(`ANMLY`, a.x + 5, a.y - 5);
+                    });
+
+                    // Соединяем все точки сетью
+                    ctx.lineWidth = 1;
+                    ctx.globalAlpha = 0.4;
+                    for (let i = 0; i < points.length; i++) {
+                        for (let j = i + 1; j < points.length; j++) {
+                            const d = Math.hypot(points[i].x - points[j].x, points[i].y - points[j].y);
+                            if (d < 400) { // Максимальная длина связи
+                                ctx.beginPath();
+                                ctx.moveTo(points[i].x, points[i].y);
+                                ctx.lineTo(points[j].x, points[j].y);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                    ctx.globalAlpha = 1.0;
+                }
+            };
+
+            // Главный цикл отрисовки и Глитча
+            const symbols = "010101XY#%&@$+-/=<>?!";
+            
+            function draw() {
+                requestAnimationFrame(draw);
+                if (video.paused || video.ended) return;
+
+                const master = DOM.master.value / 100;
+                const w = canvas.width;
+                const h = canvas.height;
+
+                // 1. Отрисовка базового видео
+                ctx.drawImage(video, 0, 0, w, h);
+
+                // 2. Отрисовка AI HUD (Трекинг и Графы ложатся ПОД глитч)
+                drawHUD(w, h);
+
+                // 3. ПРИМЕНЕНИЕ ГЛИТЧЕЙ
+                
+                // RGB Shift / VHS Jitter
+                if (DOM.rgb.checked && Math.random() < master) {
+                    const offset = (Math.random() * 20 * master);
+                    const imageData = ctx.getImageData(0, 0, w, h);
+                    const data = imageData.data;
+
+                    for (let i = 0; i < data.length; i += 4) {
+                        data[i] = data[i + Math.floor(offset * 4)] || data[i]; // Сдвиг красного
+                    }
+                    ctx.putImageData(imageData, 0, 0);
+                    
+                    // Горизонтальный сдвиг строк (Jitter)
+                    for(let i=0; i<10 * master; i++) {
+                        let sy = Math.random() * h;
+                        let sh = Math.random() * 20;
+                        ctx.drawImage(canvas, 0, sy, w, sh, (Math.random()-0.5) * 30 * master, sy, w, sh);
+                    }
+                }
+
+                // Block Artifacts (Ломает куски изображения вместе с HUD)
+                if (DOM.blocks.checked && Math.random() < master * 0.5) {
+                    for (let i = 0; i < 5 * master; i++) {
+                        const bx = Math.random() * w;
+                        const by = Math.random() * h;
+                        const bw = Math.random() * 200 * master;
+                        const bh = Math.random() * 50 * master;
+                        // Копируем кусок и сдвигаем
+                        ctx.drawImage(canvas, bx, by, bw, bh, bx + (Math.random()-0.5)*100, by, bw, bh);
+                        
+                        // Добавляем цветной квадрат
+                        if(Math.random() > 0.8) {
+                            ctx.fillStyle = `rgba(249, 115, 22, ${0.2 * master})`;
+                            ctx.fillRect(bx, by, bw, bh);
+                        }
+                    }
+                }
+
+                // Data Symbols (Ошибки в коде)
+                if (DOM.text.checked && Math.random() < master) {
+                    ctx.font = "900 14px monospace";
+                    ctx.fillStyle = DOM.hudColor.value; // Используем цвет HUD для системных ошибок
+                    for(let i=0; i<3 * master; i++) {
+                        const txt = Array(5).fill(0).map(() => symbols[Math.floor(Math.random()*symbols.length)]).join("");
+                        ctx.fillText(txt, Math.random() * w, Math.random() * h);
+                    }
+                }
+
+                // Scanlines (Статика телевизора)
+                if (DOM.lines.checked) {
+                    ctx.fillStyle = "rgba(0,0,0,0.15)";
+                    for (let i = 0; i < h; i += 4) {
+                        ctx.fillRect(0, i, w, 1);
+                    }
+                }
+
+                // Финальный "белый шум"
+                if (Math.random() < master * 0.1) {
+                    ctx.fillStyle = `rgba(255,255,255,${0.05 * master})`;
+                    ctx.fillRect(0, 0, w, h);
+                }
+            }
+
+            // Старт пустого цикла отрисовки
+            draw();
+
+        })();
+    </script>
+</body>
+</html>
