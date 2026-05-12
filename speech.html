@@ -87,7 +87,6 @@
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--active-color); cursor: pointer; margin-top: -6px; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #333; border-radius: 2px; }
 
-        /* Gender Toggle */
         .gender-toggle { display: flex; background: var(--control-bg); border-radius: 8px; border: 1px solid var(--border-light); overflow: hidden; }
         .gender-btn { flex: 1; padding: 0.75rem; text-align: center; font-size: 10px; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: 0.3s; color: gray; }
         .gender-btn.active { background: #333; color: white; }
@@ -97,10 +96,7 @@
             display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; position: relative;
         }
         canvas { width: 100%; height: 100%; }
-        .phoneme-display { position: absolute; bottom: 20px; left: 0; width: 100%; text-align: center; font-size: 4rem; font-weight: 900; color: rgba(255,255,255,0.1); font-family: monospace; letter-spacing: 0.2em; text-transform: uppercase; pointer-events: none;}
-        .phoneme-display.active { color: var(--active-color); opacity: 0.8; text-shadow: 0 0 20px var(--active-color); }
         
-        /* Стилизация нативного аудиоплеера под темную тему */
         audio { filter: invert(90%) hue-rotate(180deg); opacity: 0.8; transition: 0.3s; }
         audio:hover { opacity: 1; }
 
@@ -164,7 +160,6 @@
                     <div class="control-group">
                         <div class="control-label"><span>Форманта (Тембр)</span><span class="control-val" id="val-formant">1.0x</span></div>
                         <input type="range" id="ctrl-formant" min="0.5" max="1.5" step="0.05" value="1.0">
-                        <p class="text-[9px] text-gray-500 mt-1">Меняет размер виртуального "рта" синтезатора.</p>
                     </div>
 
                     <div class="h-[1px] w-full bg-white/10 my-1"></div>
@@ -192,15 +187,14 @@
                     <div class="control-panel p-2">
                         <div class="visualizer-container">
                             <canvas id="waveform-canvas"></canvas>
-                            <div class="phoneme-display" id="phoneme-display">READY</div>
                         </div>
                     </div>
                     
                     <div class="control-panel">
                         <p class="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">
-                            <span class="text-white font-bold">Архитектура Commodore SAM:</span><br>
-                            Используется <b>один непрерывный генератор импульсов</b> (аналог голосовых связок) и один генератор шума. Они подключены к параллельному массиву из 3 полосовых фильтров. 
-                            Вместо склейки сэмплов, движок <i>скользит (glides)</i> по частотам фильтров и громкости во времени, воссоздавая ту самую непрерывную 8-битную синтезированную речь.
+                            <span class="text-white font-bold">Архитектура 2.0 (Intelligibility Update):</span><br>
+                            Используется <b>параллельная фильтрация формант</b>. В отличие от последовательных фильтров (которые звучат как синусоида), параллельные пропускают базовый жужжащий спектр, усиливая нужные гармоники.<br><br>
+                            <b>Огибающие (Артикуляция):</b> Взрывные согласные (п, т, к) теперь генерируют 30мс тишины (смыкание рта), за которым следует резкий шумовой импульс нужной частоты, имитирующий настоящий физический хлопок.
                         </p>
                     </div>
                 </div>
@@ -236,8 +230,7 @@
                 bit: document.getElementById('ctrl-bit'), valBit: document.getElementById('val-bit'),
                 delay: document.getElementById('ctrl-delay'), valDelay: document.getElementById('val-delay'),
                 
-                canvas: document.getElementById('waveform-canvas'),
-                phonemeDisp: document.getElementById('phoneme-display')
+                canvas: document.getElementById('waveform-canvas')
             };
 
             const ctx = DOM.canvas.getContext('2d');
@@ -253,13 +246,7 @@
             DOM.gMale.onclick = () => { currentGender = 'male'; DOM.gMale.classList.add('active'); DOM.gFemale.classList.remove('active'); };
             DOM.gFemale.onclick = () => { currentGender = 'female'; DOM.gFemale.classList.add('active'); DOM.gMale.classList.remove('active'); };
 
-            // --- ИСТИННАЯ FORMANT DICTIONARY (Для непрерывного скольжения) ---
-            // t: тип (v=vowel, f=fricative, p=plosive, s=space)
-            // d: длительность (множитель)
-            // f1, f2, f3: частоты формант
-            // vA: громкость голоса (импульса)
-            // nA: громкость шума
-            // nF: частота фильтра шума
+            // --- ОБНОВЛЕННЫЙ СЛОВАРЬ (Разборчивость + Правильные шумы) ---
             const PHONEMES = {
                 // Гласные (чистый голос)
                 'а': { t: 'v', d: 1.0, f1: 700, f2: 1200, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000 },
@@ -277,7 +264,7 @@
                 'я': { t: 'v', d: 1.2, f1: 600, f2: 1400, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000 }, 
                 'ю': { t: 'v', d: 1.2, f1: 300, f2: 800, f3: 2600, vA: 0.9, nA: 0.0, nF: 1000 },
                 
-                // Сонорные (голос тише, частоты другие)
+                // Сонорные (голос тише)
                 'м': { t: 'v', d: 0.8, f1: 250, f2: 1200, f3: 2600, vA: 0.5, nA: 0.0, nF: 1000 },
                 'm': { t: 'v', d: 0.8, f1: 250, f2: 1200, f3: 2600, vA: 0.5, nA: 0.0, nF: 1000 },
                 'н': { t: 'v', d: 0.8, f1: 250, f2: 1800, f3: 2600, vA: 0.5, nA: 0.0, nF: 1000 },
@@ -289,52 +276,47 @@
                 'й': { t: 'v', d: 0.5, f1: 300, f2: 2200, f3: 3000, vA: 0.7, nA: 0.0, nF: 1000 },
                 'y': { t: 'v', d: 0.5, f1: 300, f2: 2200, f3: 3000, vA: 0.7, nA: 0.0, nF: 1000 },
 
-                // Звонкие фрикативы (голос + шум)
-                'в': { t: 'f', d: 0.7, f1: 300, f2: 800, f3: 2000, vA: 0.3, nA: 0.2, nF: 3000 },
-                'v': { t: 'f', d: 0.7, f1: 300, f2: 800, f3: 2000, vA: 0.3, nA: 0.2, nF: 3000 },
-                'w': { t: 'f', d: 0.7, f1: 300, f2: 800, f3: 2000, vA: 0.3, nA: 0.1, nF: 2000 },
-                'з': { t: 'f', d: 0.7, f1: 300, f2: 1200, f3: 2000, vA: 0.3, nA: 0.6, nF: 5000 },
-                'z': { t: 'f', d: 0.7, f1: 300, f2: 1200, f3: 2000, vA: 0.3, nA: 0.6, nF: 5000 },
-                'ж': { t: 'f', d: 0.8, f1: 300, f2: 1500, f3: 2500, vA: 0.4, nA: 0.5, nF: 3500 },
-                'j': { t: 'f', d: 0.8, f1: 300, f2: 1500, f3: 2500, vA: 0.4, nA: 0.5, nF: 3500 },
-
-                // Глухие фрикативы (чистый шум)
+                // Фрикативы (длинный шум)
+                'в': { t: 'f', d: 0.7, f1: 300, f2: 800, f3: 2000, vA: 0.3, nA: 0.4, nF: 1500 },
+                'v': { t: 'f', d: 0.7, f1: 300, f2: 800, f3: 2000, vA: 0.3, nA: 0.4, nF: 1500 },
+                'з': { t: 'f', d: 0.7, f1: 300, f2: 1200, f3: 2000, vA: 0.3, nA: 0.6, nF: 4500 },
+                'z': { t: 'f', d: 0.7, f1: 300, f2: 1200, f3: 2000, vA: 0.3, nA: 0.6, nF: 4500 },
+                'ж': { t: 'f', d: 0.8, f1: 300, f2: 1500, f3: 2500, vA: 0.4, nA: 0.5, nF: 2500 },
+                'j': { t: 'f', d: 0.8, f1: 300, f2: 1500, f3: 2500, vA: 0.4, nA: 0.5, nF: 2500 },
                 'с': { t: 'f', d: 0.9, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.8, nF: 6000 },
                 's': { t: 'f', d: 0.9, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.8, nF: 6000 },
                 'c': { t: 'f', d: 0.9, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.8, nF: 6000 },
-                'ш': { t: 'f', d: 1.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.7, nF: 3500 },
-                'щ': { t: 'f', d: 1.2, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.7, nF: 4000 },
-                'ф': { t: 'f', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.6, nF: 5000 },
-                'f': { t: 'f', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.6, nF: 5000 },
+                'ш': { t: 'f', d: 1.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.7, nF: 2500 },
+                'щ': { t: 'f', d: 1.2, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.7, nF: 3500 },
+                'ф': { t: 'f', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.6, nF: 1500 },
+                'f': { t: 'f', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.6, nF: 1500 },
                 'х': { t: 'f', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.7, nF: 2500 },
                 'h': { t: 'f', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.7, nF: 2500 },
                 
-                // Взрывные и короткие (шумовые всплески)
-                'п': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.0, nF: 1500 },
-                'p': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.0, nF: 1500 },
-                'т': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.0, nF: 3500 },
-                't': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.0, nF: 3500 },
-                'к': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.0, nF: 2000 },
-                'k': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.0, nF: 2000 },
-                'q': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.0, nF: 2000 },
-                'x': { t: 'p', d: 0.6, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.0, nF: 4000 },
-                'ц': { t: 'p', d: 0.6, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.0, nF: 5000 },
-                'ч': { t: 'p', d: 0.6, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.0, nF: 4000 },
+                // Взрывные и короткие (plosives) - nA выкручен для щелчка
+                'п': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 2.0, nF: 800 },
+                'p': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 2.0, nF: 800 },
+                'т': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 2.0, nF: 4000 },
+                't': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 2.0, nF: 4000 },
+                'к': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 2.0, nF: 2000 },
+                'k': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 2.0, nF: 2000 },
+                'ц': { t: 'p', d: 0.6, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.5, nF: 5000 },
+                'ч': { t: 'p', d: 0.6, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.5, nF: 4000 },
                 
                 // Звонкие взрывные
-                'б': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 0.8, nF: 1500 },
-                'b': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 0.8, nF: 1500 },
-                'д': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 0.8, nF: 3500 },
-                'd': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 0.8, nF: 3500 },
-                'г': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 0.8, nF: 2000 },
-                'g': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 0.8, nF: 2000 },
+                'б': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 1.5, nF: 800 },
+                'b': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 1.5, nF: 800 },
+                'д': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 1.5, nF: 3500 },
+                'd': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 1.5, nF: 3500 },
+                'г': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 1.5, nF: 2000 },
+                'g': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.3, nA: 1.5, nF: 2000 },
 
-                // Паузы
+                // Паузы и пунктуация
                 ' ': { t: 's', d: 1.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000 },
-                '.': { t: 's', d: 2.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000 },
-                ',': { t: 's', d: 1.5, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000 },
-                '?': { t: 's', d: 2.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000 },
-                '!': { t: 's', d: 2.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000 }
+                '.': { t: 'punct', d: 2.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000 },
+                ',': { t: 'punct', d: 1.5, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000 },
+                '?': { t: 'punct', d: 2.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000 },
+                '!': { t: 'punct', d: 2.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000 }
             };
 
             const synthesizeSpeech = async () => {
@@ -360,7 +342,7 @@
                         const char = text[i];
                         let ph = PHONEMES[char] || PHONEMES[' '];
                         const dur = Math.max(0.01, ph.d * baseDur);
-                        sequence.push({ ph, start: totalTime, dur });
+                        sequence.push({ ph, char, start: totalTime, dur });
                         totalTime += dur;
                     }
                     
@@ -368,14 +350,12 @@
                     const frames = Math.max(1, Math.ceil(sampleRate * renderDuration));
                     const oCtx = new OfflineAudioContext(1, frames, sampleRate);
                     
-                    // --- EFFECTS CHAIN ---
                     const masterGain = oCtx.createGain();
                     masterGain.gain.value = 1.0;
                     masterGain.connect(oCtx.destination);
 
                     let effectInput = masterGain;
                     
-                    // Delay
                     if (delayAmt > 0) {
                         const delayNode = oCtx.createDelay(1.0); delayNode.delayTime.value = 0.25; 
                         const delayFeedback = oCtx.createGain(); delayFeedback.gain.value = delayAmt * 0.5; 
@@ -385,7 +365,6 @@
                         effectInput.connect(delayNode);
                     }
 
-                    // Bitcrusher
                     if (bitcrushAmt > 0) {
                         const shaper = oCtx.createWaveShaper();
                         const bits = Math.max(2, 16 - (bitcrushAmt / 100 * 14)); 
@@ -403,19 +382,13 @@
                     const mixBus = oCtx.createGain();
                     mixBus.connect(effectInput);
 
-                    // --- GENERATORS (CONTINUOUS) ---
-                    // 1. Создаем импульсную волну (жесткий 8-битный buzzer)
-                    const real = new Float32Array(32);
-                    const imag = new Float32Array(32);
-                    real[0] = 0;
-                    for (let i = 1; i < 32; i++) real[i] = 1.0; // Максимально богатый гармониками спектр
-                    const impulseWave = oCtx.createPeriodicWave(real, imag);
-                    
-                    const voiceOsc = oCtx.createOscillator();
-                    voiceOsc.setPeriodicWave(impulseWave);
-                    voiceOsc.frequency.value = basePitch;
+                    // --- GENERATORS ---
+                    // Два осциллятора для жесткой 8-битной пилы с "телом"
+                    const voiceOsc1 = oCtx.createOscillator(); voiceOsc1.type = 'sawtooth';
+                    const voiceOsc2 = oCtx.createOscillator(); voiceOsc2.type = 'square';
+                    voiceOsc1.frequency.value = basePitch;
+                    voiceOsc2.frequency.value = basePitch / 2; // Саб-октава
 
-                    // 2. Создаем генератор белого шума
                     const noiseBuf = oCtx.createBuffer(1, sampleRate, sampleRate);
                     const nd = noiseBuf.getChannelData(0);
                     for(let i=0; i<sampleRate; i++) nd[i] = Math.random() * 2 - 1;
@@ -427,63 +400,86 @@
                     const vcaVoice = oCtx.createGain(); vcaVoice.gain.value = 0;
                     const vcaNoise = oCtx.createGain(); vcaNoise.gain.value = 0;
 
-                    // Параллельные формантные фильтры для голоса (bandpass)
+                    // ИСПРАВЛЕНИЕ: ПАРАЛЛЕЛЬНЫЕ БЭНДПАССЫ ДЛЯ ФОРМАНТ
+                    // Теперь они не вырезают все вокруг, а усиливают нужные полосы
                     const f1 = oCtx.createBiquadFilter(); f1.type = 'bandpass'; f1.Q.value = 4;
-                    const f2 = oCtx.createBiquadFilter(); f2.type = 'bandpass'; f2.Q.value = 6;
-                    const f3 = oCtx.createBiquadFilter(); f3.type = 'bandpass'; f3.Q.value = 8;
+                    const f2 = oCtx.createBiquadFilter(); f2.type = 'bandpass'; f2.Q.value = 5;
+                    const f3 = oCtx.createBiquadFilter(); f3.type = 'bandpass'; f3.Q.value = 6;
                     
-                    // Фильтр шума
                     const fNoise = oCtx.createBiquadFilter(); fNoise.type = 'bandpass'; fNoise.Q.value = 1;
 
-                    voiceOsc.connect(vcaVoice);
+                    voiceOsc1.connect(vcaVoice);
+                    voiceOsc2.connect(vcaVoice);
+                    
                     vcaVoice.connect(f1).connect(mixBus);
                     vcaVoice.connect(f2).connect(mixBus);
                     vcaVoice.connect(f3).connect(mixBus);
+                    
+                    // Добавляем немного необработанного жужжания для четкости (Dry Mix)
+                    const dryBuzz = oCtx.createGain(); dryBuzz.gain.value = 0.15;
+                    vcaVoice.connect(dryBuzz).connect(mixBus);
 
                     noiseOsc.connect(vcaNoise).connect(fNoise).connect(mixBus);
 
-                    voiceOsc.start(0);
+                    voiceOsc1.start(0); voiceOsc2.start(0);
                     noiseOsc.start(0);
 
-                    // --- AUTOMATION (THE SECRET SAUCE OF COMMODORE SAM) ---
+                    // --- AUTOMATION LOOP ---
                     let t = 0;
                     sequence.forEach((item, index) => {
                         const ph = item.ph;
-                        const glide = 0.04; // Плавность перехода (скольжение формы рта)
+                        const dur = item.dur;
+                        const glide = 0.03; 
                         
-                        // Питч (с легкой модуляцией на паузах для эффекта дыхания/интонации)
-                        let targetPitch = basePitch;
-                        if (ph.t === 's') targetPitch = basePitch * 0.9;
-                        voiceOsc.frequency.linearRampToValueAtTime(targetPitch, t + glide);
-
-                        // Скольжение частот фильтров (Continuous Formant Glide)
+                        // Плавное изменение формант
                         f1.frequency.linearRampToValueAtTime(ph.f1 * formMult, t + glide);
                         f2.frequency.linearRampToValueAtTime(ph.f2 * formMult, t + glide);
                         f3.frequency.linearRampToValueAtTime(ph.f3 * formMult, t + glide);
                         fNoise.frequency.linearRampToValueAtTime(ph.nF, t + glide);
 
-                        // Управление громкостью (конверты)
+                        // ИНТОНАЦИЯ: Легкое падение питча в конце фразы
+                        let targetPitch = basePitch;
+                        if (ph.t === 'punct') targetPitch = basePitch * 0.75;
+                        voiceOsc1.frequency.linearRampToValueAtTime(targetPitch, t + glide);
+                        voiceOsc2.frequency.linearRampToValueAtTime(targetPitch / 2, t + glide);
+
+                        // ИСПРАВЛЕНИЕ АРТИКУЛЯЦИИ
                         if (ph.t === 'p') {
-                            // Взрывные звуки (Plosives): резкая атака, быстрый спад
-                            vcaVoice.gain.linearRampToValueAtTime(0, t + 0.01);
-                            vcaNoise.gain.linearRampToValueAtTime(ph.nA, t + 0.01);
-                            vcaNoise.gain.linearRampToValueAtTime(0, t + item.dur * 0.8);
+                            // ВЗРЫВНЫЕ СОГЛАСНЫЕ: Создаем тишину перед щелчком (Stop Gap)
+                            vcaVoice.gain.cancelScheduledValues(t);
+                            vcaNoise.gain.cancelScheduledValues(t);
+                            vcaVoice.gain.setValueAtTime(0, t);
+                            vcaNoise.gain.setValueAtTime(0, t);
+
+                            const gap = Math.min(0.03, dur * 0.4); // 30мс смыкание губ
+                            
+                            // Резкий взрыв шума
+                            vcaNoise.gain.setValueAtTime(0, t + gap);
+                            vcaNoise.gain.linearRampToValueAtTime(ph.nA, t + gap + 0.01);
+                            vcaNoise.gain.exponentialRampToValueAtTime(0.01, t + dur);
+
+                            // Взрыв голоса (если буква звонкая, как Б или Д)
+                            vcaVoice.gain.setValueAtTime(0, t + gap);
+                            if(ph.vA > 0) {
+                                vcaVoice.gain.linearRampToValueAtTime(ph.vA, t + gap + 0.01);
+                                vcaVoice.gain.exponentialRampToValueAtTime(0.01, t + dur);
+                            }
                         } else {
-                            // Гласные и фрикативы: плавное изменение громкости
+                            // ГЛАСНЫЕ И ФРИКАТИВЫ: Плавные переходы
                             vcaVoice.gain.linearRampToValueAtTime(ph.vA, t + glide);
                             vcaNoise.gain.linearRampToValueAtTime(ph.nA, t + glide);
+                            vcaVoice.gain.setValueAtTime(ph.vA, t + dur - 0.01);
+                            vcaNoise.gain.setValueAtTime(ph.nA, t + dur - 0.01);
                         }
 
-                        t += item.dur;
+                        t += dur;
                     });
 
-                    // Завершение звука в конце текста
                     vcaVoice.gain.linearRampToValueAtTime(0, t);
                     vcaNoise.gain.linearRampToValueAtTime(0, t);
-                    voiceOsc.stop(t + 0.1);
+                    voiceOsc1.stop(t + 0.1); voiceOsc2.stop(t + 0.1);
                     noiseOsc.stop(t + 0.1);
 
-                    // --- Рендер ---
                     const renderedBuffer = await oCtx.startRendering();
                     
                     const blob = encodeWAV(renderedBuffer);
@@ -500,7 +496,7 @@
                     DOM.btnExport.style.cursor = 'pointer';
 
                     drawWaveform(renderedBuffer);
-                    DOM.audioPlayer.play().catch(() => console.log("Автовоспроизведение заблокировано браузером."));
+                    DOM.audioPlayer.play().catch(() => {});
 
                 } catch (error) {
                     console.error("Audio Render Error:", error);
