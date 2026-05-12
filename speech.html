@@ -133,7 +133,7 @@
                 
                 <div class="control-panel">
                     
-                    <textarea id="text-input" placeholder="Введите текст на русском или английском...">привет, человек. я научился четко произносить букву ч. четыре черненьких чумазых чертенка.</textarea>
+                    <textarea id="text-input" placeholder="Введите текст на русском или английском...">привет, человек. я научился четко произносить букву ч. четыре черненьких чумазых чертенка. гласные теперь звучат чисто.</textarea>
 
                     <button class="btn btn-play-big mt-2" id="btn-generate">⚡ ГЕНЕРИРОВАТЬ РЕЧЬ</button>
                     
@@ -184,17 +184,10 @@
                 </div>
 
                 <div class="flex flex-col gap-6">
-                    <div class="control-panel p-2">
-                        <div class="visualizer-container">
+                    <div class="control-panel p-2 h-full">
+                        <div class="visualizer-container h-full">
                             <canvas id="waveform-canvas"></canvas>
                         </div>
-                    </div>
-                    
-                    <div class="control-panel">
-                        <p class="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">
-                            <span class="text-white font-bold">Архитектура 5.1 (Affricate Fix):</span><br>
-                            <b>Огибающая аффрикат:</b> Проблема звуков "Ч" и "Ц" заключалась в экспоненциальном затухании (свойственном для П, Т, К). Теперь для них применяется кастомная линейная огибающая. Это сохраняет плотный "шипящий" хвост после начального смыкания губ, делая буквы "Ч" и "Ц" максимально разборчивыми.
-                        </p>
                     </div>
                 </div>
 
@@ -246,7 +239,6 @@
             DOM.gFemale.onclick = () => { currentGender = 'female'; DOM.gFemale.classList.add('active'); DOM.gMale.classList.remove('active'); };
 
             const PHONEMES = {
-                // Гласные
                 'а': { t: 'v', d: 1.0, f1: 700, f2: 1200, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000, nQ: 1 },
                 'a': { t: 'v', d: 1.0, f1: 700, f2: 1200, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000, nQ: 1 },
                 'о': { t: 'v', d: 1.0, f1: 400, f2: 800, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000, nQ: 1 },
@@ -262,11 +254,10 @@
                 'я': { t: 'v', d: 1.2, f1: 600, f2: 1400, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000, nQ: 1 }, 
                 'ю': { t: 'v', d: 1.2, f1: 300, f2: 800, f3: 2600, vA: 0.9, nA: 0.0, nF: 1000, nQ: 1 },
                 
-                // Сонорные
-                'м': { t: 'v', d: 0.8, f1: 250, f2: 1000, f3: 2000, vA: 0.35, nA: 0.0, nF: 1000, nQ: 1 },
-                'm': { t: 'v', d: 0.8, f1: 250, f2: 1000, f3: 2000, vA: 0.35, nA: 0.0, nF: 1000, nQ: 1 },
-                'н': { t: 'v', d: 0.8, f1: 250, f2: 1800, f3: 2600, vA: 0.35, nA: 0.0, nF: 1000, nQ: 1 },
-                'n': { t: 'v', d: 0.8, f1: 250, f2: 1800, f3: 2600, vA: 0.35, nA: 0.0, nF: 1000, nQ: 1 },
+                'м': { t: 'v', d: 0.8, f1: 250, f2: 1000, f3: 2000, vA: 0.4, nA: 0.0, nF: 1000, nQ: 1 },
+                'm': { t: 'v', d: 0.8, f1: 250, f2: 1000, f3: 2000, vA: 0.4, nA: 0.0, nF: 1000, nQ: 1 },
+                'н': { t: 'v', d: 0.8, f1: 250, f2: 1800, f3: 2600, vA: 0.4, nA: 0.0, nF: 1000, nQ: 1 },
+                'n': { t: 'v', d: 0.8, f1: 250, f2: 1800, f3: 2600, vA: 0.4, nA: 0.0, nF: 1000, nQ: 1 },
                 'р': { t: 'v', d: 0.6, f1: 400, f2: 1200, f3: 2600, vA: 0.6, nA: 0.0, nF: 1000, nQ: 1 },
                 'r': { t: 'v', d: 0.6, f1: 400, f2: 1200, f3: 2600, vA: 0.6, nA: 0.0, nF: 1000, nQ: 1 },
                 'л': { t: 'v', d: 0.8, f1: 300, f2: 1200, f3: 2600, vA: 0.6, nA: 0.0, nF: 1000, nQ: 1 },
@@ -274,7 +265,6 @@
                 'й': { t: 'v', d: 0.5, f1: 300, f2: 2200, f3: 3000, vA: 0.7, nA: 0.0, nF: 1000, nQ: 1 },
                 'y': { t: 'v', d: 0.5, f1: 300, f2: 2200, f3: 3000, vA: 0.7, nA: 0.0, nF: 1000, nQ: 1 },
 
-                // Фрикативы
                 'в': { t: 'f', d: 0.7, f1: 300, f2: 800, f3: 2000, vA: 0.3, nA: 0.4, nF: 1500, nQ: 0.5 },
                 'v': { t: 'f', d: 0.7, f1: 300, f2: 800, f3: 2000, vA: 0.3, nA: 0.4, nF: 1500, nQ: 0.5 },
                 'з': { t: 'f', d: 0.7, f1: 300, f2: 1200, f3: 2000, vA: 0.3, nA: 0.6, nF: 4500, nQ: 1.5 },
@@ -291,7 +281,6 @@
                 'х': { t: 'f', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.8, nF: 2000, nQ: 1.0 },
                 'h': { t: 'f', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.8, nF: 2000, nQ: 1.0 },
                 
-                // Взрывные глухие (П, Т, К)
                 'п': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 800, nQ: 0.5 },
                 'p': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 800, nQ: 0.5 },
                 'т': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 4500, nQ: 1.0 },
@@ -299,11 +288,9 @@
                 'к': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.0, nF: 2000, nQ: 1.5 },
                 'k': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.0, nF: 2000, nQ: 1.5 },
                 
-                // ИСПРАВЛЕННЫЕ АФФРИКАТЫ (Ч, Ц) - шире Q и выше nA
                 'ч': { t: 'p', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.2, nF: 4500, nQ: 0.5 },
                 'ц': { t: 'p', d: 0.8, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.2, nF: 6000, nQ: 0.8 },
                 
-                // Взрывные звонкие (Б, Д, Г)
                 'б': { t: 'p', d: 0.4, f1: 200, f2: 800, f3: 2000, vA: 0.4, nA: 0.8, nF: 800, nQ: 0.5 },
                 'b': { t: 'p', d: 0.4, f1: 200, f2: 800, f3: 2000, vA: 0.4, nA: 0.8, nF: 800, nQ: 0.5 },
                 'д': { t: 'p', d: 0.4, f1: 200, f2: 1500, f3: 2500, vA: 0.4, nA: 0.8, nF: 3500, nQ: 1.0 },
@@ -311,7 +298,6 @@
                 'г': { t: 'p', d: 0.4, f1: 200, f2: 2000, f3: 3000, vA: 0.4, nA: 0.8, nF: 2000, nQ: 1.5 },
                 'g': { t: 'p', d: 0.4, f1: 200, f2: 2000, f3: 3000, vA: 0.4, nA: 0.8, nF: 2000, nQ: 1.5 },
 
-                // Паузы
                 ' ': { t: 's', d: 1.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000, nQ: 1 },
                 '.': { t: 'punct', d: 2.0, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000, nQ: 1 },
                 ',': { t: 'punct', d: 1.5, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.0, nF: 1000, nQ: 1 },
@@ -350,9 +336,19 @@
                     const frames = Math.max(1, Math.ceil(sampleRate * renderDuration));
                     const oCtx = new OfflineAudioContext(1, frames, sampleRate);
                     
+                    // Общий лимитер уровня громкости (снижен уровень для гарантии отсутствия клиппинга)
                     const masterGain = oCtx.createGain();
-                    masterGain.gain.value = 1.0;
-                    masterGain.connect(oCtx.destination);
+                    masterGain.gain.value = 0.5; 
+
+                    const compressor = oCtx.createDynamicsCompressor();
+                    compressor.threshold.value = -3;
+                    compressor.knee.value = 10;
+                    compressor.ratio.value = 12;
+                    compressor.attack.value = 0;
+                    compressor.release.value = 0.1;
+
+                    masterGain.connect(compressor);
+                    compressor.connect(oCtx.destination);
 
                     let effectInput = masterGain;
                     
@@ -383,18 +379,11 @@
                     mixBus.connect(effectInput);
 
                     // --- GENERATORS ---
-                    const real = new Float32Array(32);
-                    const imag = new Float32Array(32);
-                    real[0] = 0;
-                    for (let i = 1; i < 32; i++) {
-                        real[i] = (Math.sin(Math.PI * i * 0.2) / i) * Math.pow(0.95, i);
-                    }
-                    const buzzWave = oCtx.createPeriodicWave(real, imag);
-
+                    // Базовая генерация голоса - пила + прямоугольник для густоты
                     const voiceOsc1 = oCtx.createOscillator(); 
-                    voiceOsc1.setPeriodicWave(buzzWave); 
+                    voiceOsc1.type = 'sawtooth';
                     const voiceOsc2 = oCtx.createOscillator(); 
-                    voiceOsc2.type = 'sawtooth'; 
+                    voiceOsc2.type = 'square'; 
 
                     voiceOsc1.frequency.value = basePitch;
                     voiceOsc2.frequency.value = basePitch / 2;
@@ -406,30 +395,39 @@
                     noiseOsc.buffer = noiseBuf;
                     noiseOsc.loop = true;
 
-                    // --- ROUTING & FILTERS ---
+                    // --- ROUTING & FILTERS (КАСКАД PEAKING ДЛЯ ИСКЛЮЧЕНИЯ ИСЧЕЗНОВЕНИЯ ГЛАСНЫХ) ---
                     const vcaVoice = oCtx.createGain(); vcaVoice.gain.value = 0;
                     const vcaNoise = oCtx.createGain(); vcaNoise.gain.value = 0;
 
-                    const f1 = oCtx.createBiquadFilter(); f1.type = 'bandpass'; f1.Q.value = 2.0;
-                    const f2 = oCtx.createBiquadFilter(); f2.type = 'bandpass'; f2.Q.value = 3.0;
-                    const f3 = oCtx.createBiquadFilter(); f3.type = 'bandpass'; f3.Q.value = 4.0;
+                    // Lowpass фильтр для среза цифрового мусора (треска) на высоких частотах
+                    const preFilter = oCtx.createBiquadFilter();
+                    preFilter.type = 'lowpass';
+                    preFilter.frequency.value = 3500;
+
+                    voiceOsc1.connect(preFilter);
+                    voiceOsc2.connect(preFilter);
+                    preFilter.connect(vcaVoice);
+
+                    // Используем Peaking (эквалайзеры) друг за другом. Это предотвращает взаимовычитание фаз!
+                    const f1 = oCtx.createBiquadFilter(); f1.type = 'peaking'; f1.Q.value = 4.0; f1.gain.value = 14;
+                    const f2 = oCtx.createBiquadFilter(); f2.type = 'peaking'; f2.Q.value = 4.0; f2.gain.value = 10;
+                    const f3 = oCtx.createBiquadFilter(); f3.type = 'peaking'; f3.Q.value = 4.0; f3.gain.value = 8;
                     
                     const fNoise = oCtx.createBiquadFilter(); fNoise.type = 'bandpass'; fNoise.Q.value = 1;
 
-                    voiceOsc1.connect(vcaVoice);
-                    voiceOsc2.connect(vcaVoice);
-                    
-                    vcaVoice.connect(f1).connect(mixBus);
-                    vcaVoice.connect(f2).connect(mixBus);
-                    vcaVoice.connect(f3).connect(mixBus);
-                    
-                    const dryBuzz = oCtx.createGain(); dryBuzz.gain.value = 0.2;
-                    vcaVoice.connect(dryBuzz).connect(mixBus);
+                    // Каскадная маршрутизация (Voice -> F1 -> F2 -> F3 -> Mix)
+                    vcaVoice.connect(f1);
+                    f1.connect(f2);
+                    f2.connect(f3);
+                    f3.connect(mixBus);
 
                     noiseOsc.connect(vcaNoise).connect(fNoise).connect(mixBus);
 
                     voiceOsc1.start(0); voiceOsc2.start(0);
                     noiseOsc.start(0);
+
+                    // Утилита для безопасной установки частот (чтобы не было ошибок Nyquist)
+                    const safeFreq = (f) => Math.max(10, Math.min(22000, f));
 
                     // --- AUTOMATION LOOP ---
                     let t = 0;
@@ -437,55 +435,61 @@
                         const ph = item.ph;
                         const char = item.char;
                         const dur = item.dur;
-                        const glide = 0.03; 
+                        const glide = Math.min(0.03, dur * 0.5); 
                         
-                        f1.frequency.linearRampToValueAtTime(ph.f1 * formMult, t + glide);
-                        f2.frequency.linearRampToValueAtTime(ph.f2 * formMult, t + glide);
-                        f3.frequency.linearRampToValueAtTime(ph.f3 * formMult, t + glide);
+                        f1.frequency.linearRampToValueAtTime(safeFreq(ph.f1 * formMult), t + glide);
+                        f2.frequency.linearRampToValueAtTime(safeFreq(ph.f2 * formMult), t + glide);
+                        f3.frequency.linearRampToValueAtTime(safeFreq(ph.f3 * formMult), t + glide);
                         
-                        fNoise.frequency.linearRampToValueAtTime(ph.nF, t + glide);
+                        fNoise.frequency.linearRampToValueAtTime(safeFreq(ph.nF), t + glide);
                         fNoise.Q.linearRampToValueAtTime(ph.nQ || 1, t + glide);
 
                         let targetPitch = basePitch;
-                        if (ph.t === 'punct') targetPitch = basePitch * 0.75;
+                        if (ph.t === 'punct') targetPitch = basePitch * 0.8;
                         voiceOsc1.frequency.linearRampToValueAtTime(targetPitch, t + glide);
                         voiceOsc2.frequency.linearRampToValueAtTime(targetPitch / 2, t + glide);
 
+                        // Сброс автоматизации для чистоты шага
+                        vcaVoice.gain.setValueAtTime(vcaVoice.gain.value, t);
+                        vcaNoise.gain.setValueAtTime(vcaNoise.gain.value, t);
+
                         if (ph.t === 'p') {
-                            vcaVoice.gain.cancelScheduledValues(t);
-                            vcaNoise.gain.cancelScheduledValues(t);
-                            
                             const isVoiced = ph.vA > 0;
                             const isAffricate = (char === 'ч' || char === 'ц');
                             
-                            vcaVoice.gain.setValueAtTime(isVoiced ? 0.15 : 0, t);
-                            vcaNoise.gain.setValueAtTime(0, t);
+                            // Зазор смыкания
+                            const gap = Math.min(0.04, dur * 0.4); 
+                            vcaVoice.gain.linearRampToValueAtTime(isVoiced ? 0.15 : 0, t + 0.005);
+                            vcaNoise.gain.linearRampToValueAtTime(0, t + 0.005);
 
-                            const gap = Math.min(0.04, dur * 0.5); 
+                            const burstTime = t + gap;
                             
                             if (isAffricate) {
                                 // ЛИНЕЙНЫЙ СПАД ДЛЯ АФФРИКАТ (Ч, Ц)
-                                const clickDur = Math.min(0.2, dur - gap); // Длинный хвост
-                                vcaNoise.gain.setValueAtTime(0, t + gap);
-                                vcaNoise.gain.linearRampToValueAtTime(ph.nA, t + gap + 0.01);
-                                vcaNoise.gain.linearRampToValueAtTime(0.001, t + gap + clickDur); // Линейно!
+                                const clickDur = Math.min(0.2, dur - gap);
+                                vcaNoise.gain.setValueAtTime(0, burstTime);
+                                vcaNoise.gain.linearRampToValueAtTime(ph.nA, burstTime + 0.005);
+                                vcaNoise.gain.linearRampToValueAtTime(0.001, burstTime + clickDur); 
                             } else {
-                                // ЭКСПОНЕНЦИАЛЬНЫЙ СПАД ДЛЯ ВЗРЫВНЫХ (П, Т, К)
-                                const clickDur = Math.min(0.05, dur - gap); // Короткий щелчок
-                                vcaNoise.gain.setValueAtTime(0, t + gap);
-                                vcaNoise.gain.linearRampToValueAtTime(ph.nA, t + gap + 0.005);
-                                vcaNoise.gain.exponentialRampToValueAtTime(0.001, t + gap + clickDur); // Резко вниз!
+                                // ЭКСПОНЕНЦИАЛЬНЫЙ СПАД ДЛЯ ВЗРЫВНЫХ
+                                const clickDur = Math.min(0.05, dur - gap);
+                                vcaNoise.gain.setValueAtTime(0, burstTime);
+                                vcaNoise.gain.linearRampToValueAtTime(ph.nA, burstTime + 0.005);
+                                vcaNoise.gain.exponentialRampToValueAtTime(0.001, burstTime + clickDur); 
                             }
 
                             if(isVoiced) {
-                                vcaVoice.gain.linearRampToValueAtTime(ph.vA, t + gap + 0.01);
-                                vcaVoice.gain.exponentialRampToValueAtTime(0.001, t + dur);
+                                vcaVoice.gain.setValueAtTime(0.15, burstTime);
+                                vcaVoice.gain.linearRampToValueAtTime(ph.vA, burstTime + 0.01);
+                                vcaVoice.gain.linearRampToValueAtTime(0.001, burstTime + (dur - gap));
                             }
                         } else {
+                            // ГЛАСНЫЕ И ФРИКАТИВЫ
                             vcaVoice.gain.linearRampToValueAtTime(ph.vA, t + glide);
                             vcaNoise.gain.linearRampToValueAtTime(ph.nA, t + glide);
-                            vcaVoice.gain.setValueAtTime(ph.vA, t + dur - 0.01);
-                            vcaNoise.gain.setValueAtTime(ph.nA, t + dur - 0.01);
+                            
+                            vcaVoice.gain.setValueAtTime(ph.vA, t + dur - 0.001);
+                            vcaNoise.gain.setValueAtTime(ph.nA, t + dur - 0.001);
                         }
 
                         t += dur;
