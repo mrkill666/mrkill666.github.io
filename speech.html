@@ -133,7 +133,7 @@
                 
                 <div class="control-panel">
                     
-                    <textarea id="text-input" placeholder="Введите текст на русском или английском...">hello world! я робот из восьмидесятых. как меня слышно? мой голос стал богаче. мам, батя дома?</textarea>
+                    <textarea id="text-input" placeholder="Введите текст на русском или английском...">hello world! я робот из восьмидесятых. как меня слышно? мой голос стал мягче, а слова звучат очень четко.</textarea>
 
                     <button class="btn btn-play-big mt-2" id="btn-generate">⚡ ГЕНЕРИРОВАТЬ РЕЧЬ</button>
                     
@@ -192,9 +192,9 @@
                     
                     <div class="control-panel">
                         <p class="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">
-                            <span class="text-white font-bold">Архитектура 4.0 (Overtones & Nasals Update):</span><br>
-                            <b>Богатые Обертона:</b> Вместо стандартной пилообразной волны используется кастомный 64-гармониковый Impulse Train (генератор голосовой щели). Фильтры расширены, чтобы пропускать естественный тембр.<br><br>
-                            <b>М, Н и Б:</b> Для назальных согласных (М, Н) заданы четкие отличия во 2-й форманте. А звонкие взрывные (Б, Д, Г) теперь сохраняют "Voice Bar" (тихое низкочастотное гудение голосовых связок при сомкнутых губах) прямо перед щелчком, делая их легко отличимыми от П, Т и К.
+                            <span class="text-white font-bold">Архитектура 5.0 (Smooth Tone & Affricates):</span><br>
+                            <b>Мягкая генерация (Anti-Jitter):</b> Предыдущий генератор создавал "цифровой треск" (эффект встроенного биткрашера) из-за избытка нефильтрованных верхних гармоник. Теперь движок использует кастомную Pulse Wave (с 20% скважностью и мягким спадом высоких частот), что дает теплый винтажный звук без дрожания.<br><br>
+                            <b>Аффрикаты (Ч, Ц):</b> Обрабатываются отдельно от обычных взрывных звуков. После смыкания губ они выдают не просто короткий щелчок, а более длинный шумовой хвост, что делает их предельно узнаваемыми. Базовый питч голоса повышен на 8%.
                         </p>
                     </div>
                 </div>
@@ -246,9 +246,9 @@
             DOM.gMale.onclick = () => { currentGender = 'male'; DOM.gMale.classList.add('active'); DOM.gFemale.classList.remove('active'); };
             DOM.gFemale.onclick = () => { currentGender = 'female'; DOM.gFemale.classList.add('active'); DOM.gMale.classList.remove('active'); };
 
-            // --- ОБНОВЛЕННЫЙ СЛОВАРЬ (Назальные M/N, Voice bar для B/D/G) ---
+            // --- ОБНОВЛЕННЫЙ СЛОВАРЬ (Адаптация Ч и Ц) ---
             const PHONEMES = {
-                // Гласные (чистый голос)
+                // Гласные
                 'а': { t: 'v', d: 1.0, f1: 700, f2: 1200, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000, nQ: 1 },
                 'a': { t: 'v', d: 1.0, f1: 700, f2: 1200, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000, nQ: 1 },
                 'о': { t: 'v', d: 1.0, f1: 400, f2: 800, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000, nQ: 1 },
@@ -264,7 +264,7 @@
                 'я': { t: 'v', d: 1.2, f1: 600, f2: 1400, f3: 2600, vA: 1.0, nA: 0.0, nF: 1000, nQ: 1 }, 
                 'ю': { t: 'v', d: 1.2, f1: 300, f2: 800, f3: 2600, vA: 0.9, nA: 0.0, nF: 1000, nQ: 1 },
                 
-                // Сонорные (М и Н теперь имеют четкие отличия по f2 и сниженную амплитуду)
+                // Сонорные
                 'м': { t: 'v', d: 0.8, f1: 250, f2: 1000, f3: 2000, vA: 0.35, nA: 0.0, nF: 1000, nQ: 1 },
                 'm': { t: 'v', d: 0.8, f1: 250, f2: 1000, f3: 2000, vA: 0.35, nA: 0.0, nF: 1000, nQ: 1 },
                 'н': { t: 'v', d: 0.8, f1: 250, f2: 1800, f3: 2600, vA: 0.35, nA: 0.0, nF: 1000, nQ: 1 },
@@ -300,10 +300,12 @@
                 't': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 4500, nQ: 1.0 },
                 'к': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.0, nF: 2000, nQ: 1.5 },
                 'k': { t: 'p', d: 0.4, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.0, nF: 2000, nQ: 1.5 },
-                'ц': { t: 'p', d: 0.6, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 5000, nQ: 1.5 },
-                'ч': { t: 'p', d: 0.6, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 0.9, nF: 4000, nQ: 1.5 },
                 
-                // Взрывные звонкие (Б, Д, Г) - vA > 0 включит Voice Bar в паузе
+                // АФФРИКАТЫ (Ч, Ц) - хвост длиннее, nF в зоне шипящих
+                'ч': { t: 'p', d: 0.7, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.1, nF: 3500, nQ: 1.0 },
+                'ц': { t: 'p', d: 0.7, f1: 300, f2: 1000, f3: 2000, vA: 0.0, nA: 1.1, nF: 4500, nQ: 1.2 },
+                
+                // Взрывные звонкие
                 'б': { t: 'p', d: 0.4, f1: 200, f2: 800, f3: 2000, vA: 0.4, nA: 0.8, nF: 800, nQ: 0.5 },
                 'b': { t: 'p', d: 0.4, f1: 200, f2: 800, f3: 2000, vA: 0.4, nA: 0.8, nF: 800, nQ: 0.5 },
                 'д': { t: 'p', d: 0.4, f1: 200, f2: 1500, f3: 2500, vA: 0.4, nA: 0.8, nF: 3500, nQ: 1.0 },
@@ -329,7 +331,8 @@
 
                 try {
                     const sampleRate = 44100;
-                    const basePitch = (currentGender === 'female' ? 200 : 80) * parseFloat(DOM.pitch.value);
+                    // ПИТЧ: Добавлен дефолтный множитель * 1.08 (на 8% выше по умолчанию)
+                    const basePitch = (currentGender === 'female' ? 200 : 80) * 1.08 * parseFloat(DOM.pitch.value);
                     const formMult = (currentGender === 'female' ? 1.2 : 1.0) * parseFloat(DOM.formant.value);
                     const baseDur = 0.1 / parseFloat(DOM.speed.value); 
                     const bitcrushAmt = parseInt(DOM.bit.value);
@@ -382,19 +385,21 @@
                     const mixBus = oCtx.createGain();
                     mixBus.connect(effectInput);
 
-                    // --- GENERATORS (Импульсный генератор обертонов) ---
-                    const real = new Float32Array(64);
-                    const imag = new Float32Array(64);
+                    // --- GENERATORS (Анти-джиттер, мягкая Пульсовая Волна) ---
+                    const real = new Float32Array(32);
+                    const imag = new Float32Array(32);
                     real[0] = 0;
-                    for (let i = 1; i < 64; i++) {
-                        real[i] = 1.0; // Идеальный спектр гармоник для богатства обертонов
+                    for (let i = 1; i < 32; i++) {
+                        // Формируем теплую пульсовую волну (20% скважность) со спадом гармоник
+                        // Это убирает цифровой треск/биткрашер, сохраняя винтажное жужжание
+                        real[i] = (Math.sin(Math.PI * i * 0.2) / i) * Math.pow(0.95, i);
                     }
                     const buzzWave = oCtx.createPeriodicWave(real, imag);
 
                     const voiceOsc1 = oCtx.createOscillator(); 
-                    voiceOsc1.setPeriodicWave(buzzWave); // Богатая базовая волна
+                    voiceOsc1.setPeriodicWave(buzzWave); 
                     const voiceOsc2 = oCtx.createOscillator(); 
-                    voiceOsc2.type = 'sawtooth'; // Саб-тон
+                    voiceOsc2.type = 'sawtooth'; 
 
                     voiceOsc1.frequency.value = basePitch;
                     voiceOsc2.frequency.value = basePitch / 2;
@@ -406,14 +411,14 @@
                     noiseOsc.buffer = noiseBuf;
                     noiseOsc.loop = true;
 
-                    // --- ROUTING & FILTERS (Более широкие фильтры) ---
+                    // --- ROUTING & FILTERS ---
                     const vcaVoice = oCtx.createGain(); vcaVoice.gain.value = 0;
                     const vcaNoise = oCtx.createGain(); vcaNoise.gain.value = 0;
 
-                    // Q-фактор снижен (было 4,5,6), чтобы гармоники пробивались через фильтры
-                    const f1 = oCtx.createBiquadFilter(); f1.type = 'bandpass'; f1.Q.value = 2.5;
-                    const f2 = oCtx.createBiquadFilter(); f2.type = 'bandpass'; f2.Q.value = 3.5;
-                    const f3 = oCtx.createBiquadFilter(); f3.type = 'bandpass'; f3.Q.value = 4.5;
+                    // Расширяем фильтры для естественности (уменьшаем Q)
+                    const f1 = oCtx.createBiquadFilter(); f1.type = 'bandpass'; f1.Q.value = 2.0;
+                    const f2 = oCtx.createBiquadFilter(); f2.type = 'bandpass'; f2.Q.value = 3.0;
+                    const f3 = oCtx.createBiquadFilter(); f3.type = 'bandpass'; f3.Q.value = 4.0;
                     
                     const fNoise = oCtx.createBiquadFilter(); fNoise.type = 'bandpass'; fNoise.Q.value = 1;
 
@@ -424,7 +429,7 @@
                     vcaVoice.connect(f2).connect(mixBus);
                     vcaVoice.connect(f3).connect(mixBus);
                     
-                    const dryBuzz = oCtx.createGain(); dryBuzz.gain.value = 0.2; // Добавляем тела и жужжания
+                    const dryBuzz = oCtx.createGain(); dryBuzz.gain.value = 0.2;
                     vcaVoice.connect(dryBuzz).connect(mixBus);
 
                     noiseOsc.connect(vcaNoise).connect(fNoise).connect(mixBus);
@@ -434,8 +439,9 @@
 
                     // --- AUTOMATION LOOP ---
                     let t = 0;
-                    sequence.forEach((item, index) => {
+                    sequence.forEach((item) => {
                         const ph = item.ph;
+                        const char = item.char;
                         const dur = item.dur;
                         const glide = 0.03; 
                         
@@ -455,15 +461,16 @@
                             vcaVoice.gain.cancelScheduledValues(t);
                             vcaNoise.gain.cancelScheduledValues(t);
                             
-                            // ЗВОНКИЕ СОГЛАСНЫЕ: Voice Bar (гудение в сомкнутом рту)
                             const isVoiced = ph.vA > 0;
-                            const voiceBarLevel = isVoiced ? 0.15 : 0; 
+                            const isAffricate = (char === 'ч' || char === 'ц');
                             
-                            vcaVoice.gain.setValueAtTime(voiceBarLevel, t);
+                            vcaVoice.gain.setValueAtTime(isVoiced ? 0.15 : 0, t);
                             vcaNoise.gain.setValueAtTime(0, t);
 
                             const gap = Math.min(0.04, dur * 0.5); 
-                            const clickDur = Math.min(0.05, dur - gap);
+                            
+                            // АФФРИКАТЫ (Ч, Ц) получают более длинный шумовой хвост
+                            const clickDur = isAffricate ? Math.min(0.15, dur - gap) : Math.min(0.05, dur - gap);
                             
                             vcaNoise.gain.setValueAtTime(0, t + gap);
                             vcaNoise.gain.linearRampToValueAtTime(ph.nA, t + gap + 0.005);
