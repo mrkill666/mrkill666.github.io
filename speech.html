@@ -10,9 +10,6 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
-    <link rel="manifest" href="/icons/site.webmanifest">
-    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
-    <link rel="shortcut icon" href="/icons/favicon.ico">
     <meta name="theme-color" content="#ffffff">
 
     <style>
@@ -116,10 +113,10 @@
     </div>
 
     <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
-        <a href="index" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">Владислав Ножиков</a>
+        <a href="#" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">Владислав Ножиков</a>
         <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
-            <a href="index#work" class="hover:opacity-50 transition">Работы</a>
-            <a href="mujiclab" class="hover:opacity-50 transition">Мuжiclab</a>
+            <a href="#" class="hover:opacity-50 transition">Работы</a>
+            <a href="#" class="hover:opacity-50 transition">Мuжiclab</a>
         </div>
     </nav>
 
@@ -136,7 +133,7 @@
                 
                 <div class="control-panel">
                     
-                    <textarea id="text-input" placeholder="Введите текст на русском...">я робот из восьмидесятых. синтез речи запущен.</textarea>
+                    <textarea id="text-input" placeholder="Введите текст на русском или английском...">hello world! я робот из восьмидесятых.</textarea>
 
                     <button class="btn btn-play-big mt-2" id="btn-generate">⚡ ГЕНЕРИРОВАТЬ И ИГРАТЬ</button>
                     
@@ -212,7 +209,7 @@
     <footer class="mt-12 pt-8 border-t border-white/10 flex flex-col items-center text-center gap-4 relative z-10 w-full max-w-[1100px]">
         <div class="flex flex-col items-center gap-2">
             <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">© <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ</p>        
-            <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">Политика конфиденциальности</a>
+            <a href="#" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">Политика конфиденциальности</a>
         </div>
     </footer>
 
@@ -220,7 +217,7 @@
         window.onload = () => { setTimeout(() => { document.body.classList.add('loaded'); }, 500); };
         document.getElementById('current-year').textContent = new Date().getFullYear();
 
-                const SpeechLab = (() => {
+        const SpeechLab = (() => {
             const DOM = {
                 input: document.getElementById('text-input'),
                 btnGen: document.getElementById('btn-generate'),
@@ -257,8 +254,9 @@
             DOM.gMale.onclick = () => { currentGender = 'male'; DOM.gMale.classList.add('active'); DOM.gFemale.classList.remove('active'); };
             DOM.gFemale.onclick = () => { currentGender = 'female'; DOM.gFemale.classList.add('active'); DOM.gMale.classList.remove('active'); };
 
-            // --- PHONEME DICTIONARY (Акустические модели) ---
+            // --- PHONEME DICTIONARY (Акустические модели RU + EN) ---
             const PHONEMES = {
+                // Русские
                 'а': { t: 'v', d: 1.0, f1: 700, f2: 1200, f3: 2600, a: 1.0 },
                 'о': { t: 'v', d: 1.0, f1: 400, f2: 800, f3: 2600, a: 1.0 },
                 'у': { t: 'v', d: 1.0, f1: 300, f2: 600, f3: 2600, a: 0.9 },
@@ -268,7 +266,6 @@
                 'ы': { t: 'v', d: 1.0, f1: 400, f2: 1600, f3: 2600, a: 0.8 },
                 'я': { t: 'v', d: 1.2, f1: 600, f2: 1400, f3: 2600, a: 1.0 }, 
                 'ю': { t: 'v', d: 1.2, f1: 300, f2: 800, f3: 2600, a: 0.9 },
-                
                 'м': { t: 'v', d: 0.8, f1: 250, f2: 1200, f3: 2600, a: 0.5 },
                 'н': { t: 'v', d: 0.8, f1: 250, f2: 1800, f3: 2600, a: 0.5 },
                 'р': { t: 'v', d: 0.6, f1: 400, f2: 1200, f3: 2600, a: 0.6 }, 
@@ -277,7 +274,6 @@
                 'з': { t: 'v', d: 0.7, f1: 300, f2: 4000, f3: 5000, a: 0.4 },
                 'ж': { t: 'v', d: 0.8, f1: 300, f2: 2500, f3: 3500, a: 0.5 },
                 'й': { t: 'v', d: 0.5, f1: 300, f2: 2200, f3: 3000, a: 0.7 },
-
                 'с': { t: 'n', d: 0.9, f: 4000, q: 1, a: 0.6 },
                 'ш': { t: 'n', d: 1.0, f: 2500, q: 1, a: 0.7 },
                 'щ': { t: 'n', d: 1.2, f: 3000, q: 1, a: 0.7 },
@@ -285,14 +281,40 @@
                 'х': { t: 'n', d: 0.8, f: 3000, q: 0.5, a: 0.6 },
                 'ц': { t: 'n', d: 0.7, f: 4500, q: 2, a: 0.6 },
                 'ч': { t: 'n', d: 0.7, f: 3500, q: 2, a: 0.6 },
-
                 'п': { t: 'p', d: 0.3, f: 1000, a: 0.8 },
                 'т': { t: 'p', d: 0.3, f: 2500, a: 0.8 },
                 'к': { t: 'p', d: 0.3, f: 1500, a: 0.8 },
-                
                 'б': { t: 'vp', d: 0.4, f: 1000, a: 0.8 },
                 'д': { t: 'vp', d: 0.4, f: 2500, a: 0.8 },
                 'г': { t: 'vp', d: 0.4, f: 1500, a: 0.8 },
+
+                // Английские
+                'a': { t: 'v', d: 1.0, f1: 700, f2: 1200, f3: 2600, a: 1.0 },
+                'e': { t: 'v', d: 1.0, f1: 400, f2: 1600, f3: 2600, a: 0.9 },
+                'i': { t: 'v', d: 1.0, f1: 300, f2: 2200, f3: 3000, a: 0.8 },
+                'o': { t: 'v', d: 1.0, f1: 400, f2: 800, f3: 2600, a: 1.0 },
+                'u': { t: 'v', d: 1.0, f1: 300, f2: 600, f3: 2600, a: 0.9 },
+                'y': { t: 'v', d: 0.5, f1: 300, f2: 2200, f3: 3000, a: 0.7 },
+                'm': { t: 'v', d: 0.8, f1: 250, f2: 1200, f3: 2600, a: 0.5 },
+                'n': { t: 'v', d: 0.8, f1: 250, f2: 1800, f3: 2600, a: 0.5 },
+                'r': { t: 'v', d: 0.6, f1: 400, f2: 1200, f3: 2600, a: 0.6 },
+                'l': { t: 'v', d: 0.8, f1: 300, f2: 1200, f3: 2600, a: 0.6 },
+                'v': { t: 'v', d: 0.7, f1: 300, f2: 800, f3: 2000, a: 0.4 },
+                'w': { t: 'v', d: 0.7, f1: 300, f2: 800, f3: 2000, a: 0.4 },
+                'z': { t: 'v', d: 0.7, f1: 300, f2: 4000, f3: 5000, a: 0.4 },
+                'j': { t: 'v', d: 0.8, f1: 300, f2: 2500, f3: 3500, a: 0.5 },
+                's': { t: 'n', d: 0.9, f: 4000, q: 1, a: 0.6 },
+                'c': { t: 'n', d: 0.9, f: 4000, q: 1, a: 0.6 },
+                'h': { t: 'n', d: 0.8, f: 3000, q: 0.5, a: 0.6 },
+                'f': { t: 'n', d: 0.8, f: 5000, q: 0.5, a: 0.5 },
+                'p': { t: 'p', d: 0.3, f: 1000, a: 0.8 },
+                't': { t: 'p', d: 0.3, f: 2500, a: 0.8 },
+                'k': { t: 'p', d: 0.3, f: 1500, a: 0.8 },
+                'q': { t: 'p', d: 0.3, f: 1500, a: 0.8 },
+                'x': { t: 'p', d: 0.4, f: 3000, a: 0.8 },
+                'b': { t: 'vp', d: 0.4, f: 1000, a: 0.8 },
+                'd': { t: 'vp', d: 0.4, f: 2500, a: 0.8 },
+                'g': { t: 'vp', d: 0.4, f: 1500, a: 0.8 },
                 
                 ' ': { t: 'space', d: 1.0 },
                 '.': { t: 'space', d: 2.0 },
@@ -323,20 +345,17 @@
                     for (let i = 0; i < text.length; i++) {
                         const char = text[i];
                         let ph = PHONEMES[char];
-                        if (!ph) ph = PHONEMES[' ']; 
+                        if (!ph) ph = PHONEMES[' ']; // Фолбэк для неизвестных символов
                         
-                        const dur = ph.d * baseDur;
+                        const dur = Math.max(0.01, ph.d * baseDur);
                         sequence.push({ char, ph, start: totalTime, dur: dur });
                         totalTime += dur;
                     }
                     
                     renderDuration = totalTime + (delayAmt > 0 ? 1.0 : 0.2); 
-                    
-                    // ВАЖНО: Округляем количество фреймов в большую сторону, иначе OfflineAudioContext упадет на дробных значениях
                     const frames = Math.max(1, Math.ceil(sampleRate * renderDuration));
                     const oCtx = new OfflineAudioContext(1, frames, sampleRate);
                     
-                    // Master Channel
                     const masterGain = oCtx.createGain();
                     masterGain.gain.value = 0.8;
                     masterGain.connect(oCtx.destination);
@@ -363,9 +382,10 @@
                         const shaper = oCtx.createWaveShaper();
                         const bits = Math.max(2, 16 - (bitcrushAmt / 100 * 14)); 
                         const step = Math.pow(0.5, bits);
-                        const curve = new Float32Array(sampleRate);
-                        for (let i = 0; i < sampleRate; i++) {
-                            let x = i * 2 / sampleRate - 1;
+                        const curveLength = 4096;
+                        const curve = new Float32Array(curveLength);
+                        for (let i = 0; i < curveLength; i++) {
+                            let x = i * 2 / curveLength - 1;
                             curve[i] = Math.round(x / step) * step;
                         }
                         shaper.curve = curve;
@@ -376,51 +396,55 @@
                     const synthBus = oCtx.createGain();
                     synthBus.connect(bitInput);
 
-                    // --- GENERATORS ---
-                    const noiseBuffer = oCtx.createBuffer(1, frames, sampleRate);
+                    // --- GENERATORS BUFFER ---
+                    // Создаем базовый шум один раз для производительности
+                    const noiseBuffer = oCtx.createBuffer(1, sampleRate, sampleRate);
                     const noiseData = noiseBuffer.getChannelData(0);
                     for(let i=0; i<noiseData.length; i++) noiseData[i] = Math.random()*2-1;
-                    const noiseSource = oCtx.createBufferSource();
-                    noiseSource.buffer = noiseBuffer;
-                    noiseSource.loop = true;
-                    noiseSource.start(0);
-
-                    const pulseOsc = oCtx.createOscillator();
-                    pulseOsc.type = 'sawtooth';
-                    pulseOsc.frequency.value = basePitch;
-                    pulseOsc.start(0);
 
                     // --- RENDER PHONEMES ---
                     sequence.forEach(item => {
                         const { ph, start, dur } = item;
                         const t = start;
 
+                        if (ph.t === 'space') return; // Ничего не делаем в пробелах
+
+                        const env = oCtx.createGain();
+                        env.gain.setValueAtTime(0, t);
+                        
+                        // Гласные и сонорные
                         if (ph.t === 'v' || ph.t === 'vp') {
-                            const f1 = oCtx.createBiquadFilter(); f1.type = 'bandpass'; f1.frequency.value = ph.f1 * formMult; f1.Q.value = 4;
-                            const f2 = oCtx.createBiquadFilter(); f2.type = 'bandpass'; f2.frequency.value = ph.f2 * formMult; f2.Q.value = 6;
-                            const f3 = oCtx.createBiquadFilter(); f3.type = 'bandpass'; f3.frequency.value = ph.f3 * formMult; f3.Q.value = 8;
-                            
-                            const env = oCtx.createGain();
-                            env.gain.setValueAtTime(0, t);
                             env.gain.linearRampToValueAtTime(ph.a * 0.8, t + (dur * 0.2)); 
                             env.gain.setValueAtTime(ph.a * 0.8, t + (dur * 0.8)); 
                             env.gain.linearRampToValueAtTime(0, t + dur); 
 
-                            pulseOsc.connect(f1).connect(env);
-                            pulseOsc.connect(f2).connect(env);
-                            pulseOsc.connect(f3).connect(env);
+                            // ИСПРАВЛЕНИЕ: Создаем индивидуальный осциллятор для каждой фонемы
+                            const osc = oCtx.createOscillator();
+                            osc.type = 'sawtooth';
+                            // Легкое падение питча для натуральности
+                            osc.frequency.setValueAtTime(basePitch, t);
+                            osc.frequency.exponentialRampToValueAtTime(basePitch * 0.9, t + dur);
+
+                            const f1 = oCtx.createBiquadFilter(); f1.type = 'bandpass'; f1.frequency.value = ph.f1 * formMult; f1.Q.value = 4;
+                            const f2 = oCtx.createBiquadFilter(); f2.type = 'bandpass'; f2.frequency.value = ph.f2 * formMult; f2.Q.value = 6;
+                            const f3 = oCtx.createBiquadFilter(); f3.type = 'bandpass'; f3.frequency.value = ph.f3 * formMult; f3.Q.value = 8;
+                            
+                            osc.connect(f1).connect(env);
+                            osc.connect(f2).connect(env);
+                            osc.connect(f3).connect(env);
+                            
                             env.connect(synthBus);
+                            osc.start(t);
+                            osc.stop(t + dur);
                         }
                         
+                        // Согласные (шумовые)
                         if (ph.t === 'n' || ph.t === 'p' || ph.t === 'vp') {
                             const f = oCtx.createBiquadFilter(); 
                             f.type = 'bandpass'; 
                             f.frequency.value = ph.f || 3000; 
                             f.Q.value = ph.q || 1;
 
-                            const env = oCtx.createGain();
-                            env.gain.setValueAtTime(0, t);
-                            
                             if (ph.t === 'p' || ph.t === 'vp') {
                                 env.gain.linearRampToValueAtTime(ph.a, t + 0.01);
                                 env.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
@@ -430,12 +454,18 @@
                                 env.gain.linearRampToValueAtTime(0, t + dur);
                             }
 
-                            noiseSource.connect(f).connect(env).connect(synthBus);
+                            // ИСПРАВЛЕНИЕ: Изолированный генератор шума
+                            const noiseSource = oCtx.createBufferSource();
+                            noiseSource.buffer = noiseBuffer;
+                            noiseSource.loop = true;
+                            
+                            noiseSource.connect(f).connect(env);
+                            env.connect(synthBus);
+                            
+                            noiseSource.start(t);
+                            noiseSource.stop(t + dur);
                         }
                     });
-
-                    pulseOsc.stop(totalTime);
-                    noiseSource.stop(totalTime);
 
                     // Рендерим аудио
                     renderedBuffer = await oCtx.startRendering();
@@ -542,30 +572,33 @@
                 return new Blob([view], { type: 'audio/wav' });
             };
 
+            // ИСПРАВЛЕНИЕ: Безопасная отрисовка волны
             const drawWaveform = (buffer) => {
-                const resizeCanvas = () => { DOM.canvas.width = DOM.canvas.parentElement.clientWidth; DOM.canvas.height = DOM.canvas.parentElement.clientHeight; };
-                resizeCanvas();
-                
-                const data = buffer.getChannelData(0);
-                const step = Math.ceil(data.length / DOM.canvas.width);
-                const amp = DOM.canvas.height / 2;
+                DOM.canvas.width = DOM.canvas.parentElement.clientWidth; 
+                DOM.canvas.height = DOM.canvas.parentElement.clientHeight;
                 
                 ctx.fillStyle = '#0a0a0a';
                 ctx.fillRect(0, 0, DOM.canvas.width, DOM.canvas.height);
+                
+                const data = buffer.getChannelData(0);
+                const step = Math.max(1, Math.floor(data.length / DOM.canvas.width));
+                const amp = DOM.canvas.height / 2;
                 
                 ctx.beginPath();
                 ctx.strokeStyle = '#f97316';
                 ctx.lineWidth = 2;
                 
                 for (let i = 0; i < DOM.canvas.width; i++) {
-                    let min = 1.0, max = -1.0;
+                    let min = 0, max = 0;
                     for (let j = 0; j < step; j++) {
-                        const datum = data[(i * step) + j];
-                        if (datum < min) min = datum;
-                        if (datum > max) max = datum;
+                        const idx = (i * step) + j;
+                        if (idx < data.length) {
+                            if (data[idx] < min) min = data[idx];
+                            if (data[idx] > max) max = data[idx];
+                        }
                     }
-                    ctx.moveTo(i, amp * (1 + min));
-                    ctx.lineTo(i, amp * (1 + max));
+                    ctx.moveTo(i, amp + (min * amp));
+                    ctx.lineTo(i, amp + (max * amp));
                 }
                 ctx.stroke();
             };
@@ -585,6 +618,5 @@
 
         })();
     </script>
-
 </body>
 </html>
