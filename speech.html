@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Lab | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="theme-color" content="#ffffff">
+
+    <style>
+        :root {
+            --bg-color: #050505; --card-bg: #111111; --accent-color: #ffffff;
+            --border-light: rgba(255, 255, 255, 0.1); --control-bg: #1a1a1a;
+            --active-color: #f97316; --danger-color: #ff3333; --font-main: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        a { color: inherit; text-decoration: none; }
+
+        body {
+            background-color: var(--bg-color); color: var(--accent-color); font-family: var(--font-main);
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            padding: 6rem 2rem 2rem 2rem; overflow-x: hidden; position: relative;
+        }
+
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.05; pointer-events: none; z-index: 9999;
+        }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+            display: flex; justify-content: center; align-items: center; z-index: 10001;
+            transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+        .knife-svg-main { width: 120px; height: 120px; fill: none; stroke: white; stroke-width: 1.2; animation: rotate-knife 1.5s linear infinite; }
+        @keyframes rotate-knife { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loaded #loader { transform: translateY(-100%); }
+
+        .app-container {
+            background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 24px;
+            padding: 2rem; width: 100%; max-width: 1100px; position: relative; z-index: 10;
+            display: flex; flex-direction: column; gap: 2rem; backdrop-filter: blur(10px);
+        }
+
+        .subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: gray; font-weight: 700; margin-bottom: 0.5rem; }
+        .title { font-size: 2rem; font-weight: 900; text-transform: uppercase; line-height: 1.1; letter-spacing: -0.02em; }
+
+        .editor-grid { display: grid; grid-template-columns: 350px 1fr; gap: 2rem; }
+        @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
+
+        .control-panel { background: rgba(5,5,5,0.8); border: 1px solid var(--border-light); border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; height: fit-content; }
+
+        .btn {
+            background: var(--control-bg); color: var(--accent-color); border: 1px solid var(--border-light);
+            border-radius: 8px; padding: 0.75rem 1rem; font-size: 12px; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.3s ease;
+            text-align: center; width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem;
+        }
+        .btn:hover { background: var(--accent-color); color: #000; }
+        .btn.active { background: var(--active-color); color: #000; border-color: var(--active-color); }
+        
+        .btn-play-big { font-size: 1.2rem; padding: 1.5rem; border-color: var(--active-color); color: var(--active-color); }
+        .btn-play-big:hover { background: var(--active-color); color: #000; box-shadow: 0 0 20px rgba(249, 115, 22, 0.4); }
+        .btn-play-big:active { transform: scale(0.98); }
+
+        .btn-rec { border-color: var(--danger-color); color: var(--danger-color); }
+        .btn-rec:hover { background: var(--danger-color); color: white; }
+
+        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .control-label { display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; font-weight: 900; color: gray; }
+        .control-val { color: var(--active-color); font-family: monospace; }
+        
+        textarea {
+            background: var(--control-bg); color: white; border: 1px solid var(--border-light); padding: 1rem;
+            border-radius: 8px; font-size: 16px; outline: none; font-weight: 700; width: 100%; resize: vertical; min-height: 100px;
+            font-family: monospace;
+        }
+        textarea:focus { border-color: var(--active-color); }
+
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--active-color); cursor: pointer; margin-top: -6px; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #333; border-radius: 2px; }
+
+        /* Gender Toggle */
+        .gender-toggle { display: flex; background: var(--control-bg); border-radius: 8px; border: 1px solid var(--border-light); overflow: hidden; }
+        .gender-btn { flex: 1; padding: 0.75rem; text-align: center; font-size: 10px; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: 0.3s; color: gray; }
+        .gender-btn.active { background: #333; color: white; }
+
+        .visualizer-container {
+            width: 100%; aspect-ratio: 16/9; background: #0a0a0a; border-radius: 12px; border: 1px solid var(--border-light);
+            display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; position: relative;
+        }
+        canvas { width: 100%; height: 100%; }
+        .phoneme-display { position: absolute; bottom: 20px; left: 0; width: 100%; text-align: center; font-size: 4rem; font-weight: 900; color: rgba(255,255,255,0.1); font-family: monospace; letter-spacing: 0.2em; text-transform: uppercase; pointer-events: none;}
+        .phoneme-display.active { color: var(--active-color); opacity: 0.8; text-shadow: 0 0 20px var(--active-color); }
+
+    </style>
+</head>
+<body class="noise">
+
+    <div id="loader">
+        <svg class="knife-svg-main" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
+    </div>
+
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">Владислав Ножиков</a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="index#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="mujiclab" class="hover:opacity-50 transition">Мuжiclab</a>
+        </div>
+    </nav>
+
+    <main class="w-full flex justify-center relative z-10">
+        <div class="app-container">
+            
+            <div class="header-section">
+                <div class="subtitle">Sonic Lab / Вокал</div>
+                <h1 class="title">Speech Lab</h1>
+                <p class="text-xs text-gray-500 mt-2 max-w-xl font-medium">Ретро-синтезатор речи. Алгоритм преобразует текст в математические фонемы, пропуская сигнал через формантные фильтры (имитация голосовых связок и рта).</p>
+            </div>
+
+            <div class="editor-grid">
+                
+                <div class="control-panel">
+                    
+                    <textarea id="text-input" placeholder="Введите текст на русском...">я робот из восьмидесятых. синтез речи запущен.</textarea>
+
+                    <button class="btn btn-play-big mt-2" id="btn-generate">⚡ ГЕНЕРИРОВАТЬ И ИГРАТЬ</button>
+                    
+                    <div class="h-[1px] w-full bg-white/10 my-1"></div>
+
+                    <div class="control-group">
+                        <div class="control-label">Голосовой Модуль (Пол)</div>
+                        <div class="gender-toggle">
+                            <div class="gender-btn active" data-gender="male" id="g-male">Мужской (SAM)</div>
+                            <div class="gender-btn" data-gender="female" id="g-female">Женский (SIRI)</div>
+                        </div>
+                    </div>
+
+                    <div class="control-group mt-2">
+                        <div class="control-label"><span>Высота (Pitch)</span><span class="control-val" id="val-pitch">1.0x</span></div>
+                        <input type="range" id="ctrl-pitch" min="0.2" max="2.0" step="0.1" value="1.0">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label"><span>Темп (Speed)</span><span class="control-val" id="val-speed">1.0x</span></div>
+                        <input type="range" id="ctrl-speed" min="0.5" max="2.0" step="0.1" value="1.0">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label"><span>Форманта (Тембр)</span><span class="control-val" id="val-formant">1.0x</span></div>
+                        <input type="range" id="ctrl-formant" min="0.5" max="1.5" step="0.05" value="1.0">
+                        <p class="text-[9px] text-gray-500 mt-1">Меняет размер виртуального "рта" синтезатора.</p>
+                    </div>
+
+                    <div class="h-[1px] w-full bg-white/10 my-1"></div>
+                    <div class="subtitle text-[#f97316]">Эффекты</div>
+
+                    <div class="control-group">
+                        <div class="control-label"><span>Bitcrusher (8-bit)</span><span class="control-val" id="val-bit">0%</span></div>
+                        <input type="range" id="ctrl-bit" min="0" max="100" value="0">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label"><span>Space (Delay)</span><span class="control-val" id="val-delay">0%</span></div>
+                        <input type="range" id="ctrl-delay" min="0" max="100" value="0">
+                    </div>
+
+                    <div class="h-[1px] w-full bg-white/10 my-2"></div>
+                    
+                    <button class="btn btn-rec" id="btn-export" disabled style="opacity: 0.5; cursor: not-allowed;">💾 Скачать .WAV</button>
+
+                </div>
+
+                <div class="flex flex-col gap-6">
+                    <div class="control-panel p-2">
+                        <div class="visualizer-container">
+                            <canvas id="waveform-canvas"></canvas>
+                            <div class="phoneme-display" id="phoneme-display">...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="control-panel">
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">
+                            <span class="text-white font-bold">Как это работает?</span><br>
+                            Скрипт читает буквы и генерирует звук оффлайн:<br>
+                            • Гласные: пульсовая волна через 3 полосовых фильтра (F1, F2, F3).<br>
+                            • Шипящие (с, ш, ф): белый шум через ВЧ-фильтр.<br>
+                            • Взрывные (п, т, к): короткие шумовые импульсы.<br>
+                            Результат сшивается в единый WAV буфер без использования готовых сэмплов.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-12 pt-8 border-t border-white/10 flex flex-col items-center text-center gap-4 relative z-10 w-full max-w-[1100px]">
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">© <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ</p>        
+            <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">Политика конфиденциальности</a>
+        </div>
+    </footer>
+
+    <script>
+        window.onload = () => { setTimeout(() => { document.body.classList.add('loaded'); }, 500); };
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        const SpeechLab = (() => {
+            const DOM = {
+                input: document.getElementById('text-input'),
+                btnGen: document.getElementById('btn-generate'),
+                btnExport: document.getElementById('btn-export'),
+                
+                gMale: document.getElementById('g-male'),
+                gFemale: document.getElementById('g-female'),
+                
+                pitch: document.getElementById('ctrl-pitch'), valPitch: document.getElementById('val-pitch'),
+                speed: document.getElementById('ctrl-speed'), valSpeed: document.getElementById('val-speed'),
+                formant: document.getElementById('ctrl-formant'), valFormant: document.getElementById('val-formant'),
+                bit: document.getElementById('ctrl-bit'), valBit: document.getElementById('val-bit'),
+                delay: document.getElementById('ctrl-delay'), valDelay: document.getElementById('val-delay'),
+                
+                canvas: document.getElementById('waveform-canvas'),
+                phonemeDisp: document.getElementById('phoneme-display')
+            };
+
+            const ctx = DOM.canvas.getContext('2d');
+            let realAudioCtx = null;
+            let playbackSource = null;
+            let renderedBuffer = null;
+            let renderDuration = 0;
+
+            let currentGender = 'male';
+
+            // UI Listeners
+            DOM.pitch.oninput = e => DOM.valPitch.textContent = `${e.target.value}x`;
+            DOM.speed.oninput = e => DOM.valSpeed.textContent = `${e.target.value}x`;
+            DOM.formant.oninput = e => DOM.valFormant.textContent = `${e.target.value}x`;
+            DOM.bit.oninput = e => DOM.valBit.textContent = `${e.target.value}%`;
+            DOM.delay.oninput = e => DOM.valDelay.textContent = `${e.target.value}%`;
+
+            DOM.gMale.onclick = () => { currentGender = 'male'; DOM.gMale.classList.add('active'); DOM.gFemale.classList.remove('active'); };
+            DOM.gFemale.onclick = () => { currentGender = 'female'; DOM.gFemale.classList.add('active'); DOM.gMale.classList.remove('active'); };
+
+            // --- PHONEME DICTIONARY (Акустические модели) ---
+            // Упрощенная модель для русского языка. Частоты формант (F1, F2, F3)
+            const PHONEMES = {
+                'а': { t: 'v', d: 1.0, f1: 700, f2: 1200, f3: 2600, a: 1.0 },
+                'о': { t: 'v', d: 1.0, f1: 400, f2: 800, f3: 2600, a: 1.0 },
+                'у': { t: 'v', d: 1.0, f1: 300, f2: 600, f3: 2600, a: 0.9 },
+                'э': { t: 'v', d: 1.0, f1: 400, f2: 1600, f3: 2600, a: 0.9 },
+                'е': { t: 'v', d: 1.0, f1: 400, f2: 1600, f3: 2600, a: 0.9 },
+                'и': { t: 'v', d: 1.0, f1: 300, f2: 2200, f3: 3000, a: 0.8 },
+                'ы': { t: 'v', d: 1.0, f1: 400, f2: 1600, f3: 2600, a: 0.8 },
+                'я': { t: 'v', d: 1.2, f1: 600, f2: 1400, f3: 2600, a: 1.0 }, // Упрощение (й+а)
+                'ю': { t: 'v', d: 1.2, f1: 300, f2: 800, f3: 2600, a: 0.9 },
+                
+                'м': { t: 'v', d: 0.8, f1: 250, f2: 1200, f3: 2600, a: 0.5 },
+                'н': { t: 'v', d: 0.8, f1: 250, f2: 1800, f3: 2600, a: 0.5 },
+                'р': { t: 'v', d: 0.6, f1: 400, f2: 1200, f3: 2600, a: 0.6 }, // Трррр можно сделать через LFO, но тут просто гласная
+                'л': { t: 'v', d: 0.8, f1: 300, f2: 1200, f3: 2600, a: 0.6 },
+                'в': { t: 'v', d: 0.7, f1: 300, f2: 800, f3: 2000, a: 0.4 },
+                'з': { t: 'v', d: 0.7, f1: 300, f2: 4000, f3: 5000, a: 0.4 },
+                'ж': { t: 'v', d: 0.8, f1: 300, f2: 2500, f3: 3500, a: 0.5 },
+                'й': { t: 'v', d: 0.5, f1: 300, f2: 2200, f3: 3000, a: 0.7 },
+
+                'с': { t: 'n', d: 0.9, f: 4000, q: 1, a: 0.6 },
+                'ш': { t: 'n', d: 1.0, f: 2500, q: 1, a: 0.7 },
+                'щ': { t: 'n', d: 1.2, f: 3000, q: 1, a: 0.7 },
+                'ф': { t: 'n', d: 0.8, f: 5000, q: 0.5, a: 0.5 },
+                'х': { t: 'n', d: 0.8, f: 3000, q: 0.5, a: 0.6 },
+                'ц': { t: 'n', d: 0.7, f: 4500, q: 2, a: 0.6 },
+                'ч': { t: 'n', d: 0.7, f: 3500, q: 2, a: 0.6 },
+
+                'п': { t: 'p', d: 0.3, f: 1000, a: 0.8 },
+                'т': { t: 'p', d: 0.3, f: 2500, a: 0.8 },
+                'к': { t: 'p', d: 0.3, f: 1500, a: 0.8 },
+                
+                'б': { t: 'vp', d: 0.4, f: 1000, a: 0.8 },
+                'д': { t: 'vp', d: 0.4, f: 2500, a: 0.8 },
+                'г': { t: 'vp', d: 0.4, f: 1500, a: 0.8 },
+                
+                ' ': { t: 'space', d: 1.0 },
+                '.': { t: 'space', d: 2.0 },
+                ',': { t: 'space', d: 1.5 }
+            };
+
+            // --- SYNTHESIS ENGINE (Offline Rendering) ---
+            const synthesizeSpeech = async () => {
+                const text = DOM.input.value.toLowerCase();
+                if (!text) return;
+
+                DOM.btnGen.textContent = '...РЕНДЕР...';
+                DOM.btnGen.style.pointerEvents = 'none';
+
+                const sampleRate = 44100;
+                
+                // Настройки из UI
+                const basePitch = (currentGender === 'female' ? 220 : 100) * parseFloat(DOM.pitch.value);
+                const formMult = (currentGender === 'female' ? 1.2 : 1.0) * parseFloat(DOM.formant.value);
+                const baseDur = 0.15 / parseFloat(DOM.speed.value); // Базовая длительность фонемы
+                
+                const bitcrushAmt = parseInt(DOM.bit.value);
+                const delayAmt = parseInt(DOM.delay.value) / 100;
+
+                // 1. Парсинг и расчет длины оффлайн-буфера
+                let sequence = [];
+                let totalTime = 0;
+                
+                for (let i = 0; i < text.length; i++) {
+                    const char = text[i];
+                    let ph = PHONEMES[char];
+                    if (!ph) ph = PHONEMES[' ']; // Неизвестные символы как паузы
+                    
+                    const dur = ph.d * baseDur;
+                    sequence.push({ char, ph, start: totalTime, dur: dur });
+                    totalTime += dur;
+                }
+                
+                renderDuration = totalTime + (delayAmt > 0 ? 1.0 : 0.2); // Хвост для дилея
+                
+                const oCtx = new OfflineAudioContext(1, sampleRate * renderDuration, sampleRate);
+                
+                // Master Channel
+                const masterGain = oCtx.createGain();
+                masterGain.gain.value = 0.8;
+                masterGain.connect(oCtx.destination);
+
+                // --- EFFECTS SETUP ---
+                // Delay
+                let delayInput = masterGain;
+                if (delayAmt > 0) {
+                    const delayNode = oCtx.createDelay(1.0);
+                    delayNode.delayTime.value = 0.3; // 300ms echo
+                    const delayFeedback = oCtx.createGain();
+                    delayFeedback.gain.value = delayAmt * 0.6; // Max 60% feedback
+                    
+                    delayNode.connect(delayFeedback);
+                    delayFeedback.connect(delayNode);
+                    delayNode.connect(masterGain);
+                    
+                    delayInput = oCtx.createGain();
+                    delayInput.connect(masterGain);
+                    delayInput.connect(delayNode);
+                }
+
+                // Bitcrusher (WaveShaper)
+                let bitInput = delayInput;
+                if (bitcrushAmt > 0) {
+                    const shaper = oCtx.createWaveShaper();
+                    const bits = Math.max(2, 16 - (bitcrushAmt / 100 * 14)); // от 16 до 2 бит
+                    const step = Math.pow(0.5, bits);
+                    const curve = new Float32Array(sampleRate);
+                    for (let i = 0; i < sampleRate; i++) {
+                        let x = i * 2 / sampleRate - 1;
+                        curve[i] = Math.round(x / step) * step;
+                    }
+                    shaper.curve = curve;
+                    shaper.connect(delayInput);
+                    bitInput = shaper;
+                }
+
+                const synthBus = oCtx.createGain();
+                synthBus.connect(bitInput);
+
+                // --- GENERATORS ---
+                // 1. Noise Buffer (для шипящих и взрывных)
+                const noiseBuffer = oCtx.createBuffer(1, sampleRate * renderDuration, sampleRate);
+                const noiseData = noiseBuffer.getChannelData(0);
+                for(let i=0; i<noiseData.length; i++) noiseData[i] = Math.random()*2-1;
+                const noiseSource = oCtx.createBufferSource();
+                noiseSource.buffer = noiseBuffer;
+                noiseSource.loop = true;
+                noiseSource.start(0);
+
+                // 2. Pulse Oscillator (Голосовые связки)
+                // Используем Sawtooth как основу для робо-голоса
+                const pulseOsc = oCtx.createOscillator();
+                pulseOsc.type = 'sawtooth';
+                pulseOsc.frequency.value = basePitch;
+                pulseOsc.start(0);
+
+                // --- RENDER PHONEMES ---
+                sequence.forEach(item => {
+                    const { ph, start, dur } = item;
+                    const t = start;
+
+                    if (ph.t === 'v' || ph.t === 'vp') {
+                        // VOICED (Гласные / Сонорные)
+                        const f1 = oCtx.createBiquadFilter(); f1.type = 'bandpass'; f1.frequency.value = ph.f1 * formMult; f1.Q.value = 4;
+                        const f2 = oCtx.createBiquadFilter(); f2.type = 'bandpass'; f2.frequency.value = ph.f2 * formMult; f2.Q.value = 6;
+                        const f3 = oCtx.createBiquadFilter(); f3.type = 'bandpass'; f3.frequency.value = ph.f3 * formMult; f3.Q.value = 8;
+                        
+                        const env = oCtx.createGain();
+                        env.gain.setValueAtTime(0, t);
+                        env.gain.linearRampToValueAtTime(ph.a * 0.8, t + (dur * 0.2)); // Атака
+                        env.gain.setValueAtTime(ph.a * 0.8, t + (dur * 0.8)); // Удержание
+                        env.gain.linearRampToValueAtTime(0, t + dur); // Спад
+
+                        pulseOsc.connect(f1).connect(env);
+                        pulseOsc.connect(f2).connect(env);
+                        pulseOsc.connect(f3).connect(env);
+                        env.connect(synthBus);
+                    }
+                    
+                    if (ph.t === 'n' || ph.t === 'p' || ph.t === 'vp') {
+                        // NOISE (Шипящие / Взрывные)
+                        const f = oCtx.createBiquadFilter(); 
+                        f.type = 'bandpass'; 
+                        f.frequency.value = ph.f || 3000; 
+                        f.Q.value = ph.q || 1;
+
+                        const env = oCtx.createGain();
+                        env.gain.setValueAtTime(0, t);
+                        
+                        if (ph.t === 'p' || ph.t === 'vp') {
+                            // Взрывной (короткий щелчок)
+                            env.gain.linearRampToValueAtTime(ph.a, t + 0.01);
+                            env.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+                        } else {
+                            // Шипящий (длительный)
+                            env.gain.linearRampToValueAtTime(ph.a, t + (dur * 0.2));
+                            env.gain.setValueAtTime(ph.a, t + (dur * 0.8));
+                            env.gain.linearRampToValueAtTime(0, t + dur);
+                        }
+
+                        noiseSource.connect(f).connect(env).connect(synthBus);
+                    }
+                });
+
+                // STOP GENERATORS
+                pulseOsc.stop(totalTime);
+                noiseSource.stop(totalTime);
+
+                // 3. Render
+                renderedBuffer = await oCtx.startRendering();
+
+                // 4. Update UI & Play
+                DOM.btnGen.textContent = '⚡ ГЕНЕРИРОВАТЬ И ИГРАТЬ';
+                DOM.btnGen.style.pointerEvents = 'auto';
+                
+                DOM.btnExport.disabled = false;
+                DOM.btnExport.style.opacity = '1';
+                DOM.btnExport.style.cursor = 'pointer';
+
+                drawWaveform(renderedBuffer);
+                playRenderedAudio(sequence);
+            };
+
+            const playRenderedAudio = (sequence) => {
+                if (!realAudioCtx) realAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (realAudioCtx.state === 'suspended') realAudioCtx.resume();
+                
+                if (playbackSource) playbackSource.stop();
+                
+                playbackSource = realAudioCtx.createBufferSource();
+                playbackSource.buffer = renderedBuffer;
+                playbackSource.connect(realAudioCtx.destination);
+                
+                const startTime = realAudioCtx.currentTime;
+                playbackSource.start(startTime);
+
+                // Анимация текста (караоке)
+                const animateText = () => {
+                    const now = realAudioCtx.currentTime - startTime;
+                    if (now > renderDuration) {
+                        DOM.phonemeDisp.textContent = '...';
+                        DOM.phonemeDisp.classList.remove('active');
+                        return;
+                    }
+
+                    // Найти текущую фонему
+                    const currentItem = sequence.find(item => now >= item.start && now < item.start + item.dur);
+                    if (currentItem) {
+                        DOM.phonemeDisp.textContent = currentItem.char === ' ' ? '_' : currentItem.char;
+                        DOM.phonemeDisp.classList.add('active');
+                    }
+
+                    requestAnimationFrame(animateText);
+                };
+                requestAnimationFrame(animateText);
+            };
+
+            // --- WAV EXPORTER ---
+            const encodeWAV = (buffer) => {
+                const numChannels = buffer.numberOfChannels;
+                const sampleRate = buffer.sampleRate;
+                const format = 1; // PCM
+                const bitDepth = 16;
+                
+                const result = new Float32Array(buffer.length * numChannels);
+                for (let channel = 0; channel < numChannels; channel++) {
+                    const channelData = buffer.getChannelData(channel);
+                    for (let i = 0; i < buffer.length; i++) {
+                        result[i * numChannels + channel] = channelData[i];
+                    }
+                }
+
+                const dataLength = result.length * (bitDepth / 8);
+                const arrayBuffer = new ArrayBuffer(44 + dataLength);
+                const view = new DataView(arrayBuffer);
+                const writeString = (v, offset, string) => { for (let i = 0; i < string.length; i++) v.setUint8(offset + i, string.charCodeAt(i)); };
+                
+                writeString(view, 0, 'RIFF');
+                view.setUint32(4, 36 + dataLength, true);
+                writeString(view, 8, 'WAVE');
+                writeString(view, 12, 'fmt ');
+                view.setUint32(16, 16, true);
+                view.setUint16(20, format, true);
+                view.setUint16(22, numChannels, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * numChannels * (bitDepth / 8), true);
+                view.setUint16(32, numChannels * (bitDepth / 8), true);
+                view.setUint16(34, bitDepth, true);
+                writeString(view, 36, 'data');
+                view.setUint32(40, dataLength, true);
+
+                let offset = 44;
+                for (let i = 0; i < result.length; i++) {
+                    let s = Math.max(-1, Math.min(1, result[i]));
+                    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+                    offset += 2;
+                }
+                return new Blob([view], { type: 'audio/wav' });
+            };
+
+            // --- WAVEFORM DRAW ---
+            const drawWaveform = (buffer) => {
+                const resizeCanvas = () => { DOM.canvas.width = DOM.canvas.parentElement.clientWidth; DOM.canvas.height = DOM.canvas.parentElement.clientHeight; };
+                resizeCanvas();
+                
+                const data = buffer.getChannelData(0);
+                const step = Math.ceil(data.length / DOM.canvas.width);
+                const amp = DOM.canvas.height / 2;
+                
+                ctx.fillStyle = '#0a0a0a';
+                ctx.fillRect(0, 0, DOM.canvas.width, DOM.canvas.height);
+                
+                ctx.beginPath();
+                ctx.strokeStyle = '#f97316';
+                ctx.lineWidth = 2;
+                
+                for (let i = 0; i < DOM.canvas.width; i++) {
+                    let min = 1.0, max = -1.0;
+                    for (let j = 0; j < step; j++) {
+                        const datum = data[(i * step) + j];
+                        if (datum < min) min = datum;
+                        if (datum > max) max = datum;
+                    }
+                    ctx.moveTo(i, amp * (1 + min));
+                    ctx.lineTo(i, amp * (1 + max));
+                }
+                ctx.stroke();
+            };
+
+            DOM.btnGen.addEventListener('click', synthesizeSpeech);
+
+            DOM.btnExport.addEventListener('click', () => {
+                if (!renderedBuffer) return;
+                const blob = encodeWAV(renderedBuffer);
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; 
+                a.download = `SpeechLab_Synth_${Date.now()}.wav`; 
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+            });
+
+        })();
+    </script>
+</body>
+</html>
