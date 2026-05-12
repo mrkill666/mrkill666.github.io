@@ -133,7 +133,7 @@
                 
                 <div class="control-panel">
                     
-                    <textarea id="text-input" placeholder="Введите текст на русском или английском...">hello world! я робот из восьмидесятых.</textarea>
+                    <textarea id="text-input" placeholder="Введите текст на русском или английском...">hello world! я робот из восьмидесятых. как меня слышно?</textarea>
 
                     <button class="btn btn-play-big mt-2" id="btn-generate">⚡ ГЕНЕРИРОВАТЬ И ИГРАТЬ</button>
                     
@@ -194,7 +194,7 @@
                         <p class="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">
                             <span class="text-white font-bold">Как это работает?</span><br>
                             Скрипт читает буквы и генерирует звук оффлайн:<br>
-                            • Гласные: пульсовая волна через 3 полосовых фильтра (F1, F2, F3).<br>
+                            • Гласные: комбинированная волна (Saw + Square) через каскадные Peak-фильтры (F1, F2, F3) + глобальное вибрато.<br>
                             • Шипящие (с, ш, ф): белый шум через ВЧ-фильтр.<br>
                             • Взрывные (п, т, к): короткие шумовые импульсы.<br>
                             Результат сшивается в единый WAV буфер без использования готовых сэмплов.
@@ -244,7 +244,6 @@
 
             let currentGender = 'male';
 
-            // UI Listeners
             DOM.pitch.oninput = e => DOM.valPitch.textContent = `${e.target.value}x`;
             DOM.speed.oninput = e => DOM.valSpeed.textContent = `${e.target.value}x`;
             DOM.formant.oninput = e => DOM.valFormant.textContent = `${e.target.value}x`;
@@ -318,7 +317,10 @@
                 
                 ' ': { t: 'space', d: 1.0 },
                 '.': { t: 'space', d: 2.0 },
-                ',': { t: 'space', d: 1.5 }
+                ',': { t: 'space', d: 1.5 },
+                '?': { t: 'space', d: 2.0 },
+                '!': { t: 'space', d: 2.0 },
+                '-': { t: 'space', d: 1.0 }
             };
 
             // --- SYNTHESIS ENGINE (Offline Rendering) ---
@@ -345,7 +347,7 @@
                     for (let i = 0; i < text.length; i++) {
                         const char = text[i];
                         let ph = PHONEMES[char];
-                        if (!ph) ph = PHONEMES[' ']; // Фолбэк для неизвестных символов
+                        if (!ph) ph = PHONEMES[' ']; // Безопасный фолбэк
                         
                         const dur = Math.max(0.01, ph.d * baseDur);
                         sequence.push({ char, ph, start: totalTime, dur: dur });
@@ -396,53 +398,72 @@
                     const synthBus = oCtx.createGain();
                     synthBus.connect(bitInput);
 
-                    // --- GENERATORS BUFFER ---
-                    // Создаем базовый шум один раз для производительности
+                    // Глобальный шум
                     const noiseBuffer = oCtx.createBuffer(1, sampleRate, sampleRate);
                     const noiseData = noiseBuffer.getChannelData(0);
                     for(let i=0; i<noiseData.length; i++) noiseData[i] = Math.random()*2-1;
+
+                    // Глобальное LFO (вибрато)
+                    const vibrato = oCtx.createOscillator();
+                    vibrato.frequency.value = 5; // 5 Hz "живое" колебание
+                    const vibratoGain = oCtx.createGain();
+                    vibratoGain.gain.value = basePitch * 0.02; // Уровень девиации (2%)
+                    vibrato.connect(vibratoGain);
+                    vibrato.start(0);
 
                     // --- RENDER PHONEMES ---
                     sequence.forEach(item => {
                         const { ph, start, dur } = item;
                         const t = start;
 
-                        if (ph.t === 'space') return; // Ничего не делаем в пробелах
+                        if (ph.t === 'space') return;
 
                         const env = oCtx.createGain();
                         env.gain.setValueAtTime(0, t);
                         
-                        // Гласные и сонорные
+                        // Гласные и сонорные (ДОБАВЛЕНЫ ОБЕРТОНЫ И ИСПРАВЛЕН БАГ с f1,f2,f3)
                         if (ph.t === 'v' || ph.t === 'vp') {
                             env.gain.linearRampToValueAtTime(ph.a * 0.8, t + (dur * 0.2)); 
                             env.gain.setValueAtTime(ph.a * 0.8, t + (dur * 0.8)); 
                             env.gain.linearRampToValueAtTime(0, t + dur); 
 
-                            // ИСПРАВЛЕНИЕ: Создаем индивидуальный осциллятор для каждой фонемы
-                            const osc = oCtx.createOscillator();
-                            osc.type = 'sawtooth';
-                            // Легкое падение питча для натуральности
-                            osc.frequency.setValueAtTime(basePitch, t);
-                            osc.frequency.exponentialRampToValueAtTime(basePitch * 0.9, t + dur);
+                            // Два генератора: Пила (основа) + Квадрат (жирность)
+                            const osc1 = oCtx.createOscillator(); osc1.type = 'sawtooth';
+                            const osc2 = oCtx.createOscillator(); osc2.type = 'square';
+                            
+                            osc1.frequency.setValueAtTime(basePitch, t);
+                            osc2.frequency.setValueAtTime(basePitch * 1.01, t); // Detune
+                            
+                            // Подключаем вибрато к осцилляторам
+                            vibratoGain.connect(osc1.frequency);
+                            vibratoGain.connect(osc2.frequency);
 
-                            const f1 = oCtx.createBiquadFilter(); f1.type = 'bandpass'; f1.frequency.value = ph.f1 * formMult; f1.Q.value = 4;
-                            const f2 = oCtx.createBiquadFilter(); f2.type = 'bandpass'; f2.frequency.value = ph.f2 * formMult; f2.Q.value = 6;
-                            const f3 = oCtx.createBiquadFilter(); f3.type = 'bandpass'; f3.frequency.value = ph.f3 * formMult; f3.Q.value = 8;
+                            // Используем PEAKING-фильтры последовательно для сохранения базовых гармоник
+                            // ИСПРАВЛЕНО: Добавлены безопасные fallbacks (ph.f1 || 400), чтобы не ловить NaN на звонких согласных (vp)
+                            const freq1 = Math.min(22000, (ph.f1 || 400) * formMult);
+                            const freq2 = Math.min(22000, (ph.f2 || 1200) * formMult);
+                            const freq3 = Math.min(22000, (ph.f3 || 2600) * formMult);
+
+                            const f1 = oCtx.createBiquadFilter(); f1.type = 'peaking'; f1.frequency.value = freq1; f1.Q.value = 4; f1.gain.value = 12;
+                            const f2 = oCtx.createBiquadFilter(); f2.type = 'peaking'; f2.frequency.value = freq2; f2.Q.value = 4; f2.gain.value = 10;
+                            const f3 = oCtx.createBiquadFilter(); f3.type = 'peaking'; f3.frequency.value = freq3; f3.Q.value = 4; f3.gain.value = 8;
                             
-                            osc.connect(f1).connect(env);
-                            osc.connect(f2).connect(env);
-                            osc.connect(f3).connect(env);
+                            osc1.connect(f1);
+                            osc2.connect(f1);
                             
+                            f1.connect(f2).connect(f3).connect(env);
                             env.connect(synthBus);
-                            osc.start(t);
-                            osc.stop(t + dur);
+                            
+                            osc1.start(t); osc1.stop(t + dur);
+                            osc2.start(t); osc2.stop(t + dur);
                         }
                         
                         // Согласные (шумовые)
                         if (ph.t === 'n' || ph.t === 'p' || ph.t === 'vp') {
+                            const filterFreq = Math.min(22000, (ph.f || 3000));
                             const f = oCtx.createBiquadFilter(); 
                             f.type = 'bandpass'; 
-                            f.frequency.value = ph.f || 3000; 
+                            f.frequency.value = filterFreq; 
                             f.Q.value = ph.q || 1;
 
                             if (ph.t === 'p' || ph.t === 'vp') {
@@ -454,7 +475,6 @@
                                 env.gain.linearRampToValueAtTime(0, t + dur);
                             }
 
-                            // ИСПРАВЛЕНИЕ: Изолированный генератор шума
                             const noiseSource = oCtx.createBufferSource();
                             noiseSource.buffer = noiseBuffer;
                             noiseSource.loop = true;
@@ -467,10 +487,8 @@
                         }
                     });
 
-                    // Рендерим аудио
                     renderedBuffer = await oCtx.startRendering();
 
-                    // Восстанавливаем UI
                     DOM.btnGen.textContent = '⚡ ГЕНЕРИРОВАТЬ И ИГРАТЬ';
                     DOM.btnGen.style.pointerEvents = 'auto';
                     
@@ -483,7 +501,7 @@
 
                 } catch (error) {
                     console.error("Audio Render Error:", error);
-                    DOM.btnGen.textContent = 'ОШИБКА! Попробуйте другой темп.';
+                    DOM.btnGen.textContent = 'ОШИБКА! Слишком сложно для вычислений.';
                     DOM.btnGen.style.borderColor = 'var(--danger-color)';
                     DOM.btnGen.style.color = 'var(--danger-color)';
                     setTimeout(() => {
@@ -508,7 +526,6 @@
                 const startTime = realAudioCtx.currentTime;
                 playbackSource.start(startTime);
 
-                // Караоке
                 const animateText = () => {
                     if (!playbackSource) return;
                     const now = realAudioCtx.currentTime - startTime;
@@ -572,7 +589,6 @@
                 return new Blob([view], { type: 'audio/wav' });
             };
 
-            // ИСПРАВЛЕНИЕ: Безопасная отрисовка волны
             const drawWaveform = (buffer) => {
                 DOM.canvas.width = DOM.canvas.parentElement.clientWidth; 
                 DOM.canvas.height = DOM.canvas.parentElement.clientHeight;
