@@ -3,36 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Visualizer Lab</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <title>Audio Visualizer Lab | Спектр</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
     <style>
         :root {
             --bg-color: #050505; --card-bg: #111111; --accent-color: #ffffff;
             --border-light: rgba(255, 255, 255, 0.1); --control-bg: #1a1a1a;
-            --active-color: #f97316; --danger-color: #ff3333; --font-main: 'Inter', sans-serif;
+            --active-color: #f97316; --danger-color: #ff3333; 
+            --font-main: 'Inter', sans-serif; --font-mono: 'Space Mono', monospace;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        a { color: inherit; text-decoration: none; }
+
         body {
             background-color: var(--bg-color); color: var(--accent-color); font-family: var(--font-main);
-            min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 2rem;
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            padding: 6rem 2rem 2rem 2rem; overflow-x: hidden; position: relative;
+        }
+
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.05; pointer-events: none; z-index: 9999;
         }
 
         .app-container {
             background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 24px;
-            padding: 2rem; width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 2rem;
+            padding: 2rem; width: 100%; max-width: 1400px; position: relative; z-index: 10;
+            display: flex; flex-direction: column; gap: 2rem; backdrop-filter: blur(10px);
         }
 
-        .header-section .subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: gray; font-weight: 700; }
-        .header-section .title { font-size: 2rem; font-weight: 900; text-transform: uppercase; margin-top: 0.5rem; }
+        .subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: gray; font-weight: 700; margin-bottom: 0.5rem; }
+        .title { font-size: 2rem; font-weight: 900; text-transform: uppercase; line-height: 1.1; letter-spacing: -0.02em; }
 
-        .editor-grid { display: grid; grid-template-columns: 320px 1fr; gap: 2rem; }
-        @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
+        .editor-grid { display: grid; grid-template-columns: 340px 1fr; gap: 2rem; align-items: start;}
+        @media (max-width: 1000px) { .editor-grid { grid-template-columns: 1fr; } }
 
         .control-panel { 
             background: rgba(5,5,5,0.8); border: 1px solid var(--border-light); 
             border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; 
+            max-height: 80vh; overflow-y: auto;
         }
+        .control-panel::-webkit-scrollbar { width: 6px; }
+        .control-panel::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
 
         .btn {
             background: var(--control-bg); color: var(--accent-color); border: 1px solid var(--border-light);
@@ -45,12 +60,22 @@
         .btn.danger { border-color: var(--danger-color); color: var(--danger-color); }
         .btn.danger:hover, .btn.danger.recording { background: var(--danger-color); color: #fff; }
 
-        .control-group { display: flex; flex-direction: column; gap: 0.8rem; }
-        .control-label { display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; font-weight: 900; color: gray; }
+        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .control-label { display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; font-weight: 900; color: gray; margin-bottom: 0.2rem;}
         
-        select, input[type=range] { width: 100%; background: var(--control-bg); color: white; border: 1px solid var(--border-light); padding: 0.5rem; border-radius: 8px; font-family: inherit; }
-        input[type=range] { -webkit-appearance: none; padding: 0; height: 4px; background: #333; border: none; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--active-color); cursor: pointer; margin-top: -6px; }
+        select, input[type=text], input[type=color] { 
+            width: 100%; background: #000; color: white; border: 1px solid var(--border-light); 
+            padding: 0.6rem; border-radius: 8px; font-family: inherit; font-size: 12px; outline: none;
+        }
+        select:focus, input[type=text]:focus { border-color: var(--active-color); }
+        
+        input[type=color] { height: 36px; padding: 2px; cursor: pointer; }
+        input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type=color]::-webkit-color-swatch { border: none; border-radius: 6px; }
+
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--active-color); cursor: pointer; margin-top: -6px; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #333; border-radius: 2px; }
 
         .toggle-row { display: flex; align-items: center; justify-content: space-between; font-size: 10px; font-weight: 900; text-transform: uppercase; }
         .switch { position: relative; display: inline-block; width: 34px; height: 18px; }
@@ -62,221 +87,388 @@
 
         .viewport {
             width: 100%; background: #000; border-radius: 16px; border: 1px solid var(--border-light);
-            position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center; min-height: 500px;
+            position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center;
+            /* Container will scale based on aspect ratio logic */
         }
-        canvas { width: 100%; height: 100%; object-fit: cover; }
-        .hidden { display: none; }
+        
+        canvas { width: 100%; height: 100%; object-fit: contain; }
+        
+        .settings-block { display: none; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 12px; border: 1px dashed var(--border-light); gap: 1rem; flex-direction: column; }
+        .settings-block.active { display: flex; }
+        
+        .hidden { display: none !important; }
+        .color-row { display: flex; gap: 0.5rem; }
     </style>
 </head>
-<body>
+<body class="noise">
 
-    <div class="app-container">
-        <div class="header-section">
-            <div class="subtitle">Audio / Visual Lab</div>
-            <h1 class="title">Spectra Core</h1>
+    <!-- Navbar -->
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="#" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">Владислав Ножиков</a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="#" class="hover:opacity-50 transition">Работы</a>
+            <a href="#" class="hover:opacity-50 transition">Мuжiclab</a>
         </div>
+    </nav>
 
-        <div class="editor-grid">
-            <div class="control-panel">
-                <!-- Источники -->
-                <div class="control-group">
-                    <div class="control-label">Ввод аудио</div>
-                    <button class="btn" id="btn-mic">🎙 Включить Микрофон</button>
-                    <button class="btn" onclick="document.getElementById('file-audio').click()">📁 Загрузить Трек</button>
-                    <input type="file" id="file-audio" accept="audio/*" class="hidden">
-                    <audio id="audio-player" class="hidden" controls></audio>
-                </div>
+    <main class="w-full flex justify-center relative z-10">
+        <div class="app-container">
+            <div class="header-section">
+                <div class="subtitle">Audio / Visual Lab</div>
+                <h1 class="title">Spectra Core 2.0</h1>
+            </div>
 
-                <div class="h-[1px] w-full bg-white/10 my-1"></div>
-
-                <!-- Настройки -->
-                <div class="control-group">
-                    <div class="control-label">Визуализация</div>
-                    <select id="select-mode">
-                        <option value="eq">Классический Эквалайзер</option>
-                        <option value="text">Облако Текста</option>
-                        <option value="image">Реактивная Картинка</option>
-                        <option value="generative">Генеративная Абстракция</option>
-                    </select>
+            <div class="editor-grid">
+                
+                <!-- Панель управления -->
+                <div class="control-panel">
                     
-                    <button class="btn" onclick="document.getElementById('file-img').click()" id="btn-upload-img" style="display: none;">🖼 Загрузить Картинку</button>
-                    <input type="file" id="file-img" accept="image/*" class="hidden">
+                    <!-- 1. ИСТОЧНИКИ -->
+                    <div class="control-group">
+                        <div class="control-label">Ввод аудио</div>
+                        <div class="flex gap-2">
+                            <button class="btn" id="btn-mic">🎙 Микрофон</button>
+                            <button class="btn" onclick="document.getElementById('file-audio').click()">📁 Трек</button>
+                        </div>
+                        <input type="file" id="file-audio" accept="audio/*" class="hidden">
+                        <audio id="audio-player" class="hidden" controls></audio>
+                    </div>
+
+                    <div class="h-[1px] w-full bg-white/10 my-1"></div>
+
+                    <!-- 2. ОСНОВНЫЕ НАСТРОЙКИ -->
+                    <div class="control-group">
+                        <div class="control-label">Соотношение сторон</div>
+                        <select id="select-ratio">
+                            <option value="16:9">16:9 (Широкий экран)</option>
+                            <option value="4:3">4:3 (Классика)</option>
+                            <option value="1:1">1:1 (Квадрат)</option>
+                            <option value="9:16">9:16 (Вертикальное)</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label">Режим Визуализации</div>
+                        <select id="select-mode">
+                            <option value="eq">Классический Эквалайзер</option>
+                            <option value="text">Облако Текста</option>
+                            <option value="image">Реактивная Картинка</option>
+                            <optgroup label="Генеративная Абстракция">
+                                <option value="gen-particles">Частицы / Пыль</option>
+                                <option value="gen-lines">Связи / Графы</option>
+                                <option value="gen-shapes">Геометрия</option>
+                            </optgroup>
+                            <optgroup label="Креативные">
+                                <option value="pixel">Pixel Mosaic</option>
+                                <option value="ascii">Терминал (ASCII)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label"><span>Сглаживание (Smooth)</span><span id="val-smooth">85%</span></div>
+                        <input type="range" id="range-smooth" min="0" max="99" value="85">
+                    </div>
+
+                    <label class="toggle-row">
+                        <span>Резкий бит (Beat Detect)</span>
+                        <div class="switch"><input type="checkbox" id="toggle-beat"><span class="slider"></span></div>
+                    </label>
+
+                    <!-- ДИНАМИЧЕСКИЕ БЛОКИ НАСТРОЕК -->
+                    
+                    <!-- Настройки Эквалайзера -->
+                    <div id="settings-eq" class="settings-block active">
+                        <div class="control-group">
+                            <div class="control-label">Цветовая схема</div>
+                            <select id="eq-palette">
+                                <option value="cyberpunk">Cyberpunk (Cyan - Magenta)</option>
+                                <option value="fire">Fire (Red - Yellow)</option>
+                                <option value="ocean">Ocean (Blue - Teal)</option>
+                                <option value="matrix">Matrix (Dark Green - Light Green)</option>
+                                <option value="custom">Создать свою...</option>
+                            </select>
+                        </div>
+                        <div class="control-group hidden" id="eq-custom-colors">
+                            <div class="control-label">Свои цвета (Низкие - Средние - Высокие)</div>
+                            <div class="color-row">
+                                <input type="color" id="eq-c1" value="#ff0044">
+                                <input type="color" id="eq-c2" value="#aa00ff">
+                                <input type="color" id="eq-c3" value="#00e5ff">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Настройки Текста -->
+                    <div id="settings-text" class="settings-block">
+                        <div class="control-group">
+                            <div class="control-label">Текст (через запятую)</div>
+                            <input type="text" id="text-input" value="BASS, GLITCH, SYNTH, FREQ, NOISE">
+                        </div>
+                        <div class="control-group">
+                            <div class="control-label">Шрифт</div>
+                            <select id="text-font-select">
+                                <option value="Inter">Inter (Без засечек)</option>
+                                <option value="'Space Mono'">Space Mono (Моноширинный)</option>
+                                <option value="Times New Roman">Times New Roman (Засечки)</option>
+                                <option value="custom">Загрузить свой шрифт (.ttf/.otf)</option>
+                            </select>
+                            <input type="file" id="file-font" accept=".ttf,.otf,.woff,.woff2" class="hidden mt-2">
+                            <button class="btn hidden mt-2" id="btn-upload-font" onclick="document.getElementById('file-font').click()">📁 Выбрать файл шрифта</button>
+                        </div>
+                        <div class="control-group">
+                            <div class="control-label">Масштаб искажений</div>
+                            <input type="range" id="text-dist-size" min="10" max="150" value="50">
+                        </div>
+                    </div>
+
+                    <!-- Настройки Картинки -->
+                    <div id="settings-image" class="settings-block">
+                        <button class="btn" onclick="document.getElementById('file-img').click()">🖼 Загрузить Изображение</button>
+                        <input type="file" id="file-img" accept="image/*" class="hidden">
+                        
+                        <div class="control-group mt-2">
+                            <div class="control-label">Тип искажения (Glitch)</div>
+                            <select id="image-glitch-type">
+                                <option value="scale">Пульсация + RGB Split</option>
+                                <option value="wave">Волновое искажение (VHS)</option>
+                                <option value="pixel">Разрушение пикселями</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <div class="control-label">Сила искажения</div>
+                            <input type="range" id="image-dist-force" min="0" max="100" value="50">
+                        </div>
+                    </div>
+
+                    <!-- Настройки Генеративных / Креативных -->
+                    <div id="settings-gen" class="settings-block">
+                        <div class="control-group">
+                            <div class="control-label">Основной цвет</div>
+                            <input type="color" id="gen-color" value="#f97316">
+                        </div>
+                    </div>
+
+                    <div class="h-[1px] w-full bg-white/10 my-1 mt-auto"></div>
+
+                    <!-- ЗАПИСЬ -->
+                    <div class="control-group">
+                        <button class="btn danger" id="btn-record">🔴 Начать Запись (.webm)</button>
+                    </div>
+
                 </div>
 
-                <div class="control-group">
-                    <div class="control-label"><span>Сглаживание (Smooth)</span><span id="val-smooth">85%</span></div>
-                    <input type="range" id="range-smooth" min="0" max="99" value="85">
+                <!-- Viewport -->
+                <div class="viewport" id="viewport-container">
+                    <canvas id="visualizer"></canvas>
                 </div>
 
-                <label class="toggle-row">
-                    <span>Резкий бит (Beat Detection)</span>
-                    <div class="switch"><input type="checkbox" id="toggle-beat"><span class="slider"></span></div>
-                </label>
-
-                <!-- Запись -->
-                <div class="control-group" style="margin-top: auto;">
-                    <button class="btn danger" id="btn-record">🔴 Начать Запись</button>
-                </div>
-            </div>
-
-            <div class="viewport">
-                <canvas id="visualizer"></canvas>
             </div>
         </div>
-    </div>
+    </main>
 
-    <!-- Подключение логики -->
+    <!-- Footer -->
+    <footer class="mt-8 pt-8 border-t border-white/10 flex flex-col items-center text-center gap-4 relative z-10 w-full max-w-[1400px] mb-8">
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">© <span id="current-year"></span> ВЛАДИСЛАВ НОЖИКОВ</p>        
+            <a href="#" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">Политика конфиденциальности</a>
+        </div>
+    </footer>
+
     <script>
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
         // === ИНИЦИАЛИЗАЦИЯ И СОСТОЯНИЕ ===
         const DOM = {
             btnMic: document.getElementById('btn-mic'),
             fileAudio: document.getElementById('file-audio'),
             audioPlayer: document.getElementById('audio-player'),
-            fileImg: document.getElementById('file-img'),
-            btnUploadImg: document.getElementById('btn-upload-img'),
+            selectRatio: document.getElementById('select-ratio'),
             selectMode: document.getElementById('select-mode'),
             rangeSmooth: document.getElementById('range-smooth'),
-            valSmooth: document.getElementById('val-smooth'),
             toggleBeat: document.getElementById('toggle-beat'),
             btnRecord: document.getElementById('btn-record'),
-            canvas: document.getElementById('visualizer')
+            canvas: document.getElementById('visualizer'),
+            viewport: document.getElementById('viewport-container'),
+            
+            // Настройки
+            settingsEq: document.getElementById('settings-eq'),
+            settingsText: document.getElementById('settings-text'),
+            settingsImage: document.getElementById('settings-image'),
+            settingsGen: document.getElementById('settings-gen'),
+            
+            eqPalette: document.getElementById('eq-palette'),
+            eqCustomColors: document.getElementById('eq-custom-colors'),
+            
+            textInput: document.getElementById('text-input'),
+            textFont: document.getElementById('text-font-select'),
+            fileFont: document.getElementById('file-font'),
+            btnUploadFont: document.getElementById('btn-upload-font'),
+            textDistSize: document.getElementById('text-dist-size'),
+            
+            fileImg: document.getElementById('file-img'),
+            imgGlitchType: document.getElementById('image-glitch-type'),
+            imgDistForce: document.getElementById('image-dist-force'),
+            
+            genColor: document.getElementById('gen-color'),
         };
 
-        const ctx = DOM.canvas.getContext('2d');
-        DOM.canvas.width = 1280;
-        DOM.canvas.height = 720;
-
+        const ctx = DOM.canvas.getContext('2d', { willReadFrequently: true });
+        
         let audioCtx, analyser, source, streamDestination;
-        let isPlaying = false;
         let dataArray, bufferLength;
         let currentMode = 'eq';
+        
         let userImage = new Image();
-        let particles = [];
-        let texts = ["BASS", "GLITCH", "SYNTH", "FREQ", "NOISE", "WAVE", "BEAT", "LAB"];
+        let activeFont = 'Inter';
+        let customFontLoaded = false;
+        let particles = []; // Переиспользуемый массив для генеративных режимов
 
-        // Данные для MediaRecorder
         let mediaRecorder;
         let recordedChunks = [];
         let isRecording = false;
 
-        // === НАСТРОЙКА WEB AUDIO API ===
+        // === ОБНОВЛЕНИЕ СООТНОШЕНИЯ СТОРОН ===
+        function resizeCanvas() {
+            const ratio = DOM.selectRatio.value;
+            let w, h;
+            if(ratio === '16:9') { w = 1280; h = 720; }
+            else if(ratio === '4:3') { w = 1024; h = 768; }
+            else if(ratio === '1:1') { w = 800; h = 800; }
+            else if(ratio === '9:16') { w = 720; h = 1280; }
+            
+            DOM.canvas.width = w;
+            DOM.canvas.height = h;
+            DOM.viewport.style.aspectRatio = `${w} / ${h}`;
+            particles = []; // Сброс частиц при ресайзе
+        }
+        DOM.selectRatio.onchange = resizeCanvas;
+        resizeCanvas();
+
+        // === УПРАВЛЕНИЕ МЕНЮ НАСТРОЕК ===
+        DOM.selectMode.onchange = (e) => {
+            currentMode = e.target.value;
+            DOM.settingsEq.classList.remove('active');
+            DOM.settingsText.classList.remove('active');
+            DOM.settingsImage.classList.remove('active');
+            DOM.settingsGen.classList.remove('active');
+            particles = [];
+
+            if (currentMode === 'eq') DOM.settingsEq.classList.add('active');
+            else if (currentMode === 'text') DOM.settingsText.classList.add('active');
+            else if (currentMode === 'image') DOM.settingsImage.classList.add('active');
+            else if (currentMode.startsWith('gen') || currentMode === 'pixel' || currentMode === 'ascii') DOM.settingsGen.classList.add('active');
+        };
+
+        DOM.eqPalette.onchange = (e) => {
+            if(e.target.value === 'custom') DOM.eqCustomColors.classList.remove('hidden');
+            else DOM.eqCustomColors.classList.add('hidden');
+        };
+
+        DOM.textFont.onchange = (e) => {
+            if(e.target.value === 'custom') {
+                DOM.btnUploadFont.classList.remove('hidden');
+            } else {
+                DOM.btnUploadFont.classList.add('hidden');
+                activeFont = e.target.value;
+            }
+        };
+
+        DOM.fileFont.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const fontBuffer = e.target.result;
+                const customFont = new FontFace('UserCustomFont', fontBuffer);
+                customFont.load().then((loadedFont) => {
+                    document.fonts.add(loadedFont);
+                    activeFont = 'UserCustomFont';
+                    customFontLoaded = true;
+                }).catch(err => alert('Ошибка загрузки шрифта'));
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        DOM.fileImg.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) userImage.src = URL.createObjectURL(file);
+        };
+
+        // === WEB AUDIO API ===
         async function initAudioContext() {
-            if (audioCtx) return; // Инициализируем только один раз
+            if (audioCtx) return;
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             analyser = audioCtx.createAnalyser();
             analyser.fftSize = 512;
             bufferLength = analyser.frequencyBinCount;
             dataArray = new Uint8Array(bufferLength);
-            
-            // Специальный узел для записи звука синхронно с Canvas
             streamDestination = audioCtx.createMediaStreamDestination();
-            
             startDrawLoop();
         }
 
         function connectSource(newSource) {
-            if (source) source.disconnect(); // Отключаем старый источник (микрофон или плеер)
+            if (source) source.disconnect();
             source = newSource;
             source.connect(analyser);
-            
-            // Подключаем к выходу (динамики) И к узлу записи
             analyser.connect(audioCtx.destination);
             analyser.connect(streamDestination);
         }
 
-        // === ОБРАБОТЧИКИ СОБЫТИЙ: ИСТОЧНИКИ ЗВУКА ===
         DOM.btnMic.onclick = async () => {
             await initAudioContext();
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 const micSource = audioCtx.createMediaStreamSource(stream);
-                
-                // Для микрофона отключаем вывод в динамики, чтобы не было жесткого фидбека (эха)
                 if (source) source.disconnect();
                 source = micSource;
                 source.connect(analyser);
-                analyser.connect(streamDestination); // На запись пускаем
-                // НЕ подключаем к audioCtx.destination
-                
+                analyser.connect(streamDestination); // Не пускаем в destination чтобы избежать эха
                 DOM.btnMic.classList.add('active');
                 DOM.audioPlayer.pause();
-            } catch (err) {
-                console.error('Ошибка доступа к микрофону', err);
-            }
+            } catch (err) { console.error('Ошибка микрофона', err); }
         };
 
         DOM.fileAudio.onchange = async (e) => {
             await initAudioContext();
             const file = e.target.files[0];
             if (!file) return;
-
             DOM.btnMic.classList.remove('active');
             DOM.audioPlayer.src = URL.createObjectURL(file);
             DOM.audioPlayer.play();
-
-            // Создаем источник из HTMLAudioElement, если еще не создавали
             if (!DOM.audioPlayer.sourceNode) {
                 DOM.audioPlayer.sourceNode = audioCtx.createMediaElementSource(DOM.audioPlayer);
             }
             connectSource(DOM.audioPlayer.sourceNode);
         };
 
-        // === ОБРАБОТЧИКИ СОБЫТИЙ: НАСТРОЙКИ ===
-        DOM.selectMode.onchange = (e) => {
-            currentMode = e.target.value;
-            DOM.btnUploadImg.style.display = currentMode === 'image' ? 'block' : 'none';
-        };
-
-        DOM.fileImg.onchange = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                userImage.src = URL.createObjectURL(file);
-            }
-        };
-
         DOM.rangeSmooth.oninput = (e) => {
-            DOM.valSmooth.textContent = e.target.value + '%';
-            if (analyser) {
-                analyser.smoothingTimeConstant = e.target.value / 100;
-            }
+            document.getElementById('val-smooth').textContent = e.target.value + '%';
+            if (analyser) analyser.smoothingTimeConstant = e.target.value / 100;
         };
 
         DOM.toggleBeat.onchange = (e) => {
             if (!analyser) return;
-            // Резкий мод (beat) сбрасывает сглаживание
             analyser.smoothingTimeConstant = e.target.checked ? 0.1 : DOM.rangeSmooth.value / 100;
         };
 
-        // === MEDIA RECORDER: ЗАПИСЬ ВИДЕО + ЗВУКА ===
+        // === РЕКОРДЕР ===
         DOM.btnRecord.onclick = () => {
             if (!isRecording) {
-                // Захват видео потока с холста (30 кадров в секунду)
                 const canvasStream = DOM.canvas.captureStream(30);
-                
-                // Объединяем видео с холста и аудио из AudioContext
                 let combinedTracks = [...canvasStream.getTracks()];
                 if (streamDestination && streamDestination.stream.getAudioTracks().length > 0) {
                     combinedTracks = [...combinedTracks, ...streamDestination.stream.getAudioTracks()];
                 }
-                
                 const combinedStream = new MediaStream(combinedTracks);
                 mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm' });
-                
-                mediaRecorder.ondataavailable = (e) => {
-                    if (e.data.size > 0) recordedChunks.push(e.data);
-                };
-                
+                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
                 mediaRecorder.onstop = () => {
                     const blob = new Blob(recordedChunks, { type: 'video/webm' });
                     const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `AV_Lab_Record_${Date.now()}.webm`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                    recordedChunks = [];
+                    const a = document.createElement('a'); a.href = url; a.download = `Spectra_${Date.now()}.webm`; a.click();
+                    URL.revokeObjectURL(url); recordedChunks = [];
                 };
-                
                 mediaRecorder.start();
                 isRecording = true;
                 DOM.btnRecord.textContent = '⏹ Остановить Запись';
@@ -284,163 +476,284 @@
             } else {
                 mediaRecorder.stop();
                 isRecording = false;
-                DOM.btnRecord.textContent = '🔴 Начать Запись';
+                DOM.btnRecord.textContent = '🔴 Начать Запись (.webm)';
                 DOM.btnRecord.classList.remove('recording');
             }
         };
 
-        // === РЕЖИМЫ ОТРИСОВКИ ===
+        // === ЛОГИКА ОТРИСОВКИ ===
 
-        // 1. Традиционный Эквалайзер (Волны/Бары)
+        function getGradient(w, h) {
+            const grad = ctx.createLinearGradient(0, h, 0, 0);
+            const palette = DOM.eqPalette.value;
+            
+            if (palette === 'custom') {
+                grad.addColorStop(0, document.getElementById('eq-c1').value);
+                grad.addColorStop(0.5, document.getElementById('eq-c2').value);
+                grad.addColorStop(1, document.getElementById('eq-c3').value);
+            } else if (palette === 'fire') {
+                grad.addColorStop(0, '#ff0000'); grad.addColorStop(0.5, '#ff8800'); grad.addColorStop(1, '#ffff00');
+            } else if (palette === 'ocean') {
+                grad.addColorStop(0, '#0000ff'); grad.addColorStop(0.5, '#0088ff'); grad.addColorStop(1, '#00ffff');
+            } else if (palette === 'matrix') {
+                grad.addColorStop(0, '#003300'); grad.addColorStop(0.5, '#00aa00'); grad.addColorStop(1, '#00ff00');
+            } else { // cyberpunk default
+                grad.addColorStop(0, '#00ffff'); grad.addColorStop(1, '#ff00ff');
+            }
+            return grad;
+        }
+
         function drawEQ(w, h) {
             const barWidth = (w / bufferLength) * 2.5;
-            let barHeight;
-            let x = 0;
+            let barHeight, x = 0;
+            ctx.fillStyle = getGradient(w, h);
 
             for (let i = 0; i < bufferLength; i++) {
-                barHeight = dataArray[i] * 2;
-                
-                const r = barHeight + (25 * (i / bufferLength));
-                const g = 115;
-                const b = 255 - barHeight;
-
-                ctx.fillStyle = `rgb(${r},${g},${b})`;
+                barHeight = (dataArray[i] / 255) * h * 0.8;
                 ctx.fillRect(x, h - barHeight, barWidth, barHeight);
                 x += barWidth + 1;
             }
         }
 
-        // 2. Облако Текста (Реакция на бас и высокие)
         function drawTextCloud(w, h, bass, treble) {
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
+            const words = DOM.textInput.value.split(',').map(s => s.trim()).filter(s => s);
+            if(words.length === 0) words.push("AUDIO");
             
-            // Генерируем "облако", если оно пустое
+            const maxDist = parseInt(DOM.textDistSize.value);
+
             if (particles.length === 0 || particles[0].type !== 'text') {
-                particles = texts.map(txt => ({
+                particles = words.map(txt => ({
                     text: txt, type: 'text',
                     x: Math.random() * w, y: Math.random() * h,
-                    vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2
+                    vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.5) * 3
                 }));
             }
 
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
             particles.forEach((p, i) => {
-                // Полет частиц
-                p.x += p.vx * (1 + treble / 50); // Высокие частоты ускоряют частицы
-                p.y += p.vy * (1 + treble / 50);
-                
-                // Отскок от стен
+                p.x += p.vx * (1 + treble / 30);
+                p.y += p.vy * (1 + treble / 30);
                 if (p.x < 0 || p.x > w) p.vx *= -1;
                 if (p.y < 0 || p.y > h) p.vy *= -1;
 
-                // Бас влияет на размер шрифта и пульсацию
-                const fontSize = 20 + (bass / 255) * 80 + (dataArray[i * 5] / 255) * 40;
-                ctx.font = `900 ${fontSize}px Inter`;
-                ctx.fillStyle = `rgba(255, 255, 255, ${0.4 + (bass/255)*0.6})`;
+                const freqVal = dataArray[(i * 10) % bufferLength];
+                const fontSize = maxDist * 0.2 + (freqVal / 255) * maxDist;
                 
+                ctx.font = `900 ${fontSize}px ${activeFont}`;
+                ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + (freqVal/255)*0.7})`;
+                
+                // Легкий глитч-сдвиг для баса
+                if(bass > 200 && DOM.toggleBeat.checked) {
+                    ctx.fillStyle = 'cyan'; ctx.fillText(p.text, p.x - 5, p.y);
+                    ctx.fillStyle = 'red'; ctx.fillText(p.text, p.x + 5, p.y);
+                }
+                ctx.fillStyle = 'white';
                 ctx.fillText(p.text, p.x, p.y);
             });
         }
 
-        // 3. Режим Картинки (Реакция масштаба и пикселизации)
-        function drawImageMode(w, h, bass, mid) {
+        function drawImageMode(w, h, bass, mid, treble) {
             if (!userImage.src) {
-                ctx.fillStyle = "white";
-                ctx.font = "20px Inter";
-                ctx.textAlign = "center";
-                ctx.fillText("Загрузите изображение в меню слева", w/2, h/2);
-                return;
+                ctx.fillStyle = "white"; ctx.font = "20px Inter"; ctx.textAlign = "center";
+                ctx.fillText("Загрузите изображение", w/2, h/2); return;
             }
 
-            const scale = 1 + (bass / 255) * 0.3; // Пульсация картинки от баса
-            const shakeX = (Math.random() - 0.5) * (mid / 255) * 20; // Тряска от средних частот
+            const type = DOM.imgGlitchType.value;
+            const force = parseInt(DOM.imgDistForce.value) / 100;
             
-            const imgW = w * 0.5 * scale;
+            const scale = 1 + (bass / 255) * force * 0.5;
+            const imgW = w * 0.6 * scale;
             const imgH = (imgW / userImage.width) * userImage.height;
-            
-            const x = (w - imgW) / 2 + shakeX;
+            const x = (w - imgW) / 2;
             const y = (h - imgH) / 2;
 
-            // Глитч-эффект: смещение цветовых каналов если бас бьет сильно
-            if (DOM.toggleBeat.checked && bass > 200) {
-                ctx.globalCompositeOperation = 'screen';
-                ctx.filter = `hue-rotate(${Math.random() * 360}deg)`;
-            }
-
-            ctx.drawImage(userImage, x, y, imgW, imgH);
-            ctx.filter = 'none';
-            ctx.globalCompositeOperation = 'source-over';
-        }
-
-        // 4. Генеративная Абстракция (Орбитальные частицы)
-        function drawGenerative(w, h) {
-            if (particles.length === 0 || particles[0].type !== 'gen') {
-                particles = [];
-                for(let i = 0; i < 100; i++) {
-                    particles.push({
-                        type: 'gen', angle: Math.random() * Math.PI * 2,
-                        radius: Math.random() * (h/2), speed: (Math.random() - 0.5) * 0.05,
-                        bin: Math.floor(Math.random() * 100) // Привязка к конкретной частоте
-                    });
+            if (type === 'scale') {
+                if (bass > 180 * (1-force)) {
+                    ctx.globalCompositeOperation = 'screen';
+                    ctx.drawImage(userImage, x - (bass/10)*force, y, imgW, imgH); // Red shift
+                    ctx.drawImage(userImage, x + (bass/10)*force, y, imgW, imgH); // Cyan shift
+                }
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.drawImage(userImage, x, y, imgW, imgH);
+            } 
+            else if (type === 'wave') {
+                ctx.drawImage(userImage, x, y, imgW, imgH);
+                // Разрезаем картинку по горизонтали пропорционально звуку
+                const slices = Math.floor(10 + (treble/255)*20*force);
+                const sliceH = h / slices;
+                for(let i=0; i<slices; i++) {
+                    const shiftX = (dataArray[i*2] - 128) * force;
+                    ctx.drawImage(DOM.canvas, 0, i*sliceH, w, sliceH, shiftX, i*sliceH, w, sliceH);
                 }
             }
+            else if (type === 'pixel') {
+                ctx.drawImage(userImage, x, y, imgW, imgH);
+                const pixSize = Math.max(2, Math.floor((mid/255) * 50 * force));
+                if(pixSize > 4) {
+                    const tempC = document.createElement('canvas'); tempC.width = w/pixSize; tempC.height = h/pixSize;
+                    const tCtx = tempC.getContext('2d');
+                    tCtx.drawImage(DOM.canvas, 0, 0, tempC.width, tempC.height);
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.drawImage(tempC, 0, 0, w, h);
+                    ctx.imageSmoothingEnabled = true;
+                }
+            }
+        }
 
-            const cx = w / 2;
-            const cy = h / 2;
+        function drawGenParticles(w, h, bass) {
+            if (particles.length === 0 || particles[0].type !== 'ptc') {
+                for(let i = 0; i < 150; i++) particles.push({ type: 'ptc', angle: Math.random() * Math.PI*2, radius: Math.random() * (h/2), bin: i });
+            }
+            const cx = w/2, cy = h/2;
+            const color = DOM.genColor.value;
+            ctx.fillStyle = color;
 
             particles.forEach(p => {
-                p.angle += p.speed;
-                const val = dataArray[p.bin] / 255; // Реакция на конкретную частоту
-                
-                // Радиус и размер меняются от частоты
-                const currentRadius = p.radius + (val * 150);
-                const size = 2 + val * 10;
-                
-                const x = cx + Math.cos(p.angle) * currentRadius;
-                const y = cy + Math.sin(p.angle) * currentRadius;
-
+                p.angle += 0.01 + (bass/255)*0.05;
+                const val = dataArray[p.bin] / 255;
+                const r = p.radius + val * 100;
                 ctx.beginPath();
-                ctx.arc(x, y, size, 0, Math.PI * 2);
-                ctx.fillStyle = `hsla(${p.bin * 3.6}, 100%, 60%, ${0.5 + val})`;
+                ctx.arc(cx + Math.cos(p.angle)*r, cy + Math.sin(p.angle)*r, 2 + val*8, 0, Math.PI*2);
+                ctx.globalAlpha = 0.2 + val;
                 ctx.fill();
-
-                // Рисуем линии между близкими частицами при сильном сигнале
-                if (val > 0.8 && DOM.toggleBeat.checked) {
-                    ctx.beginPath();
-                    ctx.moveTo(cx, cy);
-                    ctx.lineTo(x, y);
-                    ctx.strokeStyle = `rgba(255, 255, 255, 0.1)`;
-                    ctx.stroke();
-                }
             });
+            ctx.globalAlpha = 1;
         }
 
-        // === ГЛАВНЫЙ ЦИКЛ ОТРИСОВКИ ===
+        function drawGenLines(w, h, bass) {
+            if (particles.length === 0 || particles[0].type !== 'lin') {
+                for(let i = 0; i < 50; i++) particles.push({ type: 'lin', x: Math.random()*w, y: Math.random()*h, vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2, bin: i*2 });
+            }
+            ctx.strokeStyle = DOM.genColor.value;
+            ctx.fillStyle = DOM.genColor.value;
+
+            particles.forEach(p => {
+                const val = dataArray[p.bin] / 255;
+                p.x += p.vx * (1 + val*5); p.y += p.vy * (1 + val*5);
+                if(p.x < 0 || p.x > w) p.vx *= -1; if(p.y < 0 || p.y > h) p.vy *= -1;
+                
+                ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill();
+            });
+
+            ctx.lineWidth = 1;
+            for(let i=0; i<particles.length; i++) {
+                for(let j=i+1; j<particles.length; j++) {
+                    const d = Math.hypot(particles[i].x - particles[j].x, particles[i].y - particles[j].y);
+                    const val = dataArray[particles[i].bin] / 255;
+                    if(d < 150 + val*100) {
+                        ctx.globalAlpha = 1 - (d / 250);
+                        ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
+                    }
+                }
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function drawGenShapes(w, h, mid) {
+            const color = DOM.genColor.value;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            const cx = w/2, cy = h/2;
+            
+            for(let i=0; i<10; i++) {
+                const val = dataArray[i*10] / 255;
+                const size = 50 + i*30 + val * 150;
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(Date.now()*0.001 * (i%2==0?1:-1) * (1+val));
+                
+                ctx.beginPath();
+                if(i%3 === 0) ctx.rect(-size/2, -size/2, size, size); // Квадрат
+                else if(i%3 === 1) { ctx.moveTo(0, -size); ctx.lineTo(size, size); ctx.lineTo(-size, size); ctx.closePath(); } // Треугольник
+                else { ctx.arc(0, 0, size/1.5, 0, Math.PI*2); } // Круг
+                
+                ctx.globalAlpha = 0.2 + val*0.8;
+                ctx.stroke();
+                ctx.restore();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function drawPixelMosaic(w, h) {
+            const cols = 32; const rows = 18; // Сетка
+            const cellW = w / cols; const cellH = h / rows;
+            const color = DOM.genColor.value; // Берем цвет из генеративных настроек
+            
+            // Преобразуем HEX в RGB
+            const hex2rgb = (hex) => {
+                const v = parseInt(hex.substring(1), 16);
+                return [ (v >> 16) & 255, (v >> 8) & 255, v & 255 ];
+            };
+            const [r,g,b] = hex2rgb(color);
+
+            for(let y=0; y<rows; y++) {
+                for(let x=0; x<cols; x++) {
+                    const idx = (y * cols + x) % bufferLength;
+                    const val = dataArray[idx] / 255;
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${val})`;
+                    ctx.fillRect(x*cellW, y*cellH, cellW-1, cellH-1);
+                }
+            }
+        }
+
+        function drawASCII(w, h) {
+            const chars = " .:-=+*#%@";
+            const cols = 60; const rows = 30;
+            const cellW = w / cols; const cellH = h / rows;
+            
+            ctx.fillStyle = DOM.genColor.value;
+            ctx.font = `bold ${cellH}px ${activeFont}`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+
+            for(let y=0; y<rows; y++) {
+                for(let x=0; x<cols; x++) {
+                    // Симметричное чтение массива частот для красивого рисунка
+                    const distToCenter = Math.abs(x - cols/2) + Math.abs(y - rows/2);
+                    const idx = Math.floor(distToCenter * (bufferLength / (cols/2 + rows/2)));
+                    const val = (dataArray[idx] || 0) / 255;
+                    
+                    const charIdx = Math.floor(val * (chars.length - 1));
+                    ctx.fillText(chars[charIdx], x*cellW + cellW/2, y*cellH + cellH/2);
+                }
+            }
+        }
+
+
+        // === ГЛАВНЫЙ ЦИКЛ ===
         function startDrawLoop() {
             function draw() {
                 requestAnimationFrame(draw);
                 const w = DOM.canvas.width;
                 const h = DOM.canvas.height;
 
-                // Запрашиваем данные частот
                 analyser.getByteFrequencyData(dataArray);
 
-                // Аналитика частот (усреднение)
                 let bass = 0, mid = 0, treble = 0;
-                for (let i = 0; i < 10; i++) bass += dataArray[i]; // 0-10 Бин (Бас)
-                for (let i = 10; i < 100; i++) mid += dataArray[i]; // 10-100 (Средние)
-                for (let i = 100; i < 200; i++) treble += dataArray[i]; // 100+ (Высокие)
-                bass = bass / 10; mid = mid / 90; treble = treble / 100;
+                for (let i = 0; i < 10; i++) bass += dataArray[i]; 
+                for (let i = 10; i < 100; i++) mid += dataArray[i]; 
+                for (let i = 100; i < 200; i++) treble += dataArray[i]; 
+                bass /= 10; mid /= 90; treble /= 100;
 
-                // Очистка кадра (с легким шлейфом для красоты)
-                ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
-                ctx.fillRect(0, 0, w, h);
+                // Для креативных режимов делаем полную очистку, для остальных - шлейф
+                if (currentMode === 'pixel' || currentMode === 'ascii' || (currentMode === 'image' && DOM.imgGlitchType.value === 'wave')) {
+                    ctx.fillStyle = "black";
+                    ctx.fillRect(0, 0, w, h);
+                } else {
+                    ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+                    ctx.fillRect(0, 0, w, h);
+                }
 
                 switch (currentMode) {
                     case 'eq': drawEQ(w, h); break;
                     case 'text': drawTextCloud(w, h, bass, treble); break;
-                    case 'image': drawImageMode(w, h, bass, mid); break;
-                    case 'generative': drawGenerative(w, h); break;
+                    case 'image': drawImageMode(w, h, bass, mid, treble); break;
+                    case 'gen-particles': drawGenParticles(w, h, bass); break;
+                    case 'gen-lines': drawGenLines(w, h, bass); break;
+                    case 'gen-shapes': drawGenShapes(w, h, mid); break;
+                    case 'pixel': drawPixelMosaic(w, h); break;
+                    case 'ascii': drawASCII(w, h); break;
                 }
             }
             draw();
