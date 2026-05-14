@@ -73,10 +73,10 @@
         .btn.active { background: var(--active-color); color: #000; border-color: var(--active-color); }
         
         .viewport {
-            width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 16px; border: 1px solid var(--border-light);
+            width: 100%; background: #000; border-radius: 16px; border: 1px solid var(--border-light);
             position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center;
         }
-        canvas { width: 100%; height: 100%; object-fit: contain; }
+        canvas { width: 100%; max-height: 80vh; object-fit: contain; }
 
         .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
         .control-label { display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; font-weight: 900; color: gray; }
@@ -141,6 +141,7 @@
                         <button class="btn" id="btn-webcam">📷 Веб-камера</button>
                         <button class="btn" onclick="document.getElementById('file-input').click()">📁 Загрузить Видео</button>
                         <input type="file" id="file-input" accept="video/*" class="hidden">
+                        <button class="btn" id="btn-record" style="border-color: var(--danger-color); color: var(--danger-color);">🔴 Запись / Сохранить</button>
                     </div>
 
                     <div class="ai-status" id="ai-status">Нейросеть: Ожидание...</div>
@@ -178,6 +179,10 @@
                     </div>
 
                     <div class="flex flex-col gap-3 mt-4">
+                        <label class="toggle-row">
+                            <span>Data Crash</span>
+                            <div class="switch"><input type="checkbox" id="fx-datacrash" checked><span class="slider"></span></div>
+                        </label>
                         <label class="toggle-row">
                             <span>RGB Shift / VHS</span>
                             <div class="switch"><input type="checkbox" id="fx-rgb" checked><span class="slider"></span></div>
@@ -226,6 +231,7 @@
             const DOM = {
                 master: document.getElementById('ctrl-master'),
                 valMaster: document.getElementById('val-master'),
+                dataCrash: document.getElementById('fx-datacrash'),
                 rgb: document.getElementById('fx-rgb'),
                 blocks: document.getElementById('fx-blocks'),
                 text: document.getElementById('fx-text'),
@@ -238,10 +244,14 @@
                 status: document.getElementById('ai-status'),
                 
                 btnWebcam: document.getElementById('btn-webcam'),
-                fileInput: document.getElementById('file-input')
+                fileInput: document.getElementById('file-input'),
+                btnRecord: document.getElementById('btn-record')
             };
 
             let isWebcam = false;
+            let isRecording = false;
+            let mediaRecorder;
+            let recordedChunks = [];
             
             // AI Variables
             let objectModel = null;
@@ -260,14 +270,49 @@
                 ['right_hip', 'right_knee'], ['right_knee', 'right_ankle']
             ];
 
-            // Инициализация Canvas
-            const resize = () => {
-                canvas.width = 1280;
-                canvas.height = 720;
-            };
-            resize();
+            // Инициализация Canvas (дефолтное значение до загрузки видео)
+            canvas.width = 1280;
+            canvas.height = 720;
+
+            // Динамическое изменение размера холста под загруженное видео/вебку
+            video.addEventListener('loadedmetadata', () => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+            });
 
             DOM.master.oninput = (e) => DOM.valMaster.textContent = e.target.value + '%';
+
+            // Логика Записи
+            DOM.btnRecord.onclick = () => {
+                if (!isRecording) {
+                    const stream = canvas.captureStream(30); // 30 FPS
+                    mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                    mediaRecorder.ondataavailable = e => {
+                        if (e.data.size > 0) recordedChunks.push(e.data);
+                    };
+                    mediaRecorder.onstop = () => {
+                        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'glitch_lab_record.webm';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        recordedChunks = [];
+                    };
+                    mediaRecorder.start();
+                    isRecording = true;
+                    DOM.btnRecord.textContent = '⏹ Остановить запись';
+                    DOM.btnRecord.style.background = 'var(--danger-color)';
+                    DOM.btnRecord.style.color = '#fff';
+                } else {
+                    mediaRecorder.stop();
+                    isRecording = false;
+                    DOM.btnRecord.textContent = '🔴 Запись / Сохранить';
+                    DOM.btnRecord.style.background = 'transparent';
+                    DOM.btnRecord.style.color = 'var(--danger-color)';
+                }
+            };
 
             // Загрузка Нейросетей (Обе модели)
             const initAI = async () => {
@@ -294,10 +339,12 @@
             };
             initAI();
 
-            // Источники
+            // Источники (Добавлен facingMode для мобилок)
             DOM.btnWebcam.onclick = async () => {
                 try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } });
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" } 
+                    });
                     video.srcObject = stream;
                     video.play();
                     isWebcam = true;
@@ -462,8 +509,27 @@
                 const w = canvas.width;
                 const h = canvas.height;
 
-                // 1. Отрисовка базового видео
-                ctx.drawImage(video, 0, 0, w, h);
+                // 1. Отрисовка базового видео с поддержкой Data Crash (Запекание)
+                if (DOM.dataCrash.checked) {
+                    // Создаем эффект шлейфа и постепенного изменения
+                    ctx.globalAlpha = 0.15 + (1 - master) * 0.2; 
+                    ctx.drawImage(video, 0, 0, w, h);
+                    ctx.globalAlpha = 1.0;
+                    
+                    // Застывание с размытием определенных кусков
+                    if (Math.random() < master * 0.4) {
+                        const cw = w * (Math.random() * 0.3 + 0.1);
+                        const ch = h * (Math.random() * 0.3 + 0.1);
+                        const cx = Math.random() * (w - cw);
+                        const cy = Math.random() * (h - ch);
+                        ctx.filter = 'blur(4px)';
+                        ctx.drawImage(canvas, cx, cy, cw, ch, cx, cy, cw, ch);
+                        ctx.filter = 'none';
+                    }
+                } else {
+                    ctx.globalAlpha = 1.0;
+                    ctx.drawImage(video, 0, 0, w, h);
+                }
 
                 // 2. Отрисовка AI HUD
                 drawHUD(w, h);
