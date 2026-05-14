@@ -7,6 +7,15 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     
+    <!-- Фавиконы из оригинального шаблона -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="theme-color" content="#ffffff">
+    
     <style>
         :root {
             --bg-color: #050505; --card-bg: #111111; --accent-color: #ffffff;
@@ -88,7 +97,6 @@
         .viewport {
             width: 100%; background: #000; border-radius: 16px; border: 1px solid var(--border-light);
             position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center;
-            /* Container will scale based on aspect ratio logic */
         }
         
         canvas { width: 100%; height: 100%; object-fit: contain; }
@@ -115,7 +123,7 @@
         <div class="app-container">
             <div class="header-section">
                 <div class="subtitle">Audio / Visual Lab</div>
-                <h1 class="title">Spectra Core 2.0</h1>
+                <h1 class="title">Spectra Core</h1>
             </div>
 
             <div class="editor-grid">
@@ -154,6 +162,8 @@
                             <option value="text">Облако Текста</option>
                             <option value="image">Реактивная Картинка</option>
                             <optgroup label="Генеративная Абстракция">
+                                <option value="gen-liquid">Жидкость / Облако</option>
+                                <option value="gen-sand">Песок / Ветер (Физика)</option>
                                 <option value="gen-particles">Частицы / Пыль</option>
                                 <option value="gen-lines">Связи / Графы</option>
                                 <option value="gen-shapes">Геометрия</option>
@@ -182,6 +192,7 @@
                         <div class="control-group">
                             <div class="control-label">Цветовая схема</div>
                             <select id="eq-palette">
+                                <option value="orange" selected>Orange (По умолчанию)</option>
                                 <option value="cyberpunk">Cyberpunk (Cyan - Magenta)</option>
                                 <option value="fire">Fire (Red - Yellow)</option>
                                 <option value="ocean">Ocean (Blue - Teal)</option>
@@ -203,7 +214,7 @@
                     <div id="settings-text" class="settings-block">
                         <div class="control-group">
                             <div class="control-label">Текст (через запятую)</div>
-                            <input type="text" id="text-input" value="BASS, GLITCH, SYNTH, FREQ, NOISE">
+                            <input type="text" id="text-input" value="Владислав, Ножиков">
                         </div>
                         <div class="control-group">
                             <div class="control-label">Шрифт</div>
@@ -244,8 +255,13 @@
                     <!-- Настройки Генеративных / Креативных -->
                     <div id="settings-gen" class="settings-block">
                         <div class="control-group">
-                            <div class="control-label">Основной цвет</div>
+                            <div class="control-label">Основной цвет (Геометрия / ASCII)</div>
                             <input type="color" id="gen-color" value="#f97316">
+                        </div>
+                        <!-- Настройки символов для ASCII -->
+                        <div id="settings-ascii" class="control-group hidden">
+                            <div class="control-label">Символы мозаики (от темного к светлому)</div>
+                            <input type="text" id="ascii-chars" value=" .:-=+*#%@">
                         </div>
                     </div>
 
@@ -296,6 +312,7 @@
             settingsText: document.getElementById('settings-text'),
             settingsImage: document.getElementById('settings-image'),
             settingsGen: document.getElementById('settings-gen'),
+            settingsAscii: document.getElementById('settings-ascii'),
             
             eqPalette: document.getElementById('eq-palette'),
             eqCustomColors: document.getElementById('eq-custom-colors'),
@@ -311,6 +328,7 @@
             imgDistForce: document.getElementById('image-dist-force'),
             
             genColor: document.getElementById('gen-color'),
+            asciiChars: document.getElementById('ascii-chars'),
         };
 
         const ctx = DOM.canvas.getContext('2d', { willReadFrequently: true });
@@ -321,12 +339,18 @@
         
         let userImage = new Image();
         let activeFont = 'Inter';
-        let customFontLoaded = false;
-        let particles = []; // Переиспользуемый массив для генеративных режимов
+        let particles = []; 
+        let liquidTime = 0; // Для режима "Жидкость"
 
         let mediaRecorder;
         let recordedChunks = [];
         let isRecording = false;
+
+        // Вспомогательная функция HEX -> RGB
+        const hex2rgb = (hex) => {
+            const v = parseInt(hex.substring(1), 16);
+            return [ (v >> 16) & 255, (v >> 8) & 255, v & 255 ];
+        };
 
         // === ОБНОВЛЕНИЕ СООТНОШЕНИЯ СТОРОН ===
         function resizeCanvas() {
@@ -340,7 +364,7 @@
             DOM.canvas.width = w;
             DOM.canvas.height = h;
             DOM.viewport.style.aspectRatio = `${w} / ${h}`;
-            particles = []; // Сброс частиц при ресайзе
+            particles = []; // Сброс частиц
         }
         DOM.selectRatio.onchange = resizeCanvas;
         resizeCanvas();
@@ -352,12 +376,16 @@
             DOM.settingsText.classList.remove('active');
             DOM.settingsImage.classList.remove('active');
             DOM.settingsGen.classList.remove('active');
+            DOM.settingsAscii.classList.add('hidden');
             particles = [];
 
             if (currentMode === 'eq') DOM.settingsEq.classList.add('active');
             else if (currentMode === 'text') DOM.settingsText.classList.add('active');
             else if (currentMode === 'image') DOM.settingsImage.classList.add('active');
-            else if (currentMode.startsWith('gen') || currentMode === 'pixel' || currentMode === 'ascii') DOM.settingsGen.classList.add('active');
+            else if (currentMode.startsWith('gen') || currentMode === 'pixel' || currentMode === 'ascii') {
+                DOM.settingsGen.classList.add('active');
+                if (currentMode === 'ascii') DOM.settingsAscii.classList.remove('hidden');
+            }
         };
 
         DOM.eqPalette.onchange = (e) => {
@@ -384,7 +412,6 @@
                 customFont.load().then((loadedFont) => {
                     document.fonts.add(loadedFont);
                     activeFont = 'UserCustomFont';
-                    customFontLoaded = true;
                 }).catch(err => alert('Ошибка загрузки шрифта'));
             };
             reader.readAsArrayBuffer(file);
@@ -423,7 +450,7 @@
                 if (source) source.disconnect();
                 source = micSource;
                 source.connect(analyser);
-                analyser.connect(streamDestination); // Не пускаем в destination чтобы избежать эха
+                analyser.connect(streamDestination); 
                 DOM.btnMic.classList.add('active');
                 DOM.audioPlayer.pause();
             } catch (err) { console.error('Ошибка микрофона', err); }
@@ -491,6 +518,8 @@
                 grad.addColorStop(0, document.getElementById('eq-c1').value);
                 grad.addColorStop(0.5, document.getElementById('eq-c2').value);
                 grad.addColorStop(1, document.getElementById('eq-c3').value);
+            } else if (palette === 'orange') {
+                grad.addColorStop(0, '#ff4500'); grad.addColorStop(0.5, '#f97316'); grad.addColorStop(1, '#ffaf7a');
             } else if (palette === 'fire') {
                 grad.addColorStop(0, '#ff0000'); grad.addColorStop(0.5, '#ff8800'); grad.addColorStop(1, '#ffff00');
             } else if (palette === 'ocean') {
@@ -544,7 +573,7 @@
                 ctx.font = `900 ${fontSize}px ${activeFont}`;
                 ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + (freqVal/255)*0.7})`;
                 
-                // Легкий глитч-сдвиг для баса
+                // Легкий глитч-сдвиг
                 if(bass > 200 && DOM.toggleBeat.checked) {
                     ctx.fillStyle = 'cyan'; ctx.fillText(p.text, p.x - 5, p.y);
                     ctx.fillStyle = 'red'; ctx.fillText(p.text, p.x + 5, p.y);
@@ -580,7 +609,6 @@
             } 
             else if (type === 'wave') {
                 ctx.drawImage(userImage, x, y, imgW, imgH);
-                // Разрезаем картинку по горизонтали пропорционально звуку
                 const slices = Math.floor(10 + (treble/255)*20*force);
                 const sliceH = h / slices;
                 for(let i=0; i<slices; i++) {
@@ -602,13 +630,72 @@
             }
         }
 
+        // НОВЫЙ ЭФФЕКТ: Жидкость (Волны)
+        function drawGenLiquid(w, h, bass) {
+            liquidTime += 0.02 + (bass/255)*0.05;
+            const [r, g, b] = hex2rgb(DOM.genColor.value);
+            const layers = 4;
+            
+            for (let l = 0; l < layers; l++) {
+                ctx.beginPath();
+                ctx.moveTo(0, h);
+                let startY = h - (h / layers) * (l + 0.5) + (bass/255)*50;
+
+                for (let x = 0; x <= w; x += 20) {
+                    // Используем разные частоты для разных слоев
+                    const bin = Math.floor((x / w) * 80) + (l * 10);
+                    const val = (dataArray[bin] || 0) / 255;
+                    
+                    const y = startY + Math.sin(x * 0.005 + liquidTime + l) * 50 - val * 120;
+                    ctx.lineTo(x, y);
+                }
+                ctx.lineTo(w, h);
+                ctx.closePath();
+                
+                ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${0.2 + l * 0.15})`;
+                ctx.fill();
+            }
+        }
+
+        // НОВЫЙ ЭФФЕКТ: Песок / Ветер
+        function drawGenSand(w, h) {
+            if (particles.length === 0 || particles[0].type !== 'sand') {
+                for(let i=0; i<1500; i++) particles.push({type: 'sand', x: Math.random()*w, y: Math.random()*h, vx: 0, vy: 0});
+            }
+            
+            ctx.fillStyle = DOM.genColor.value;
+            particles.forEach(p => {
+                p.vy += 0.2; // Гравитация
+                
+                // Звук работает как ветер: маппим X позицию частицы на частоты
+                const bin = Math.floor((p.x / w) * 100);
+                const val = (dataArray[bin] || 0) / 255;
+                
+                if (val > 0.4) {
+                    p.vy -= val * 1.5; // Подбрасывает вверх
+                    p.vx += (Math.random() - 0.5) * val * 4; // Турбулентность по бокам
+                }
+                
+                p.vx *= 0.95; // Трение
+                p.vy *= 0.96;
+                p.x += p.vx; p.y += p.vy;
+                
+                // Зацикливаем границы
+                if (p.x < 0) p.x = w;
+                if (p.x > w) p.x = 0;
+                if (p.y > h) { p.y = 0; p.vy = 0; }
+                if (p.y < 0) { p.y = 0; p.vy = 0; }
+                
+                ctx.fillRect(p.x, p.y, 2, 2);
+            });
+        }
+
         function drawGenParticles(w, h, bass) {
             if (particles.length === 0 || particles[0].type !== 'ptc') {
                 for(let i = 0; i < 150; i++) particles.push({ type: 'ptc', angle: Math.random() * Math.PI*2, radius: Math.random() * (h/2), bin: i });
             }
             const cx = w/2, cy = h/2;
-            const color = DOM.genColor.value;
-            ctx.fillStyle = color;
+            ctx.fillStyle = DOM.genColor.value;
 
             particles.forEach(p => {
                 p.angle += 0.01 + (bass/255)*0.05;
@@ -665,9 +752,9 @@
                 ctx.rotate(Date.now()*0.001 * (i%2==0?1:-1) * (1+val));
                 
                 ctx.beginPath();
-                if(i%3 === 0) ctx.rect(-size/2, -size/2, size, size); // Квадрат
-                else if(i%3 === 1) { ctx.moveTo(0, -size); ctx.lineTo(size, size); ctx.lineTo(-size, size); ctx.closePath(); } // Треугольник
-                else { ctx.arc(0, 0, size/1.5, 0, Math.PI*2); } // Круг
+                if(i%3 === 0) ctx.rect(-size/2, -size/2, size, size); 
+                else if(i%3 === 1) { ctx.moveTo(0, -size); ctx.lineTo(size, size); ctx.lineTo(-size, size); ctx.closePath(); } 
+                else { ctx.arc(0, 0, size/1.5, 0, Math.PI*2); } 
                 
                 ctx.globalAlpha = 0.2 + val*0.8;
                 ctx.stroke();
@@ -677,21 +764,22 @@
         }
 
         function drawPixelMosaic(w, h) {
-            const cols = 32; const rows = 18; // Сетка
+            const cols = 32; const rows = 18; 
             const cellW = w / cols; const cellH = h / rows;
-            const color = DOM.genColor.value; // Берем цвет из генеративных настроек
+            const [r, g, b] = hex2rgb(DOM.genColor.value); 
             
-            // Преобразуем HEX в RGB
-            const hex2rgb = (hex) => {
-                const v = parseInt(hex.substring(1), 16);
-                return [ (v >> 16) & 255, (v >> 8) & 255, v & 255 ];
-            };
-            const [r,g,b] = hex2rgb(color);
+            // Фикс бага: Читаем только активную часть массива (низкие/средние частоты)
+            const activeBins = 100; 
 
             for(let y=0; y<rows; y++) {
                 for(let x=0; x<cols; x++) {
-                    const idx = (y * cols + x) % bufferLength;
-                    const val = dataArray[idx] / 255;
+                    // Симметричный маппинг от центра к краям
+                    const distToCenter = Math.sqrt(Math.pow(x - cols/2, 2) + Math.pow(y - rows/2, 2));
+                    const maxDist = Math.sqrt(Math.pow(cols/2, 2) + Math.pow(rows/2, 2));
+                    
+                    const idx = Math.floor((1 - (distToCenter / maxDist)) * activeBins);
+                    const val = (dataArray[idx] || 0) / 255;
+                    
                     ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${val})`;
                     ctx.fillRect(x*cellW, y*cellH, cellW-1, cellH-1);
                 }
@@ -699,7 +787,7 @@
         }
 
         function drawASCII(w, h) {
-            const chars = " .:-=+*#%@";
+            const chars = DOM.asciiChars.value || " .:-=+*#%@";
             const cols = 60; const rows = 30;
             const cellW = w / cols; const cellH = h / rows;
             
@@ -709,7 +797,6 @@
 
             for(let y=0; y<rows; y++) {
                 for(let x=0; x<cols; x++) {
-                    // Симметричное чтение массива частот для красивого рисунка
                     const distToCenter = Math.abs(x - cols/2) + Math.abs(y - rows/2);
                     const idx = Math.floor(distToCenter * (bufferLength / (cols/2 + rows/2)));
                     const val = (dataArray[idx] || 0) / 255;
@@ -719,7 +806,6 @@
                 }
             }
         }
-
 
         // === ГЛАВНЫЙ ЦИКЛ ===
         function startDrawLoop() {
@@ -736,8 +822,7 @@
                 for (let i = 100; i < 200; i++) treble += dataArray[i]; 
                 bass /= 10; mid /= 90; treble /= 100;
 
-                // Для креативных режимов делаем полную очистку, для остальных - шлейф
-                if (currentMode === 'pixel' || currentMode === 'ascii' || (currentMode === 'image' && DOM.imgGlitchType.value === 'wave')) {
+                if (currentMode === 'pixel' || currentMode === 'ascii' || currentMode === 'gen-liquid' || (currentMode === 'image' && DOM.imgGlitchType.value === 'wave')) {
                     ctx.fillStyle = "black";
                     ctx.fillRect(0, 0, w, h);
                 } else {
@@ -749,6 +834,8 @@
                     case 'eq': drawEQ(w, h); break;
                     case 'text': drawTextCloud(w, h, bass, treble); break;
                     case 'image': drawImageMode(w, h, bass, mid, treble); break;
+                    case 'gen-liquid': drawGenLiquid(w, h, bass); break;
+                    case 'gen-sand': drawGenSand(w, h); break;
                     case 'gen-particles': drawGenParticles(w, h, bass); break;
                     case 'gen-lines': drawGenLines(w, h, bass); break;
                     case 'gen-shapes': drawGenShapes(w, h, mid); break;
