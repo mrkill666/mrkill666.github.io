@@ -171,6 +171,28 @@
 
                     <div class="h-[1px] w-full bg-white/10 my-1"></div>
 
+                    <div class="subtitle text-[#0ea5e9]">Временны́е Искажения (Поток)</div>
+                    <div class="control-group mt-2">
+                        <div class="control-label"><span>Интенсивность Эффектов</span><span class="control-val" id="val-fx-master">60%</span></div>
+                        <input type="range" id="ctrl-fx-master" min="0" max="100" value="60">
+                    </div>
+                    <div class="flex flex-col gap-3 mt-4">
+                        <label class="toggle-row">
+                            <span>Фризинг (Застывание)</span>
+                            <div class="switch"><input type="checkbox" id="fx-freeze" checked><span class="slider"></span></div>
+                        </label>
+                        <label class="toggle-row">
+                            <span>Шлейф (P-Frames)</span>
+                            <div class="switch"><input type="checkbox" id="fx-trail" checked><span class="slider"></span></div>
+                        </label>
+                        <label class="toggle-row">
+                            <span>Слияние (Melting)</span>
+                            <div class="switch"><input type="checkbox" id="fx-melt" checked><span class="slider"></span></div>
+                        </label>
+                    </div>
+
+                    <div class="h-[1px] w-full bg-white/10 my-1"></div>
+
                     <div class="subtitle text-white">Искажения (Glitch)</div>
                     
                     <div class="control-group mt-2">
@@ -179,10 +201,6 @@
                     </div>
 
                     <div class="flex flex-col gap-3 mt-4">
-                        <label class="toggle-row">
-                            <span>Data Crash</span>
-                            <div class="switch"><input type="checkbox" id="fx-datacrash" checked><span class="slider"></span></div>
-                        </label>
                         <label class="toggle-row">
                             <span>RGB Shift / VHS</span>
                             <div class="switch"><input type="checkbox" id="fx-rgb" checked><span class="slider"></span></div>
@@ -228,10 +246,22 @@
             const canvas = document.getElementById('glitch-canvas');
             const ctx = canvas.getContext('2d', { alpha: false });
             
+            // Создаем отдельный Canvas для хранения предыдущих кадров (Feedback loop)
+            const bufferCanvas = document.createElement('canvas');
+            const bCtx = bufferCanvas.getContext('2d', { alpha: false });
+            let frozenSlices = [];
+            
             const DOM = {
                 master: document.getElementById('ctrl-master'),
                 valMaster: document.getElementById('val-master'),
-                dataCrash: document.getElementById('fx-datacrash'),
+                
+                // Временны́е искажения
+                fxMaster: document.getElementById('ctrl-fx-master'),
+                valFxMaster: document.getElementById('val-fx-master'),
+                freeze: document.getElementById('fx-freeze'),
+                trail: document.getElementById('fx-trail'),
+                melt: document.getElementById('fx-melt'),
+
                 rgb: document.getElementById('fx-rgb'),
                 blocks: document.getElementById('fx-blocks'),
                 text: document.getElementById('fx-text'),
@@ -273,14 +303,19 @@
             // Инициализация Canvas (дефолтное значение до загрузки видео)
             canvas.width = 1280;
             canvas.height = 720;
+            bufferCanvas.width = 1280;
+            bufferCanvas.height = 720;
 
             // Динамическое изменение размера холста под загруженное видео/вебку
             video.addEventListener('loadedmetadata', () => {
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
+                bufferCanvas.width = video.videoWidth;
+                bufferCanvas.height = video.videoHeight;
             });
 
             DOM.master.oninput = (e) => DOM.valMaster.textContent = e.target.value + '%';
+            DOM.fxMaster.oninput = (e) => DOM.valFxMaster.textContent = e.target.value + '%';
 
             // Логика Записи
             DOM.btnRecord.onclick = () => {
@@ -320,21 +355,17 @@
                     DOM.status.textContent = 'Нейросеть: Загрузка моделей...';
                     DOM.status.style.color = 'gray';
                     
-                    // Coco-SSD для квадратов
                     objectModel = await cocoSsd.load();
-                    
-                    // MoveNet для скелета
                     const poseConfig = { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING };
                     poseModel = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, poseConfig);
                     
                     DOM.status.textContent = 'Нейросеть: АКТИВНА';
                     DOM.status.style.color = '#ffffff';
                     
-                    detectLoop(); // Старт трекинга
+                    detectLoop(); 
                 } catch (err) {
                     DOM.status.textContent = 'Нейросеть: Ошибка загрузки';
                     DOM.status.style.color = '#ff3333';
-                    console.error("AI Init Error:", err);
                 }
             };
             initAI();
@@ -368,11 +399,9 @@
                         if (objectModel) objectPredictions = await objectModel.detect(video);
                         if (poseModel) poses = await poseModel.estimatePoses(video);
                         updateAnomalies();
-                    } catch (e) {
-                        // Игнорируем ошибки сканирования конкретного кадра
-                    }
+                    } catch (e) {}
                 }
-                setTimeout(detectLoop, 60); // ~15 FPS для AI, чтобы не тормозить глитч
+                setTimeout(detectLoop, 60); 
             };
 
             const updateAnomalies = () => {
@@ -389,7 +418,7 @@
                 });
             };
 
-            // Отрисовка HUD с пересчетом масштаба видео
+            // Отрисовка HUD
             const drawHUD = (w, h) => {
                 const vw = video.videoWidth;
                 const vh = video.videoHeight;
@@ -406,7 +435,6 @@
 
                 let points = [];
 
-                // 1. Coco-SSD (Квадраты / Bounding Boxes)
                 if (DOM.aiBoxes.checked) {
                     objectPredictions.forEach(pred => {
                         const [origX, origY, origW, origH] = pred.bbox;
@@ -419,7 +447,6 @@
                         const cy = y + height/2;
                         points.push({x: cx, y: cy});
 
-                        // Квадрат вокруг объекта
                         const len = 20;
                         ctx.beginPath();
                         ctx.moveTo(x, y + len); ctx.lineTo(x, y); ctx.lineTo(x + len, y);
@@ -432,26 +459,22 @@
                     });
                 }
 
-                // 2. MoveNet (Рэгдолл / Скелет)
                 if (DOM.aiSkeleton.checked) {
                     poses.forEach(pose => {
                         const keypoints = pose.keypoints;
                         const kpMap = {};
                         
-                        // Рисуем суставы
                         keypoints.forEach(kp => {
                             if (kp.score > 0.3) {
                                 const x = kp.x * scaleX;
                                 const y = kp.y * scaleY;
                                 kpMap[kp.name] = { x, y };
-                                
                                 ctx.beginPath();
                                 ctx.arc(x, y, 4, 0, Math.PI * 2);
                                 ctx.fill();
                             }
                         });
 
-                        // Соединяем кости
                         ctx.beginPath();
                         SKELETON_EDGES.forEach(([joint1, joint2]) => {
                             const p1 = kpMap[joint1];
@@ -463,7 +486,6 @@
                         });
                         ctx.stroke();
                         
-                        // Добавляем центр человека в точки для графов
                         if(kpMap['left_hip'] && kpMap['right_shoulder']) {
                             points.push({
                                 x: (kpMap['left_hip'].x + kpMap['right_shoulder'].x) / 2,
@@ -473,7 +495,6 @@
                     });
                 }
 
-                // 3. Аномалии и Графы
                 if (DOM.aiGraphs.checked) {
                     anomalies.forEach(a => {
                         points.push({x: a.x, y: a.y});
@@ -498,7 +519,6 @@
                 }
             };
 
-            // Главный цикл отрисовки и Глитча
             const symbols = "010101XY#%&@$+-/=<>?!";
             
             function draw() {
@@ -506,42 +526,66 @@
                 if (video.paused || video.ended || video.videoWidth === 0) return;
 
                 const master = DOM.master.value / 100;
+                const fxPower = DOM.fxMaster.value / 100;
                 const w = canvas.width;
                 const h = canvas.height;
 
-                // 1. Отрисовка базового видео с поддержкой Data Crash (Запекание)
-                if (DOM.dataCrash.checked) {
-                    // Создаем эффект шлейфа и постепенного изменения
-                    ctx.globalAlpha = 0.15 + (1 - master) * 0.2; 
-                    ctx.drawImage(video, 0, 0, w, h);
-                    ctx.globalAlpha = 1.0;
+                // 1. Отрисовка базового видео
+                ctx.globalAlpha = 1.0;
+                ctx.drawImage(video, 0, 0, w, h);
+
+                // --- НОВЫЕ ВРЕМЕННЫЕ ЭФФЕКТЫ ---
+                if (DOM.trail.checked || DOM.melt.checked || DOM.freeze.checked) {
                     
-                    // Застывание с размытием определенных кусков
-                    if (Math.random() < master * 0.4) {
-                        const cw = w * (Math.random() * 0.3 + 0.1);
-                        const ch = h * (Math.random() * 0.3 + 0.1);
-                        const cx = Math.random() * (w - cw);
-                        const cy = Math.random() * (h - ch);
-                        ctx.filter = 'blur(4px)';
-                        ctx.drawImage(canvas, cx, cy, cw, ch, cx, cy, cw, ch);
-                        ctx.filter = 'none';
+                    // Шлейф (P-Frames): Наложение грязного смещенного прошлого кадра
+                    if (DOM.trail.checked) {
+                        ctx.globalAlpha = fxPower * 0.85; 
+                        const dx = (Math.random() - 0.5) * (fxPower * 10);
+                        const dy = (Math.random() - 0.5) * (fxPower * 10);
+                        ctx.drawImage(bufferCanvas, dx, dy, w, h);
                     }
-                } else {
+
+                    // Слияние (Melting): Стекание кадра вниз
+                    if (DOM.melt.checked) {
+                        ctx.globalAlpha = fxPower * 0.9;
+                        const meltSpeed = fxPower * 10 + 1; 
+                        ctx.drawImage(bufferCanvas, 0, meltSpeed, w, h);
+                    }
+                    
                     ctx.globalAlpha = 1.0;
-                    ctx.drawImage(video, 0, 0, w, h);
+
+                    // Фризинг (Застывание): Замороженные куски случайного размера
+                    if (DOM.freeze.checked) {
+                        if (Math.random() < fxPower * 0.3) {
+                            frozenSlices.push({
+                                x: Math.random() > 0.5 ? 0 : Math.random() * w,
+                                y: Math.random() * h,
+                                w: Math.random() > 0.5 ? w : Math.random() * (w / 2),
+                                h: Math.random() * 80 + 20,
+                                life: Math.random() * 20 + 10
+                            });
+                        }
+                        for (let i = frozenSlices.length - 1; i >= 0; i--) {
+                            let s = frozenSlices[i];
+                            ctx.drawImage(bufferCanvas, s.x, s.y, s.w, s.h, s.x, s.y, s.w, s.h);
+                            s.life--;
+                            if (s.life <= 0) frozenSlices.splice(i, 1);
+                        }
+                    }
+
+                    // Сохраняем текущее состояние в буфер (чтобы шлейфы и слияние могли накапливаться)
+                    bCtx.drawImage(canvas, 0, 0, w, h);
                 }
 
                 // 2. Отрисовка AI HUD
                 drawHUD(w, h);
 
-                // 3. ПРИМЕНЕНИЕ ГЛИТЧЕЙ
+                // 3. ПРИМЕНЕНИЕ СТАРЫХ ГЛИТЧЕЙ
                 
-                // RGB Shift / VHS
                 if (DOM.rgb.checked && Math.random() < master) {
                     const offset = (Math.random() * 20 * master);
                     const imageData = ctx.getImageData(0, 0, w, h);
                     const data = imageData.data;
-
                     for (let i = 0; i < data.length; i += 4) {
                         data[i] = data[i + Math.floor(offset * 4)] || data[i]; 
                     }
@@ -554,7 +598,6 @@
                     }
                 }
 
-                // Block Artifacts 
                 if (DOM.blocks.checked && Math.random() < master * 0.5) {
                     for (let i = 0; i < 5 * master; i++) {
                         const bx = Math.random() * w;
@@ -571,7 +614,6 @@
                     }
                 }
 
-                // Data Symbols
                 if (DOM.text.checked && Math.random() < master) {
                     ctx.font = "900 14px monospace";
                     ctx.fillStyle = DOM.hudColor.value; 
@@ -581,7 +623,6 @@
                     }
                 }
 
-                // Scanlines
                 if (DOM.lines.checked) {
                     ctx.fillStyle = "rgba(0,0,0,0.15)";
                     for (let i = 0; i < h; i += 4) {
@@ -589,7 +630,6 @@
                     }
                 }
 
-                // Шум
                 if (Math.random() < master * 0.1) {
                     ctx.fillStyle = `rgba(255,255,255,${0.05 * master})`;
                     ctx.fillRect(0, 0, w, h);
