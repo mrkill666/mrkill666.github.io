@@ -7,13 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     
-    <!-- Favicons -->
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
-    <link rel="manifest" href="/icons/site.webmanifest">
-    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
-    <link rel="shortcut icon" href="/icons/favicon.ico">
     <meta name="theme-color" content="#ffffff">
 
     <style>
@@ -72,23 +68,14 @@
 
         .control-panel {
             background: var(--bg-color); border: 1px solid var(--border-light);
-            border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;
+            border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;
             height: fit-content;
         }
 
-        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
-        .control-label { display: flex; justify-content: space-between; font-size: 12px; text-transform: uppercase; font-weight: 900; color: #fff; }
+        .section-title { font-size: 10px; text-transform: uppercase; font-weight: 900; color: gray; letter-spacing: 0.1em; border-bottom: 1px solid var(--border-light); padding-bottom: 0.5rem; }
 
-        .btn {
-            background: var(--control-bg); color: var(--accent-color); border: 1px solid var(--border-light);
-            border-radius: 8px; padding: 0.6rem 0.5rem; font-size: 10px; font-weight: 900;
-            text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.3s ease;
-            text-align: center; flex: 1; min-width: 30%;
-        }
-        .btn:hover { background: var(--accent-color); color: #000; }
-        .btn.active { background: var(--active-color); color: #000; border-color: var(--active-color); }
-        .btn-download { background: var(--active-color); color: #000; border-color: var(--active-color); margin-top: 0.5rem; width: 100%; font-size: 12px; padding: 1rem;}
-        .btn-download:hover { background: #fff; border-color: #fff; }
+        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .control-label { display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; font-weight: 900; color: #fff; }
 
         select { 
             background: var(--control-bg); color: white; border: 1px solid var(--border-light); 
@@ -99,27 +86,27 @@
         .drop-zone {
             border: 2px dashed var(--border-light); border-radius: 8px; padding: 1.5rem 1rem;
             text-align: center; font-size: 12px; color: white; font-weight: 900; text-transform: uppercase;
-            cursor: pointer; transition: all 0.3s; background: var(--control-bg);
+            cursor: pointer; transition: all 0.3s; background: var(--control-bg); margin-bottom: 0.5rem;
         }
         .drop-zone.dragover { border-color: var(--active-color); background: rgba(249, 115, 22, 0.1); color: var(--active-color); }
 
         .slider-container {
-            border: 2px solid var(--border-light); border-radius: 8px; padding: 0.75rem 1rem;
+            border: 1px solid var(--border-light); border-radius: 8px; padding: 0.75rem 1rem;
             background: var(--control-bg); display: flex; align-items: center; gap: 1rem;
         }
         input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
         input[type=range]::-webkit-slider-thumb { 
-            -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; 
-            background: var(--active-color); cursor: pointer; margin-top: -8px; 
+            -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; 
+            background: var(--active-color); cursor: pointer; margin-top: -6px; 
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #444; border-radius: 2px; }
-        .slider-val { font-size: 16px; font-weight: 900; min-width: 30px; text-align: right; }
+        .slider-val { font-size: 12px; font-family: monospace; font-weight: 900; min-width: 30px; text-align: right; color: var(--active-color); }
 
         .preview-container {
             background: var(--bg-color); border: 1px solid var(--border-light);
             border-radius: 16px; padding: 1rem; display: flex; justify-content: center; align-items: center;
-            overflow: hidden; min-height: 500px;
+            overflow: hidden; min-height: 500px; position: relative;
         }
         canvas {
             max-width: 100%; max-height: 75vh; object-fit: contain;
@@ -127,6 +114,32 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             image-rendering: pixelated; 
         }
+
+        /* Стиль для пресетов как в плагине */
+        .preset-list::-webkit-scrollbar { width: 4px; }
+        .preset-list::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        
+        .preset-btn {
+            background: var(--control-bg); border: 1px solid var(--border-light);
+            border-radius: 8px; padding: 0.6rem 0.75rem; display: flex;
+            justify-content: space-between; align-items: center; cursor: pointer;
+            transition: all 0.2s ease; width: 100%;
+        }
+        .preset-btn:hover { background: #222; }
+        .preset-btn.active { border-color: var(--active-color); background: rgba(249, 115, 22, 0.05); }
+        .preset-name { font-size: 10px; font-weight: 900; text-transform: uppercase; color: #ccc; }
+        .preset-btn.active .preset-name { color: var(--active-color); }
+        .color-dots { display: flex; gap: 4px; }
+        .color-dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); box-shadow: inset 0 0 2px rgba(0,0,0,0.5); }
+
+        .btn-download { 
+            background: var(--active-color); color: #000; border: 1px solid var(--active-color); 
+            border-radius: 8px; padding: 1rem; font-size: 12px; font-weight: 900; 
+            text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.3s ease; 
+            text-align: center; width: 100%; mt-2;
+        }
+        .btn-download:hover { background: #fff; border-color: #fff; }
+
     </style>
 </head>
 <body class="noise">
@@ -139,7 +152,6 @@
         </svg>
     </div>
 
-    <!-- Обновленная навигация -->
     <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
         <a href="index" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">
             Владислав Ножиков
@@ -159,24 +171,35 @@
             </div>
 
             <div class="editor-grid">
-                <!-- Панель управления -->
+                
                 <div class="control-panel">
                     
-                    <div class="control-group">
-                        <div class="control-label">Цветовой Режим</div>
-                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                            <button class="btn active" id="mode-bw">B/W</button>
-                            <button class="btn" id="mode-brand">Brand</button>
-                            <button class="btn" id="mode-color">Color</button>
-                            <button class="btn" id="mode-scramble">Scramble</button>
-                            <button class="btn" id="mode-random">Random</button>
-                        </div>
-                    </div>
-
                     <label class="drop-zone" id="drop-zone">
                         <span>PNG, JPG, WEBP: <br><br> UPLOAD ▲</span>
                         <input type="file" id="file-input" accept="image/*" style="display: none;">
                     </label>
+
+                    <div class="section-title">O.G. Presets</div>
+                    <div class="preset-list flex flex-col gap-2 max-h-[180px] overflow-y-auto pr-1" id="presets-container">
+                        </div>
+
+                    <div class="section-title mt-2">Render Settings</div>
+
+                    <div class="control-group">
+                        <div class="control-label">Highlights (Bias):</div>
+                        <div class="slider-container">
+                            <input type="range" id="ctrl-highlights" min="-128" max="127" value="0">
+                            <span class="slider-val" id="highlights-val">0</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label">Soften (Blur):</div>
+                        <div class="slider-container">
+                            <input type="range" id="ctrl-soften" min="0" max="20" value="0">
+                            <span class="slider-val" id="soften-val">0</span>
+                        </div>
+                    </div>
 
                     <div class="control-group">
                         <div class="control-label">Size (Размер Пикселя):</div>
@@ -187,18 +210,10 @@
                     </div>
 
                     <div class="control-group">
-                        <div class="control-label">Threshold (Яркость):</div>
-                        <div class="slider-container">
-                            <input type="range" id="ctrl-thresh" min="-128" max="127" value="0">
-                            <span class="slider-val" id="thresh-val">0</span>
-                        </div>
-                    </div>
-
-                    <div class="control-group">
                         <div class="control-label">Dithering Method:</div>
                         <select id="ctrl-algo">
-                            <option value="bitmap">BITMAP</option>
-                            <option value="stretch">STRETCH</option>
+                            <option value="bitmap">BITMAP (Hard Cut)</option>
+                            <option value="stretch">STRETCH (Contrast)</option>
                             <option value="floyd" selected>FLOYD-STEINBERG</option>
                             <option value="atkinson">ATKINSON</option>
                             <option value="jjn">JARVIS-JUDICE-NINKE</option>
@@ -207,14 +222,13 @@
                             <option value="bayer4">BAYER 4X4</option>
                             <option value="bayer8">BAYER 8X8</option>
                             <option value="clustered">CLUSTERED 4X4</option>
-                            <option value="random">RANDOM</option>
+                            <option value="random">RANDOM NOISE</option>
                         </select>
                     </div>
 
                     <button class="btn btn-download" id="btn-download">Сохранить PNG</button>
                 </div>
 
-                <!-- Холст -->
                 <div class="preview-container">
                     <canvas id="canvas" width="600" height="400"></canvas>
                 </div>
@@ -222,7 +236,6 @@
 
         </div>
 
-        <!-- Добавленный футер с кнопкой "Политика конфиденциальности" -->
         <footer class="mt-24 md:mt-32 pt-12 border-t border-white/10 flex flex-col items-center text-center gap-8 reveal w-full">
             <div class="flex flex-col items-center gap-2">
                 <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">
@@ -236,59 +249,8 @@
 
     </main>
 
-    <!-- Всплывашка-нож (Cookie) - Финальная версия -->
-    <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
-        
-        <!-- Острие и лезвие -->
-        <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" 
-             style="border-bottom-left-radius: 120px 100%; border-top-left-radius: 0;">
-            
-            <div class="relative z-10 flex items-center justify-end w-full">
-                <p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight text-right">
-                    Мы собираем <span class="text-white font-bold">Cookie</span><br>
-                    <a href="privacy" class="underline hover:text-white transition">Политика</a>
-                </p>
-            </div>
-        </div>
-
-        <!-- "Палочка" (Гарда) -->
-        <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm relative z-10 pointer-events-none shadow-sm"></div>
-
-        <!-- Рукоять, которая и является кнопкой "Принять" -->
-        <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center relative px-4 md:px-6 hover:bg-white hover:text-black hover:border-white transition-colors cursor-pointer group">
-            <span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap z-20 relative">
-                Принять
-            </span>
-        </button>
-
-    </div>
-
-    <!-- Скрипты логики -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const cookieKnife = document.getElementById('cookie-knife');
-            const acceptBtn = document.getElementById('accept-cookie-btn');
-
-            if (!localStorage.getItem('cookieAccepted')) {
-                setTimeout(() => {
-                    cookieKnife.classList.remove('translate-y-40', 'opacity-0');
-                    cookieKnife.classList.add('translate-y-0', 'opacity-100');
-                }, 2500);
-            }
-
-            acceptBtn.addEventListener('click', () => {
-                localStorage.setItem('cookieAccepted', 'true');
-                cookieKnife.classList.remove('translate-y-0', 'opacity-100');
-                cookieKnife.classList.add('translate-y-40', 'opacity-0');
-            });
-        });
-    </script>
-
     <script>
         document.getElementById('current-year').textContent = new Date().getFullYear();
-    </script>
-
-    <script>
         window.onload = () => { setTimeout(() => { document.body.classList.add('loaded'); }, 500); };
 
         const BitmapEditor = (() => {
@@ -299,29 +261,62 @@
                 ctrlAlgo: document.getElementById('ctrl-algo'),
                 ctrlSize: document.getElementById('ctrl-size'),
                 sizeVal: document.getElementById('size-val'),
-                ctrlThresh: document.getElementById('ctrl-thresh'),
-                threshVal: document.getElementById('thresh-val'),
+                ctrlHighlights: document.getElementById('ctrl-highlights'),
+                highlightsVal: document.getElementById('highlights-val'),
+                ctrlSoften: document.getElementById('ctrl-soften'),
+                softenVal: document.getElementById('soften-val'),
                 btnDownload: document.getElementById('btn-download'),
-                modeBtns: {
-                    bw: document.getElementById('mode-bw'),
-                    brand: document.getElementById('mode-brand'),
-                    color: document.getElementById('mode-color'),
-                    scramble: document.getElementById('mode-scramble'),
-                    random: document.getElementById('mode-random')
-                }
+                presetsContainer: document.getElementById('presets-container')
             };
 
             const ctx = DOM.canvas.getContext('2d');
             let originalImage = null;
 
+            // Конфигурация палитр (от самого темного к светлому)
+            const PRESETS = [
+                { name: 'B&W Stencil', colors: ['#111111', '#ffffff'] },
+                { name: 'Brand Orange', colors: ['#050505', '#f97316'] },
+                { name: 'Clockwork', colors: ['#111111', '#4a2c11', '#f97316', '#ffffff'] },
+                { name: 'Soft Pink', colors: ['#111111', '#ff5e8e', '#ffb8d0'] },
+                { name: 'Geo Blue', colors: ['#0a0f1a', '#004777', '#00d2ff', '#ffffff'] },
+                { name: 'Muddy Violet', colors: ['#1a0b2e', '#6a0dad', '#a8e6cf', '#ffffff'] },
+                { name: 'Moonlight', colors: ['#050510', '#1b2a47', '#4b7e94', '#c2e8f5'] },
+                { name: 'Cyberpunk', colors: ['#000000', '#7122fa', '#00ff9f', '#fcee0a'] }
+            ];
+
             // Состояние
             const state = {
                 size: 4,
-                threshold: 0,
+                highlights: 0,
+                soften: 0,
                 algo: 'floyd',
-                palette: 'bw',
-                randColors: { dark: [0,0,0], light: [255,255,255] }
+                activePresetIdx: 0
             };
+
+            // Утилита конвертации HEX в RGB
+            const hexToRgb = hex => {
+                let c = hex.substring(1).split('');
+                if(c.length == 3){ c= [c[0], c[0], c[1], c[1], c[2], c[2]]; }
+                c= '0x'+c.join('');
+                return {r: (c>>16)&255, g: (c>>8)&255, b: c&255};
+            };
+
+            // Генерация UI палитр
+            PRESETS.forEach((preset, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `preset-btn ${idx === state.activePresetIdx ? 'active' : ''}`;
+                
+                let dotsHtml = preset.colors.map(c => `<div class="color-dot" style="background-color: ${c}"></div>`).join('');
+                btn.innerHTML = `<span class="preset-name">${preset.name}</span><div class="color-dots">${dotsHtml}</div>`;
+                
+                btn.onclick = () => {
+                    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    state.activePresetIdx = idx;
+                    applyFilters();
+                };
+                DOM.presetsContainer.appendChild(btn);
+            });
 
             // Матрицы Байера и Clustered
             const matrices = {
@@ -355,11 +350,13 @@
             DOM.dropZone.addEventListener('dragleave', () => DOM.dropZone.classList.remove('dragover'));
             DOM.dropZone.addEventListener('drop', (e) => { e.preventDefault(); DOM.dropZone.classList.remove('dragover'); if (e.dataTransfer.files.length > 0) processFile(e.dataTransfer.files[0]); });
 
-            // Универсальная функция применения алгоритма к одному каналу (массиву)
-            const processChannel = (buf, w, h) => {
-                // Пре-обработка: Сдвиг яркости (Threshold Bias)
+            // Универсальная функция применения алгоритма с поддержкой N-цветов (шаги квантования)
+            const processChannel = (buf, w, h, levels) => {
+                const step = 255 / (levels - 1);
+
+                // Пре-обработка: Сдвиг яркости (Highlights Bias)
                 for (let i = 0; i < buf.length; i++) {
-                    let val = buf[i] + state.threshold;
+                    let val = buf[i] + state.highlights;
                     buf[i] = val < 0 ? 0 : (val > 255 ? 255 : val);
                 }
 
@@ -370,30 +367,42 @@
                         if (buf[i] > max) max = buf[i];
                     }
                     for (let i = 0; i < buf.length; i++) {
-                        buf[i] = max === min ? 0 : ((buf[i] - min) / (max - min)) * 255;
-                        buf[i] = buf[i] >= 128 ? 255 : 0;
+                        let normalized = max === min ? 0 : ((buf[i] - min) / (max - min)) * 255;
+                        buf[i] = Math.round(normalized / step) * step;
                     }
                 } else if (state.algo === 'bitmap') {
-                    for (let i = 0; i < buf.length; i++) buf[i] = buf[i] >= 128 ? 255 : 0;
+                    for (let i = 0; i < buf.length; i++) {
+                        buf[i] = Math.round(buf[i] / step) * step;
+                    }
                 } else if (state.algo === 'random') {
-                    for (let i = 0; i < buf.length; i++) buf[i] = buf[i] > (Math.random() * 255) ? 255 : 0;
+                    for (let i = 0; i < buf.length; i++) {
+                        const noise = (0.5 - Math.random()) * step;
+                        let newP = Math.round((buf[i] + noise) / step) * step;
+                        buf[i] = Math.max(0, Math.min(255, newP));
+                    }
                 } else if (matrices[state.algo]) {
+                    // Ordered Dither (Bayer / Clustered)
                     const m = matrices[state.algo];
                     for (let y = 0; y < h; y++) {
                         for (let x = 0; x < w; x++) {
                             const i = y * w + x;
-                            const thresh = (m.data[(y % m.dim) * m.dim + (x % m.dim)] / m.div) * 255;
-                            buf[i] = buf[i] > thresh ? 255 : 0;
+                            const bayerVal = m.data[(y % m.dim) * m.dim + (x % m.dim)] / m.div;
+                            const noise = (0.5 - bayerVal) * step; // Математическое смещение порога
+                            let newP = Math.round((buf[i] + noise) / step) * step;
+                            buf[i] = Math.max(0, Math.min(255, newP));
                         }
                     }
                 } else if (errDist[state.algo]) {
+                    // Error Diffusion (Floyd, Atkinson, etc.)
                     const dist = errDist[state.algo];
                     for (let y = 0; y < h; y++) {
                         for (let x = 0; x < w; x++) {
                             const i = y * w + x;
                             const oldP = buf[i];
-                            const newP = oldP < 128 ? 0 : 255;
+                            let newP = Math.round(oldP / step) * step;
+                            newP = Math.max(0, Math.min(255, newP));
                             buf[i] = newP;
+                            
                             const err = oldP - newP;
                             for (let d = 0; d < dist.length; d++) {
                                 const nx = x + dist[d][0], ny = y + dist[d][1];
@@ -419,63 +428,45 @@
                 const offCanvas = document.createElement('canvas');
                 offCanvas.width = smallW; offCanvas.height = smallH;
                 const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
+                
+                // Применяем Soften (Предварительное размытие перед дизерингом)
+                if (state.soften > 0) {
+                    offCtx.filter = `blur(${state.soften}px)`;
+                }
                 offCtx.drawImage(originalImage, 0, 0, smallW, smallH);
+                offCtx.filter = 'none'; // Сброс
                 
                 const imgData = offCtx.getImageData(0, 0, smallW, smallH);
                 const data = imgData.data;
 
-                // ЦВЕТОВЫЕ РЕЖИМЫ
-                if (state.palette === 'color' || state.palette === 'scramble') {
-                    // Разделяем на 3 канала
-                    const rBuf = new Float32Array(smallW * smallH);
-                    const gBuf = new Float32Array(smallW * smallH);
-                    const bBuf = new Float32Array(smallW * smallH);
+                // Цветовая Палитра
+                const activePreset = PRESETS[state.activePresetIdx];
+                const paletteRgb = activePreset.colors.map(hexToRgb);
+                const levels = paletteRgb.length;
 
-                    for (let i = 0; i < smallW * smallH; i++) {
-                        let idx = i * 4;
-                        if (state.palette === 'scramble') {
-                            rBuf[i] = data[idx+1];          // R становится G
-                            gBuf[i] = data[idx+2];          // G становится B
-                            bBuf[i] = 255 - data[idx];      // B становится инвертированным R
-                        } else {
-                            rBuf[i] = data[idx];
-                            gBuf[i] = data[idx+1];
-                            bBuf[i] = data[idx+2];
-                        }
-                    }
+                // Конвертируем в Ч/Б буфер для процессинга
+                const grayBuf = new Float32Array(smallW * smallH);
+                for (let i = 0; i < smallW * smallH; i++) {
+                    let idx = i * 4;
+                    grayBuf[i] = 0.299 * data[idx] + 0.587 * data[idx+1] + 0.114 * data[idx+2];
+                }
 
-                    // Обрабатываем каждый цвет отдельно (дает трушные 8 цветов 1-bit RGB)
-                    processChannel(rBuf, smallW, smallH);
-                    processChannel(gBuf, smallW, smallH);
-                    processChannel(bBuf, smallW, smallH);
+                // Запускаем алгоритм сжатия с учетом количества цветов в палитре
+                processChannel(grayBuf, smallW, smallH, levels);
 
-                    for (let i = 0; i < smallW * smallH; i++) {
-                        let idx = i * 4;
-                        data[idx] = rBuf[i];
-                        data[idx+1] = gBuf[i];
-                        data[idx+2] = bBuf[i];
-                        data[idx+3] = 255;
-                    }
-                } else {
-                    // Черно-белые или Дуотон-режимы (Brand, BW, Random)
-                    const grayBuf = new Float32Array(smallW * smallH);
-                    for (let i = 0; i < smallW * smallH; i++) {
-                        let idx = i * 4;
-                        grayBuf[i] = 0.299 * data[idx] + 0.587 * data[idx+1] + 0.114 * data[idx+2];
-                    }
-
-                    processChannel(grayBuf, smallW, smallH);
-
-                    let dark = [0,0,0], light = [255,255,255];
-                    if (state.palette === 'brand') { dark = [5,5,5]; light = [249,115,22]; }
-                    if (state.palette === 'random') { dark = state.randColors.dark; light = state.randColors.light; }
-
-                    for (let i = 0; i < smallW * smallH; i++) {
-                        let isLight = grayBuf[i] > 127;
-                        let color = isLight ? light : dark;
-                        let idx = i * 4;
-                        data[idx] = color[0]; data[idx+1] = color[1]; data[idx+2] = color[2]; data[idx+3] = 255;
-                    }
+                // Окрашиваем пиксели согласно палитре
+                for (let i = 0; i < smallW * smallH; i++) {
+                    let val = grayBuf[i];
+                    // Вычисляем индекс цвета (от 0 до levels-1)
+                    let colorIdx = Math.round((val / 255) * (levels - 1));
+                    colorIdx = Math.max(0, Math.min(levels - 1, colorIdx)); // Защита
+                    
+                    let c = paletteRgb[colorIdx];
+                    let idx = i * 4;
+                    data[idx] = c.r; 
+                    data[idx+1] = c.g; 
+                    data[idx+2] = c.b; 
+                    data[idx+3] = 255;
                 }
 
                 offCtx.putImageData(imgData, 0, 0);
@@ -488,27 +479,9 @@
 
             // Слушатели контролов
             DOM.ctrlSize.addEventListener('input', (e) => { state.size = parseInt(e.target.value); DOM.sizeVal.textContent = state.size; applyFilters(); });
-            DOM.ctrlThresh.addEventListener('input', (e) => { state.threshold = parseInt(e.target.value); DOM.threshVal.textContent = state.threshold > 0 ? '+' + state.threshold : state.threshold; applyFilters(); });
+            DOM.ctrlHighlights.addEventListener('input', (e) => { state.highlights = parseInt(e.target.value); DOM.highlightsVal.textContent = state.highlights > 0 ? '+' + state.highlights : state.highlights; applyFilters(); });
+            DOM.ctrlSoften.addEventListener('input', (e) => { state.soften = parseInt(e.target.value); DOM.softenVal.textContent = state.soften; applyFilters(); });
             DOM.ctrlAlgo.addEventListener('change', (e) => { state.algo = e.target.value; applyFilters(); });
-
-            // Логика кнопок цветовых режимов
-            const setMode = (modeBtn, modeName) => {
-                Object.values(DOM.modeBtns).forEach(btn => btn.classList.remove('active'));
-                modeBtn.classList.add('active');
-                state.palette = modeName;
-                if (modeName === 'random') {
-                    state.randColors.dark = [Math.random()*255|0, Math.random()*255|0, Math.random()*255|0];
-                    state.randColors.light = [Math.random()*255|0, Math.random()*255|0, Math.random()*255|0];
-                }
-                applyFilters();
-            };
-
-            DOM.modeBtns.bw.addEventListener('click', () => setMode(DOM.modeBtns.bw, 'bw'));
-            DOM.modeBtns.brand.addEventListener('click', () => setMode(DOM.modeBtns.brand, 'brand'));
-            DOM.modeBtns.color.addEventListener('click', () => setMode(DOM.modeBtns.color, 'color'));
-            DOM.modeBtns.scramble.addEventListener('click', () => setMode(DOM.modeBtns.scramble, 'scramble'));
-            
-            DOM.modeBtns.random.addEventListener('click', () => setMode(DOM.modeBtns.random, 'random'));
 
             DOM.btnDownload.addEventListener('click', () => {
                 if (!originalImage) return alert('Сначала загрузите изображение!');
@@ -518,14 +491,13 @@
                 link.click();
             });
 
-            // Предзагрузка изображения hero.jpg
+            // Предзагрузка изображения
             const initImg = new Image();
             initImg.onload = () => {
                 originalImage = initImg;
                 applyFilters();
             };
             initImg.onerror = () => {
-                // Если картинка не найдена, показываем стандартный текст
                 ctx.fillStyle = "#111111"; ctx.fillRect(0, 0, DOM.canvas.width, DOM.canvas.height);
                 ctx.fillStyle = "#333333"; ctx.font = "14px Inter"; ctx.textAlign = "center";
                 ctx.fillText("ЗАГРУЗИТЕ ФОТОГРАФИЮ", DOM.canvas.width / 2, DOM.canvas.height / 2);
