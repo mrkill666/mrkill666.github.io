@@ -791,6 +791,36 @@
     </svg>
 </a>
 
+
+            <a href="morse" class="hub-card col-span-1 md:col-span-2 reveal" data-category="sound" style="transition-delay: 1.6s;">
+                <div class="card-tag">Sonic Lab / Генерация</div>
+                <h2 class="card-title">Signal Synth</h2>
+                <p class="card-desc">Алгоритм преобразует текст в азбуку Морзе, а затем маппит точки и тире на ступени выбранной музыкальной гаммы, создавая уникальную мелодию.</p>
+                <div class="arrow-link">Открыть модуль →</div>
+
+                <svg class="card-icon" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2">
+                    <g class="svg-float">
+                        <!-- Abstract Signal Wave -->
+                        <path d="M 10 50 Q 25 20 50 50 T 90 50" stroke-width="1.5" opacity="0.3" stroke-dasharray="4 4" />
+                        
+                        <!-- Morse Code Elements (Dots & Dashes) -->
+                        <circle cx="25" cy="35" r="3" fill="white" stroke="none" opacity="0.6" />
+                        <circle cx="35" cy="35" r="3" fill="#f97316" stroke="none" class="svg-beat" />
+                        <rect x="45" y="33" width="10" height="4" rx="2" fill="white" stroke="none" opacity="0.8" />
+                        <rect x="60" y="33" width="10" height="4" rx="2" fill="#f97316" stroke="none" class="svg-beat" style="animation-delay: 0.3s;" />
+                        <rect x="75" y="33" width="10" height="4" rx="2" fill="white" stroke="none" opacity="0.4" />
+                        
+                        <!-- Melodic Steps (Scale mapping) -->
+                        <path d="M 25 65 L 45 55 L 60 75 L 80 60" stroke="#f97316" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8" />
+                        
+                        <!-- Note Nodes -->
+                        <circle cx="25" cy="65" r="2.5" fill="white" stroke="none" />
+                        <circle cx="45" cy="55" r="2.5" fill="white" stroke="none" />
+                        <circle cx="60" cy="75" r="2.5" fill="white" stroke="none" />
+                        <circle cx="80" cy="60" r="2.5" fill="white" stroke="none" />
+                    </g>
+                </svg>
+            </a>
             
         </div>
     </main>
