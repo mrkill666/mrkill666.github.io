@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signal Synth | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <meta name="theme-color" content="#ffffff">
+
+    <style>
+        :root {
+            --bg-color: #050505; --card-bg: #111111; --accent-color: #ffffff;
+            --border-light: rgba(255, 255, 255, 0.1); --control-bg: #1a1a1a;
+            --active-color: #f97316; --danger-color: #ff3333; --font-main: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        a { color: inherit; text-decoration: none; }
+
+        body {
+            background-color: var(--bg-color); color: var(--accent-color); font-family: var(--font-main);
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            padding: 6rem 2rem 2rem 2rem; overflow-x: hidden; position: relative;
+        }
+
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.05; pointer-events: none; z-index: 9999;
+        }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+            display: flex; justify-content: center; align-items: center; z-index: 10001;
+            transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+        .knife-svg-main { width: 120px; height: 120px; fill: none; stroke: white; stroke-width: 1.2; animation: rotate-knife 1.5s linear infinite; }
+        @keyframes rotate-knife { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loaded #loader { transform: translateY(-100%); }
+
+        .app-container {
+            background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 24px;
+            padding: 2rem; width: 100%; max-width: 1100px; position: relative; z-index: 10;
+            display: flex; flex-direction: column; gap: 2rem; backdrop-filter: blur(10px);
+        }
+
+        .subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: gray; font-weight: 700; margin-bottom: 0.5rem; }
+        .title { font-size: 2rem; font-weight: 900; text-transform: uppercase; line-height: 1.1; letter-spacing: -0.02em; }
+
+        /* ИСПРАВЛЕНИЕ СЕТКИ: Использование minmax(0, 1fr) не дает канвасу распирать сетку */
+        .editor-grid { display: grid; grid-template-columns: 350px minmax(0, 1fr); gap: 2rem; }
+        @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
+
+        .control-panel { background: rgba(5,5,5,0.8); border: 1px solid var(--border-light); border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; height: fit-content; }
+
+        .btn {
+            background: var(--control-bg); color: var(--accent-color); border: 1px solid var(--border-light);
+            border-radius: 8px; padding: 0.75rem 1rem; font-size: 12px; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.3s ease;
+            text-align: center; width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem;
+        }
+        .btn:hover { background: var(--accent-color); color: #000; }
+        .btn.active { background: var(--active-color); color: #000; border-color: var(--active-color); }
+        
+        .btn-play-big { font-size: 1.2rem; padding: 1.5rem; border-color: var(--active-color); color: var(--active-color); }
+        .btn-play-big:hover { background: var(--active-color); color: #000; box-shadow: 0 0 20px rgba(249, 115, 22, 0.4); }
+        .btn-play-big:active { transform: scale(0.98); }
+
+        .btn-rec { border-color: var(--danger-color); color: var(--danger-color); }
+        .btn-rec:hover { background: var(--danger-color); color: white; }
+
+        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .control-label { display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; font-weight: 900; color: gray; }
+        .control-val { color: var(--active-color); font-family: monospace; }
+        
+        textarea {
+            background: var(--control-bg); color: white; border: 1px solid var(--border-light); padding: 1rem;
+            border-radius: 8px; font-size: 16px; outline: none; font-weight: 700; width: 100%; resize: vertical; min-height: 100px;
+            font-family: monospace;
+        }
+        textarea:focus { border-color: var(--active-color); }
+
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--active-color); cursor: pointer; margin-top: -6px; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #333; border-radius: 2px; }
+
+        select { 
+            background: var(--control-bg); color: white; border: 1px solid var(--border-light); 
+            padding: 0.75rem; border-radius: 8px; font-size: 12px; outline: none; cursor: pointer; 
+            text-transform: uppercase; font-weight: 900; width: 100%;
+        }
+
+        .visualizer-container {
+            width: 100%; aspect-ratio: 16/9; background: #0a0a0a; border-radius: 12px; border: 1px solid var(--border-light);
+            display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; position: relative;
+        }
+        canvas { width: 100%; height: 100%; display: block; }
+        
+        audio { filter: invert(90%) hue-rotate(180deg); opacity: 0.8; transition: 0.3s; }
+        audio:hover { opacity: 1; }
+
+    </style>
+</head>
+<body class="noise">
+
+    <div id="loader">
+        <svg class="knife-svg-main" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
+    </div>
+
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index" class="font-black text-sm md:text-base uppercase tracking-widest hover:opacity-50 transition whitespace-nowrap">Владислав Ножиков</a>
+        <div class="flex space-x-4 md:space-x-8 font-medium text-[10px] md:text-sm uppercase tracking-widest">
+            <a href="index#work" class="hover:opacity-50 transition">Работы</a>
+            <a href="mujiclab" class="hover:opacity-50 transition">Мuжiclab</a>
+        </div>
+    </nav>
+
+    <main class="w-full flex justify-center relative z-10">
+        <div class="app-container">
+            
+            <div class="header-section">
+                <div class="subtitle">Sonic Lab / Генерация</div>
+                <h1 class="title">Signal Synth</h1>
+                <p class="text-xs text-gray-500 mt-2 max-w-xl font-medium">Алгоритм преобразует текст в азбуку Морзе, а затем маппит точки и тире на ступени выбранной музыкальной гаммы, создавая уникальную мелодию.</p>
+            </div>
+
+            <div class="editor-grid">
+                
+                <div class="control-panel">
+                    
+                    <textarea id="text-input" placeholder="Введите текст на русском или английском...">SOS signal lab</textarea>
+
+                    <button class="btn btn-play-big mt-2" id="btn-generate">⚡ СГЕНЕРИРОВАТЬ</button>
+                    
+                    <div class="h-[1px] w-full bg-white/10 my-1"></div>
+
+                    <div class="control-group">
+                        <div class="control-label">Инструмент</div>
+                        <select id="ctrl-instrument">
+                            <option value="classic" selected>Classic Morse (Пищалка)</option>
+                            <option value="box">Music Box (Мягкий)</option>
+                            <option value="retro">Retro Synth (Синтезатор)</option>
+                        </select>
+                    </div>
+
+                    <div class="flex gap-2 w-full">
+                        <div class="control-group flex-1">
+                            <div class="control-label">Тональность</div>
+                            <select id="ctrl-key">
+                                <option value="0">C (До)</option>
+                                <option value="1">C# (До-диез)</option>
+                                <option value="2">D (Ре)</option>
+                                <option value="3">D# (Ре-диез)</option>
+                                <option value="4">E (Ми)</option>
+                                <option value="5">F (Фа)</option>
+                                <option value="6">F# (Фа-диез)</option>
+                                <option value="7">G (Соль)</option>
+                                <option value="8">G# (Соль-диез)</option>
+                                <option value="9" selected>A (Ля)</option>
+                                <option value="10">A# (Ля-диез)</option>
+                                <option value="11">B (Си)</option>
+                            </select>
+                        </div>
+                        <div class="control-group flex-1">
+                            <div class="control-label">Лад</div>
+                            <select id="ctrl-scale">
+                                <option value="minor" selected>Минор (Грустный)</option>
+                                <option value="major">Мажор (Веселый)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="control-group mt-2">
+                        <div class="control-label"><span>Темп (Speed)</span><span class="control-val" id="val-speed">0.5x</span></div>
+                        <input type="range" id="ctrl-speed" min="0.25" max="1.5" step="0.05" value="0.5">
+                    </div>
+
+                    <div class="h-[1px] w-full bg-white/10 my-2"></div>
+                    
+                    <audio id="audio-player" controls class="w-full hidden outline-none rounded-lg"></audio>
+                    
+                    <button class="btn btn-rec mt-2" id="btn-export" disabled style="opacity: 0.5; cursor: not-allowed;">💾 Скачать .WAV</button>
+
+                </div>
+
+                <div class="flex flex-col gap-6">
+                    <div class="control-panel p-2 h-full">
+                        <div class="visualizer-container h-full">
+                            <canvas id="waveform-canvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-12 pt-8 border-t border-white/10 flex flex-col items-center text-center gap-4 relative z-10 w-full max-w-[1100px]">
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">© <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ</p>        
+            <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">Политика конфиденциальности</a>
+        </div>
+    </footer>
+
+    <script>
+        window.onload = () => { setTimeout(() => { document.body.classList.add('loaded'); }, 500); };
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        const SignalLab = (() => {
+            const DOM = {
+                input: document.getElementById('text-input'),
+                btnGen: document.getElementById('btn-generate'),
+                btnExport: document.getElementById('btn-export'),
+                audioPlayer: document.getElementById('audio-player'),
+                
+                speed: document.getElementById('ctrl-speed'), 
+                valSpeed: document.getElementById('val-speed'),
+                instrument: document.getElementById('ctrl-instrument'),
+                key: document.getElementById('ctrl-key'),
+                scale: document.getElementById('ctrl-scale'),
+                
+                canvas: document.getElementById('waveform-canvas')
+            };
+
+            const ctx = DOM.canvas.getContext('2d');
+            let currentAudioUrl = null;
+
+            DOM.speed.oninput = e => DOM.valSpeed.textContent = `${e.target.value}x`;
+
+            // Словарь Морзе
+            const MORSE = {
+                'а': '.-', 'б': '-...', 'в': '.--', 'г': '--.', 'д': '-..', 'е': '.', 'ё': '.', 'ж': '...-', 'з': '--..', 'и': '..', 'й': '.---', 'к': '-.-', 'л': '.-..', 'м': '--', 'н': '-.', 'о': '---', 'п': '.--.', 'р': '.-.', 'с': '...', 'т': '-', 'у': '..-', 'ф': '..-.', 'х': '....', 'ц': '-.-.', 'ч': '---.', 'ш': '----', 'щ': '--.-', 'ъ': '--.--', 'ы': '-.--', 'ь': '-..-', 'э': '..-..', 'ю': '..--', 'я': '.-.-',
+                'a': '.-', 'b': '-...', 'c': '-.-.', 'd': '-..', 'e': '.', 'f': '..-.', 'g': '--.', 'h': '....', 'i': '..', 'j': '.---', 'k': '-.-', 'l': '.-..', 'm': '--', 'n': '-.', 'o': '---', 'p': '.--.', 'q': '--.-', 'r': '.-.', 's': '...', 't': '-', 'u': '..-', 'v': '...-', 'w': '.--', 'x': '-..-', 'y': '-.--', 'z': '--..',
+                '1': '.----', '2': '..---', '3': '...--', '4': '....-', '5': '.....', '6': '-....', '7': '--...', '8': '---..', '9': '----.', '0': '-----',
+                ' ': ' '
+            };
+
+            // Музыкальные интервалы
+            const SCALES = {
+                major: [0, 2, 4, 5, 7, 9, 11],
+                minor: [0, 2, 3, 5, 7, 8, 10]
+            };
+
+            const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
+
+            const synthesizeMelody = async () => {
+                const text = DOM.input.value.toLowerCase();
+                if (!text.trim()) return;
+
+                DOM.btnGen.textContent = '...РЕНДЕР...';
+                DOM.btnGen.style.pointerEvents = 'none';
+                DOM.audioPlayer.pause();
+
+                try {
+                    const sampleRate = 44100;
+                    const speedMult = parseFloat(DOM.speed.value);
+                    const baseUnit = 0.08 / speedMult; // Длительность "точки". При 0.5x она будет 0.16 сек
+                    
+                    const rootKey = parseInt(DOM.key.value);
+                    const scaleType = DOM.scale.value;
+                    const currentScale = SCALES[scaleType];
+                    const instrument = DOM.instrument.value;
+
+                    let sequence = [];
+                    let totalTime = 0;
+                    
+                    for (let i = 0; i < text.length; i++) {
+                        const char = text[i];
+                        
+                        if (char === ' ') {
+                            totalTime += baseUnit * 7;
+                            continue;
+                        }
+
+                        const code = MORSE[char];
+                        if (!code) continue;
+
+                        for (let j = 0; j < code.length; j++) {
+                            const symbol = code[j];
+                            const isDash = symbol === '-';
+                            const duration = isDash ? baseUnit * 3 : baseUnit;
+                            
+                            const hash = char.charCodeAt(0) + j;
+                            let degree = isDash ? (hash % 4) + 2 : (hash % 4);
+
+                            const midiNote = 60 + rootKey + currentScale[degree];
+                            const freq = midiToFreq(midiNote);
+
+                            sequence.push({ freq, start: totalTime, dur: duration, isDash });
+                            
+                            totalTime += duration;
+                            totalTime += baseUnit; 
+                        }
+                        totalTime += baseUnit * 3; 
+                    }
+                    
+                    const renderDuration = totalTime + 0.5; // Запас без дилеев
+                    const frames = Math.max(1, Math.ceil(sampleRate * renderDuration));
+                    const oCtx = new OfflineAudioContext(1, frames, sampleRate);
+                    
+                    const masterGain = oCtx.createGain();
+                    masterGain.gain.value = 0.7;
+                    
+                    const compressor = oCtx.createDynamicsCompressor();
+                    compressor.threshold.value = -3;
+                    masterGain.connect(compressor).connect(oCtx.destination);
+
+                    const synthBus = masterGain;
+
+                    // Рендер нот (без задержек/дилеев)
+                    sequence.forEach((note) => {
+                        const osc = oCtx.createOscillator();
+                        const env = oCtx.createGain();
+                        
+                        osc.frequency.value = note.freq;
+
+                        if (instrument === 'classic') {
+                            osc.type = 'sine';
+                            env.gain.setValueAtTime(0, note.start);
+                            env.gain.linearRampToValueAtTime(1, note.start + 0.01);
+                            env.gain.setValueAtTime(1, note.start + note.dur - 0.01);
+                            env.gain.linearRampToValueAtTime(0, note.start + note.dur);
+                        } 
+                        else if (instrument === 'box') {
+                            osc.type = 'sine';
+                            const osc2 = oCtx.createOscillator();
+                            osc2.type = 'triangle';
+                            osc2.frequency.value = note.freq * 2;
+                            osc2.connect(env);
+                            osc2.start(note.start);
+                            osc2.stop(note.start + note.dur + 0.5);
+
+                            env.gain.setValueAtTime(0, note.start);
+                            env.gain.linearRampToValueAtTime(1, note.start + 0.01);
+                            env.gain.exponentialRampToValueAtTime(0.001, note.start + note.dur + (note.isDash ? 0.4 : 0.2));
+                        }
+                        else if (instrument === 'retro') {
+                            osc.type = 'square';
+                            const filter = oCtx.createBiquadFilter();
+                            filter.type = 'lowpass';
+                            filter.Q.value = 5;
+                            
+                            filter.frequency.setValueAtTime(note.freq * 4, note.start);
+                            filter.frequency.exponentialRampToValueAtTime(note.freq, note.start + note.dur);
+                            
+                            env.gain.setValueAtTime(0, note.start);
+                            env.gain.linearRampToValueAtTime(0.6, note.start + 0.02);
+                            env.gain.exponentialRampToValueAtTime(0.001, note.start + note.dur + 0.1);
+                            
+                            osc.connect(filter).connect(env);
+                        }
+
+                        if (instrument !== 'retro') {
+                            osc.connect(env);
+                        }
+                        
+                        env.connect(synthBus);
+                        
+                        osc.start(note.start);
+                        osc.stop(note.start + note.dur + 1.0); 
+                    });
+
+                    const renderedBuffer = await oCtx.startRendering();
+                    
+                    const blob = encodeWAV(renderedBuffer);
+                    if (currentAudioUrl) URL.revokeObjectURL(currentAudioUrl);
+                    currentAudioUrl = URL.createObjectURL(blob);
+                    
+                    DOM.audioPlayer.src = currentAudioUrl;
+                    DOM.audioPlayer.classList.remove('hidden');
+
+                    DOM.btnGen.textContent = '⚡ СГЕНЕРИРОВАТЬ';
+                    DOM.btnGen.style.pointerEvents = 'auto';
+                    DOM.btnExport.disabled = false;
+                    DOM.btnExport.style.opacity = '1';
+                    DOM.btnExport.style.cursor = 'pointer';
+
+                    drawWaveform(renderedBuffer);
+                    DOM.audioPlayer.play().catch(() => {});
+
+                } catch (error) {
+                    console.error("Render Error:", error);
+                    DOM.btnGen.textContent = 'ОШИБКА';
+                    setTimeout(() => {
+                        DOM.btnGen.textContent = '⚡ СГЕНЕРИРОВАТЬ';
+                        DOM.btnGen.style.pointerEvents = 'auto';
+                    }, 2500);
+                }
+            };
+
+            const encodeWAV = (buffer) => {
+                const numChannels = buffer.numberOfChannels;
+                const sampleRate = buffer.sampleRate;
+                const format = 1; 
+                const bitDepth = 16;
+                const result = new Float32Array(buffer.length * numChannels);
+                for (let channel = 0; channel < numChannels; channel++) {
+                    const channelData = buffer.getChannelData(channel);
+                    for (let i = 0; i < buffer.length; i++) result[i * numChannels + channel] = channelData[i];
+                }
+                const dataLength = result.length * (bitDepth / 8);
+                const arrayBuffer = new ArrayBuffer(44 + dataLength);
+                const view = new DataView(arrayBuffer);
+                const writeString = (v, offset, string) => { for (let i = 0; i < string.length; i++) v.setUint8(offset + i, string.charCodeAt(i)); };
+                
+                writeString(view, 0, 'RIFF');
+                view.setUint32(4, 36 + dataLength, true);
+                writeString(view, 8, 'WAVE');
+                writeString(view, 12, 'fmt ');
+                view.setUint32(16, 16, true);
+                view.setUint16(20, format, true);
+                view.setUint16(22, numChannels, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * numChannels * (bitDepth / 8), true);
+                view.setUint16(32, numChannels * (bitDepth / 8), true);
+                view.setUint16(34, bitDepth, true);
+                writeString(view, 36, 'data');
+                view.setUint32(40, dataLength, true);
+
+                let offset = 44;
+                for (let i = 0; i < result.length; i++) {
+                    let s = Math.max(-1, Math.min(1, result[i]));
+                    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+                    offset += 2;
+                }
+                return new Blob([view], { type: 'audio/wav' });
+            };
+
+            const drawWaveform = (buffer) => {
+                const rect = DOM.canvas.parentElement.getBoundingClientRect();
+                DOM.canvas.width = rect.width; 
+                DOM.canvas.height = rect.height;
+                ctx.fillStyle = '#0a0a0a';
+                ctx.fillRect(0, 0, DOM.canvas.width, DOM.canvas.height);
+                
+                const data = buffer.getChannelData(0);
+                const step = Math.max(1, Math.floor(data.length / DOM.canvas.width));
+                const amp = DOM.canvas.height / 2;
+                
+                ctx.beginPath();
+                ctx.strokeStyle = '#f97316';
+                ctx.lineWidth = 2;
+                
+                for (let i = 0; i < DOM.canvas.width; i++) {
+                    let min = 0, max = 0;
+                    for (let j = 0; j < step; j++) {
+                        const idx = (i * step) + j;
+                        if (idx < data.length) {
+                            if (data[idx] < min) min = data[idx];
+                            if (data[idx] > max) max = data[idx];
+                        }
+                    }
+                    ctx.moveTo(i, amp + (min * amp));
+                    ctx.lineTo(i, amp + (max * amp));
+                }
+                ctx.stroke();
+            };
+
+            DOM.btnGen.addEventListener('click', synthesizeMelody);
+            DOM.btnExport.addEventListener('click', () => {
+                if (!currentAudioUrl) return;
+                const a = document.createElement('a');
+                a.href = currentAudioUrl; 
+                a.download = `SignalSynth_${DOM.key.options[DOM.key.selectedIndex].text}_${DOM.scale.value}_${Date.now()}.wav`; 
+                a.click();
+            });
+
+        })();
+    </script>
+</body>
+</html>
