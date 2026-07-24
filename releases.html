@@ -6,22 +6,16 @@
     <title>Архив релизов | Владислав Ножиков</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
-        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
     <link rel="manifest" href="/icons/site.webmanifest">
-    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
-    <link rel="shortcut icon" href="/icons/favicon.ico">
-    <meta name="apple-mobile-web-app-title" content="Nozhikov">
-    <meta name="application-name" content="Nozhikov">
-    <meta name="msapplication-TileColor" content="#da532c">
-    <meta name="msapplication-config" content="/icons/browserconfig.xml">
-    <meta name="theme-color" content="#ffffff">
+    <meta name="theme-color" content="#050505">
     <style>
         :root {
             --bg-color: #050505;
             --accent-color: #ffffff;
-            --card-bg: #111111;
+            --card-bg: #0a0a0a;
         }
 
         body {
@@ -29,7 +23,6 @@
             color: var(--accent-color);
             font-family: 'Inter', sans-serif;
             overflow-x: hidden;
-
         }
 
         /* Эффект зернистости */
@@ -44,8 +37,7 @@
             z-index: 9999;
         }
 
-
-        /* Загрузка */
+        /* Загрузка страницы */
         #loader {
             position: fixed;
             top: 0; left: 0;
@@ -76,40 +68,41 @@
             transform: translateY(-100%);
         }
 
-        /* Стили карточек */
+        /* Стили карточек релизов */
         .release-card {
             background: var(--card-bg);
-            border-radius: 24px;
-            overflow: hidden;
             border: 1px solid rgba(255,255,255,0.05);
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: flex;
             flex-direction: column;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
         }
 
         .release-card:hover {
-            transform: translateY(-10px);
-            border-color: rgba(255,255,255,0.2);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            border-color: rgba(255,255,255,0.3);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
         }
 
         .cover-wrapper {
             width: 100%;
             aspect-ratio: 1/1;
             overflow: hidden;
+            background: #111;
             position: relative;
-            background: #1a1a1a;
         }
 
         .cover-wrapper img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.6s ease;
+            transition: transform 0.8s ease, filter 0.5s ease;
         }
 
         .release-card:hover .cover-wrapper img {
             transform: scale(1.05);
+            filter: brightness(0.7);
         }
 
         .reveal {
@@ -121,15 +114,9 @@
             opacity: 1;
             transform: translateY(0);
         }
-
-        @media (max-width: 768px) {
-            #cursor, #cursor-follower { display: none; }
-            body { cursor: auto; }
-        }
     </style>
 </head>
 <body class="noise">
-
 
     <div id="loader">
         <svg class="knife-svg-main" viewBox="0 0 100 100">
@@ -148,7 +135,7 @@
         </div>
     </nav>
 
-    <main class="pt-32 px-6 md:px-12 pb-24 max-w-7xl mx-auto">
+    <main class="pt-32 px-6 md:px-12 pb-24 max-w-7xl mx-auto min-h-screen">
         
         <header class="mb-20 reveal">
             <span class="text-xs uppercase tracking-[0.5em] text-gray-500 block mb-4">Музыка / Дискография</span>
@@ -157,172 +144,121 @@
             </h1>
         </header>
 
-        <!-- Секция основного синти-поп проекта -->
         <section class="mb-32">
             <h2 class="text-xs uppercase tracking-[0.4em] text-gray-500 mb-10 border-b border-white/10 pb-4">Nozhikov — синти-поп проект</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                
-                <!-- Праздник пустых разговоров -->
-                <a href="https://band.link/pprn" target="_blank" class="release-card reveal">
-                    <div class="cover-wrapper">
-                        <img src="pprn.jpg" alt="[Обложка Праздник пустых разговоров]" onerror="this.parentElement.innerHTML='<div class=\'flex items-center justify-center h-full text-[10px] text-gray-600\'>pprn.jpg</div>'">
-                    </div>
-                    <div class="p-6">
-                        <h3 class="text-xl font-bold uppercase tracking-tight">Праздник пустых разговоров</h3>
-                        <p class="text-[10px] text-gray-500 uppercase tracking-widest mt-2">Альбом / 2025</p>
-                    </div>
-                </a>
-
-                <!-- Гештальт -->
-                <a href="https://band.link/gstlt" target="_blank" class="release-card reveal" style="transition-delay: 0.1s;">
-                    <div class="cover-wrapper">
-                        <img src="geshtalt-cover.jpg" alt="[Обложка Гештальт]" onerror="this.parentElement.innerHTML='<div class=\'flex items-center justify-center h-full text-[10px] text-gray-600\'>geshtalt-cover.jpg</div>'">
-                    </div>
-                    <div class="p-6">
-                        <h3 class="text-xl font-bold uppercase tracking-tight">Гештальт</h3>
-                        <p class="text-[10px] text-gray-500 uppercase tracking-widest mt-2">Альбом / 2025</p>
-                    </div>
-                </a>
-
-                <!-- Цветные сны -->
-                <a href="https://band.link/CvetnyeSni" target="_blank" class="release-card reveal" style="transition-delay: 0.2s;">
-                    <div class="cover-wrapper">
-                        <img src="cvetnye-sny-cover.jpg" alt="[Обложка Цветные сны]" onerror="this.parentElement.innerHTML='<div class=\'flex items-center justify-center h-full text-[10px] text-gray-600\'>cvetnye-sny-cover.jpg</div>'">
-                    </div>
-                    <div class="p-6">
-                        <h3 class="text-xl font-bold uppercase tracking-tight">Цветные сны</h3>
-                        <p class="text-[10px] text-gray-500 uppercase tracking-widest mt-2">Альбом / 2025</p>
-                    </div>
-                </a>
-
-            </div>
-        </section>
-
-
-
-        
-        <!-- Секция Альтернативных проектов -->
-        <section>
-            <h2 class="text-xs uppercase tracking-[0.4em] text-gray-500 mb-10 border-b border-white/10 pb-4">Альтернативные проекты</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-
-                
-                <!-- Животная Лирика -->
-                <a href="https://band.link/jivlir" target="_blank" class="release-card reveal">
-                    <div class="flex flex-col md:flex-row h-full">
-                        <div class="cover-wrapper md:w-1/2">
-                            <img src="jivlir-cover.jpg" alt="[Обложка Животная Лирика]" onerror="this.parentElement.innerHTML='<div class=\'flex items-center justify-center h-full text-[10px] text-gray-600\'>jivlir-cover.jpg</div>'">
-                        </div>
-                        <div class="p-8 flex flex-col justify-center">
-                            <h3 class="text-2xl font-black uppercase tracking-tight">Животная Лирика</h3>
-                            <p class="text-sm text-gray-500 mt-4 leading-relaxed uppercase tracking-wider">
-                                Сибирский инди поп рок
-                            </p>
-                            <span class="text-[10px] font-bold uppercase tracking-widest mt-6 flex items-center">
-                                Слушать проект <span class="ml-2">→</span>
-                            </span>
-                        </div>
-                    </div>
-                </a>
-
-                <!-- Жан-Поль Говя -->
-                <a href="https://band.link/jeanpaulgovia" target="_blank" class="release-card reveal" style="transition-delay: 0.1s;">
-                    <div class="flex flex-col md:flex-row h-full">
-                        <div class="cover-wrapper md:w-1/2">
-                            <img src="jeanpaulgovia-cover.jpg" alt="[Обложка Жан-Поль Говя]" onerror="this.parentElement.innerHTML='<div class=\'flex items-center justify-center h-full text-[10px] text-gray-600\'>jeanpaulgovia-cover.jpg</div>'">
-                        </div>
-                        <div class="p-8 flex flex-col justify-center">
-                            <h3 class="text-2xl font-black uppercase tracking-tight">Жан-Поль Говя</h3>
-                            <p class="text-sm text-gray-500 mt-4 leading-relaxed uppercase tracking-wider">
-                                Экспериментальный эмбиент нойз индастриал проект
-                            </p>
-                            <span class="text-[10px] font-bold uppercase tracking-widest mt-6 flex items-center">
-                                Слушать проект <span class="ml-2">→</span>
-                            </span>
-                        </div>
-                    </div>
-                </a>
-
-                    <a href="https://band.link/vanillanaps" target="_blank" class="release-card reveal" style="transition-delay: 0.1s;">
-                    <div class="flex flex-col md:flex-row h-full">
-                        <div class="cover-wrapper md:w-1/2">
-                            <img src="vanillanaps.jpg" alt="[Vanilla Naps]" onerror="this.parentElement.innerHTML='<div class=\'flex items-center justify-center h-full text-[10px] text-gray-600\'>hero.jpg</div>'">
-                        </div>
-                        <div class="p-8 flex flex-col justify-center">
-                            <h3 class="text-2xl font-black uppercase tracking-tight">Vanilla Naps</h3>
-                            <p class="text-sm text-gray-500 mt-4 leading-relaxed uppercase tracking-wider">
-                                Легкая инструментальная и электронная музыка
-                            </p>
-                            <span class="text-[10px] font-bold uppercase tracking-widest mt-6 flex items-center">
-                                Слушать проект <span class="ml-2">→</span>
-                            </span>
-                        </div>
-                    </div>
-                </a>
-                
-            </div>
-        </section>
-
-
-
-
-
-
-        <!-- Footer -->
-<footer class="mt-24 md:mt-32 pt-12 border-t border-white/10 flex flex-col items-center text-center gap-8 reveal">
-    
-    <!-- Блок с копирайтом и политикой -->
-    <div class="flex flex-col items-center gap-2">
-        <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">
-            © <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ
-        </p>        
-        <!-- Ссылка на политику конфиденциальности -->
-        <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">
-            Политика конфиденциальности
-        </a>
-    </div>
-
-</footer>
-
-<script>
-    document.getElementById('current-year').textContent = new Date().getFullYear();
-</script>
-
-        <!-- Всплывашка-нож (Cookie) - Финальная версия -->
-    <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
-        
-        <!-- Острие и лезвие -->
-        <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" 
-             style="border-bottom-left-radius: 120px 100%; border-top-left-radius: 0;">
             
+            <!-- Сетка релизов (заполняется JS-скриптом из локальных файлов) -->
+            <div id="releases-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto pt-12 pb-12 border-t border-white/10 flex flex-col items-center text-center gap-8 reveal">
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">
+                © <span id="current-year"></span> ВЛАДИСЛАВ НОЖИКОВ
+            </p>        
+            <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">
+                Политика конфиденциальности
+            </a>
+        </div>
+    </footer>
+
+    <!-- Всплывашка-нож (Cookie) -->
+    <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
+        <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" style="border-bottom-left-radius: 120px 100%; border-top-left-radius: 0;">
             <div class="relative z-10 flex items-center justify-end w-full">
-                <!-- Убрана точка после Cookie -->
                 <p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight text-right">
                     Мы собираем <span class="text-white font-bold">Cookie</span><br>
                     <a href="privacy" class="underline hover:text-white transition">Политика</a>
                 </p>
             </div>
         </div>
-
-        <!-- "Палочка" (Гарда) -->
-        <!-- Заменили прозрачный белый (bg-white/20) на плотный серый (bg-neutral-600) -->
         <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm relative z-10 pointer-events-none shadow-sm"></div>
-
-        <!-- Рукоять, которая и является кнопкой "Принять" -->
         <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center relative px-4 md:px-6 hover:bg-white hover:text-black hover:border-white transition-colors cursor-pointer group">
-            
-            <!-- Текст ПРИНЯТЬ на самой рукояти (без лишних элементов) -->
             <span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap z-20 relative">
                 Принять
             </span>
-            
         </button>
-
     </div>
 
-    <!-- Скрипт логики всплывашки -->
+    <!-- ОСНОВНАЯ ЛОГИКА -->
     <script>
+        // =========================================================
+        // МАССИВ РЕЛИЗОВ: Обложки теперь берутся из папки cover/
+        // =========================================================
+        const RELEASES = [
+            {
+                title: "Фантомная вибрация",
+                url: "https://band.link/fantomka",
+                type: "Сингл",
+                year: "2026",
+                image: "cover/fantomka.jpg"
+            },
+            {
+                title: "Целовательное лицо",
+                url: "https://band.link/tselovatelnoye",
+                type: "Сингл",
+                year: "2026",
+                image: "cover/tselovatelnoye.jpg"
+            },
+            {
+                title: "Синдром случайного попутчика",
+                url: "https://band.link/poputchika",
+                type: "Сингл",
+                year: "2026",
+                image: "cover/poputchika.jpg"
+            },
+            {
+                title: "Ноттепель",
+                url: "https://band.link/nottepel",
+                type: "Сингл",
+                year: "2026",
+                image: "cover/nottepel.jpg"
+            },
+            {
+                title: "Гранями",
+                url: "https://band.link/granyami",
+                type: "Сингл",
+                year: "2026",
+                image: "cover/granyami.jpg"
+            },
+            {
+                title: "Праздник пустых разговоров",
+                url: "https://band.link/pprn",
+                type: "Альбом",
+                year: "2025",
+                image: "cover/pprn.jpg"
+            },
+            {
+                title: "Гештальт",
+                url: "https://band.link/gstlt",
+                type: "Альбом",
+                year: "2025",
+                image: "cover/geshtalt-cover.jpg"
+            },
+            {
+                title: "Цветные сны",
+                url: "https://band.link/CvetnyeSni",
+                type: "Альбом",
+                year: "2025",
+                image: "cover/cvetnye-sny-cover.jpg"
+            },
+            {
+                title: "Затопленный город",
+                url: "https://band.link/Zatoplennyj",
+                type: "Альбом", 
+                year: "2023",
+                image: "cover/zatoplennyj.jpg"
+            }
+        ];
+        // =========================================================
+
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        // Логика Cookie
         document.addEventListener('DOMContentLoaded', () => {
             const cookieKnife = document.getElementById('cookie-knife');
             const acceptBtn = document.getElementById('accept-cookie-btn');
@@ -340,37 +276,8 @@
                 cookieKnife.classList.add('translate-y-40', 'opacity-0');
             });
         });
-    </script>
 
-    </main>
-
-    <script>
-        window.onload = () => {
-            setTimeout(() => {
-                document.body.classList.add('loaded');
-                initObserver();
-            }, 1000);
-        };
-
-        const cursor = document.getElementById('cursor');
-        const follower = document.getElementById('cursor-follower');
-        
-        document.addEventListener('mousemove', (e) => {
-            cursor.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
-            follower.style.left = `${e.clientX - 25}px`;
-            follower.style.top = `${e.clientY - 25}px`;
-        });
-
-        const interactiveElements = document.querySelectorAll('a, .release-card');
-        interactiveElements.forEach(el => {
-            el.addEventListener('mouseenter', () => {
-                follower.style.transform = 'scale(1.4)';
-            });
-            el.addEventListener('mouseleave', () => {
-                follower.style.transform = 'scale(1)';
-            });
-        });
-
+        // Анимации появления (Reveal)
         function initObserver() {
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
@@ -382,6 +289,49 @@
 
             document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
         }
+
+        // Рендер карточек
+        function renderReleases() {
+            const grid = document.getElementById('releases-grid');
+            grid.innerHTML = '';
+
+            RELEASES.forEach((release, index) => {
+                const delay = index * 0.05; // Легкая задержка для красивого каскадного появления
+                
+                const cardHTML = `
+                    <a href="${release.url}" target="_blank" class="release-card reveal" style="transition-delay: ${delay}s;">
+                        <div class="cover-wrapper">
+                            <!-- Загружаем локальную картинку. Если файл удалят, покажется название картинки на сером фоне -->
+                            <img src="${release.image}" alt="[${release.title}]" loading="lazy" 
+                                 onerror="this.parentElement.innerHTML='<div class=\\'flex items-center justify-center h-full w-full bg-[#111] text-gray-600 text-[10px] uppercase tracking-widest text-center px-4\\'>${release.image}</div>';">
+                            
+                            <!-- Оверлей при наведении -->
+                            <div class="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10 hidden md:flex pointer-events-none">
+                                <span class="text-white text-xs uppercase tracking-widest font-bold border border-white/30 px-6 py-3 rounded-full backdrop-blur-sm">
+                                    Слушать релиз
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="p-5 md:p-6 border-t border-white/5 flex flex-col justify-between flex-grow">
+                            <h3 class="text-lg md:text-xl font-bold uppercase tracking-tight leading-tight group-hover:text-gray-300 transition-colors">${release.title}</h3>
+                            <p class="text-[9px] md:text-[10px] text-gray-500 uppercase tracking-widest mt-4">${release.type} / ${release.year}</p>
+                        </div>
+                    </a>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+
+            setTimeout(initObserver, 100);
+        }
+
+        // Инициализация при загрузке страницы
+        window.onload = () => {
+            renderReleases();
+            setTimeout(() => {
+                document.body.classList.add('loaded');
+            }, 500); // Немного ускорил снятие лоадера, так как файлы локальные
+        };
     </script>
 </body>
 </html>
