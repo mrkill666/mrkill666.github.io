@@ -153,13 +153,28 @@
             </div>
         </header>
 
-        <section class="mb-32">
+        <section class="mb-24">
             <h2 class="text-xs uppercase tracking-[0.4em] text-gray-500 mb-10 border-b border-white/10 pb-4">Резиденты</h2>
             
             <!-- Сетка артистов -->
             <div id="artists-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
                 <!-- Заполняется через JS -->
             </div>
+        </section>
+
+        <!-- Блок сотрудничества -->
+        <section class="mt-32 pt-16 border-t border-white/10 reveal flex flex-col md:flex-row items-start md:items-center justify-between gap-10">
+            <div class="max-w-xl">
+                <h2 class="text-3xl md:text-4xl font-black uppercase tracking-tight mb-4">Коллаборация</h2>
+                <p class="text-sm text-gray-400 leading-relaxed">
+                    Мы открыты к новым идеям. Если вы ищете площадку для публикации своего анонимного творчества или хотите предложить совместный музыкальный/арт проект — свяжитесь с нами.
+                </p>
+            </div>
+            <a href="mailto:v@nozv.ru" class="group flex items-center justify-center border border-white/20 bg-transparent hover:bg-white transition-colors duration-500 px-8 py-5 w-full md:w-auto text-center shrink-0">
+                <span class="text-xs font-bold uppercase tracking-[0.2em] text-white group-hover:text-black transition-colors duration-500">
+                    Написать на почту
+                </span>
+            </a>
         </section>
 
     </main>
@@ -198,7 +213,6 @@
     <script>
         // =========================================================
         // МАССИВ АРТИСТОВ (Лейбл)
-        // Изображение hero.jpg берется из корня, остальные из папки cover/
         // =========================================================
         const ARTISTS = [
             {
@@ -279,11 +293,9 @@
                 const cardHTML = `
                     <a href="${artist.url}" target="_blank" class="artist-card reveal" style="transition-delay: ${delay}s;">
                         <div class="cover-wrapper">
-                            <!-- Загрузка локальной картинки -->
                             <img src="${artist.image}" alt="[${artist.title}]" loading="lazy" 
                                  onerror="this.parentElement.innerHTML='<div class=\\'flex items-center justify-center h-full w-full bg-[#111] text-gray-600 text-[10px] uppercase tracking-widest text-center px-4\\'>${artist.image}</div>';">
                             
-                            <!-- Оверлей при наведении -->
                             <div class="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10 hidden md:flex pointer-events-none">
                                 <span class="text-white text-xs uppercase tracking-widest font-bold border border-white/30 px-6 py-3 rounded-full backdrop-blur-sm">
                                     Страница артиста
@@ -303,7 +315,6 @@
             setTimeout(initObserver, 100);
         }
 
-        // Инициализация при загрузке страницы
         window.onload = () => {
             renderArtists();
             setTimeout(() => {
