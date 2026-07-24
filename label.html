@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лейбл | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <meta name="theme-color" content="#050505">
+    <style>
+        :root {
+            --bg-color: #050505;
+            --accent-color: #ffffff;
+            --card-bg: #0a0a0a;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--accent-color);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Эффект зернистости */
+        .noise::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* Загрузка страницы */
+        #loader {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10001;
+            transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+
+        .knife-svg-main {
+            width: 120px;
+            height: 120px;
+            fill: none;
+            stroke: white;
+            stroke-width: 1.2;
+            animation: rotate-knife 1.5s linear infinite;
+        }
+
+        @keyframes rotate-knife {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .loaded #loader {
+            transform: translateY(-100%);
+        }
+
+        /* Стили карточек артистов */
+        .artist-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .artist-card:hover {
+            border-color: rgba(255,255,255,0.3);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+        }
+
+        .cover-wrapper {
+            width: 100%;
+            aspect-ratio: 1/1;
+            overflow: hidden;
+            background: #111;
+            position: relative;
+        }
+
+        .cover-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.8s ease, filter 0.5s ease;
+        }
+
+        .artist-card:hover .cover-wrapper img {
+            transform: scale(1.05);
+            filter: brightness(0.7);
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="noise">
+
+    <div id="loader">
+        <svg class="knife-svg-main" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
+    </div>
+
+    <!-- Навигация -->
+    <nav class="fixed top-0 left-0 w-full p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="https://nozv.ru" class="text-xs uppercase tracking-[0.3em] hover:opacity-50 transition">← На главную</a>
+        <div class="flex space-x-8 font-medium text-sm uppercase tracking-widest">
+            <a href="/bio" class="hover:opacity-50 transition">Био</a>
+            <a href="/releases" class="hover:opacity-50 transition">Релизы</a>
+            <a href="/artworks" class="hover:opacity-50 transition">Арт</a>
+        </div>
+    </nav>
+
+    <main class="pt-32 px-6 md:px-12 pb-24 max-w-7xl mx-auto min-h-screen">
+        
+        <!-- Шапка страницы -->
+        <header class="mb-20 reveal">
+            <span class="text-xs uppercase tracking-[0.5em] text-gray-500 block mb-4">Музыкальная формация</span>
+            <h1 class="text-6xl md:text-9xl font-black tracking-tighter uppercase leading-none mb-8">
+                ЛЕЙ<span class="text-transparent" style="-webkit-text-stroke: 1px white;">БЛ</span>
+            </h1>
+            
+            <!-- Описание (Манифест) -->
+            <div class="max-w-2xl border-l border-white/20 pl-6 py-1">
+                <p class="text-sm md:text-base text-gray-400 leading-relaxed">
+                    В некоторых представленных проектах Владислав Ножиков принимает непосредственное участие, являясь их идейным вдохновителем и создателем. В других же — выступает лишь как номинальное лицо, скрывающее за собой настоящего автора или целый коллектив анонимных творцов.
+                </p>
+            </div>
+        </header>
+
+        <section class="mb-32">
+            <h2 class="text-xs uppercase tracking-[0.4em] text-gray-500 mb-10 border-b border-white/10 pb-4">Резиденты</h2>
+            
+            <!-- Сетка артистов -->
+            <div id="artists-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
+                <!-- Заполняется через JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto pt-12 pb-12 border-t border-white/10 flex flex-col items-center text-center gap-8 reveal">
+        <div class="flex flex-col items-center gap-2">
+            <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">
+                © <span id="current-year"></span> ВЛАДИСЛАВ НОЖИКОВ
+            </p>        
+            <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">
+                Политика конфиденциальности
+            </a>
+        </div>
+    </footer>
+
+    <!-- Всплывашка-нож (Cookie) -->
+    <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
+        <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" style="border-bottom-left-radius: 120px 100%; border-top-left-radius: 0;">
+            <div class="relative z-10 flex items-center justify-end w-full">
+                <p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight text-right">
+                    Мы собираем <span class="text-white font-bold">Cookie</span><br>
+                    <a href="privacy" class="underline hover:text-white transition">Политика</a>
+                </p>
+            </div>
+        </div>
+        <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm relative z-10 pointer-events-none shadow-sm"></div>
+        <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center relative px-4 md:px-6 hover:bg-white hover:text-black hover:border-white transition-colors cursor-pointer group">
+            <span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap z-20 relative">
+                Принять
+            </span>
+        </button>
+    </div>
+
+    <!-- ОСНОВНАЯ ЛОГИКА -->
+    <script>
+        // =========================================================
+        // МАССИВ АРТИСТОВ (Лейбл)
+        // Изображение hero.jpg берется из корня, остальные из папки cover/
+        // =========================================================
+        const ARTISTS = [
+            {
+                title: "Nozhikov",
+                url: "https://band.link/nozhikov",
+                genre: "Синти-поп проект",
+                image: "hero.jpg"
+            },
+            {
+                title: "Животная Лирика",
+                url: "https://band.link/jivlir",
+                genre: "Инди-группа",
+                image: "cover/jivlir-cover.jpg"
+            },
+            {
+                title: "Vanilla Naps",
+                url: "https://band.link/vanillanaps",
+                genre: "Симфонический проект",
+                image: "cover/vanillanaps.jpg"
+            },
+            {
+                title: "Сил Валдав",
+                url: "https://band.link/silvaldav",
+                genre: "Инди-поп исполнитель",
+                image: "cover/silvaldav.jpg"
+            },
+            {
+                title: "Жан-Поль Говя",
+                url: "https://band.link/jeanpaulgovia",
+                genre: "Нойз проект",
+                image: "cover/jeanpaulgovia-cover.jpg"
+            }
+        ];
+        // =========================================================
+
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        // Логика Cookie
+        document.addEventListener('DOMContentLoaded', () => {
+            const cookieKnife = document.getElementById('cookie-knife');
+            const acceptBtn = document.getElementById('accept-cookie-btn');
+
+            if (!localStorage.getItem('cookieAccepted')) {
+                setTimeout(() => {
+                    cookieKnife.classList.remove('translate-y-40', 'opacity-0');
+                    cookieKnife.classList.add('translate-y-0', 'opacity-100');
+                }, 2500);
+            }
+
+            acceptBtn.addEventListener('click', () => {
+                localStorage.setItem('cookieAccepted', 'true');
+                cookieKnife.classList.remove('translate-y-0', 'opacity-100');
+                cookieKnife.classList.add('translate-y-40', 'opacity-0');
+            });
+        });
+
+        // Анимации появления (Reveal)
+        function initObserver() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+        }
+
+        // Рендер карточек артистов
+        function renderArtists() {
+            const grid = document.getElementById('artists-grid');
+            grid.innerHTML = '';
+
+            ARTISTS.forEach((artist, index) => {
+                const delay = index * 0.05;
+                
+                const cardHTML = `
+                    <a href="${artist.url}" target="_blank" class="artist-card reveal" style="transition-delay: ${delay}s;">
+                        <div class="cover-wrapper">
+                            <!-- Загрузка локальной картинки -->
+                            <img src="${artist.image}" alt="[${artist.title}]" loading="lazy" 
+                                 onerror="this.parentElement.innerHTML='<div class=\\'flex items-center justify-center h-full w-full bg-[#111] text-gray-600 text-[10px] uppercase tracking-widest text-center px-4\\'>${artist.image}</div>';">
+                            
+                            <!-- Оверлей при наведении -->
+                            <div class="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10 hidden md:flex pointer-events-none">
+                                <span class="text-white text-xs uppercase tracking-widest font-bold border border-white/30 px-6 py-3 rounded-full backdrop-blur-sm">
+                                    Страница артиста
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="p-5 md:p-6 border-t border-white/5 flex flex-col justify-between flex-grow">
+                            <h3 class="text-lg md:text-xl font-bold uppercase tracking-tight leading-tight group-hover:text-gray-300 transition-colors">${artist.title}</h3>
+                            <p class="text-[9px] md:text-[10px] text-gray-500 uppercase tracking-widest mt-4">${artist.genre}</p>
+                        </div>
+                    </a>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+
+            setTimeout(initObserver, 100);
+        }
+
+        // Инициализация при загрузке страницы
+        window.onload = () => {
+            renderArtists();
+            setTimeout(() => {
+                document.body.classList.add('loaded');
+            }, 500);
+        };
+    </script>
+</body>
+</html>
