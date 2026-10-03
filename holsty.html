@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Последствия | Владислав Ножиков</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
+    <meta name="apple-mobile-web-app-title" content="Nozhikov">
+    <meta name="application-name" content="Nozhikov">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
+    <style>
+        :root {
+            --bg-color: #050505;
+            --accent-color: #ffffff;
+            --card-bg: #111111;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--accent-color);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            /* Запрет выделения текста */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Эффект зернистости */
+        .noise::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* Загрузчик */
+        #loader {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10001;
+            transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+
+        .knife-svg-main {
+            width: 80px;
+            height: 80px;
+            fill: none;
+            stroke: white;
+            stroke-width: 1.2;
+            animation: rotate-knife 1.5s linear infinite;
+        }
+
+        @keyframes rotate-knife {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .loaded #loader {
+            transform: translateY(-100%);
+        }
+
+        /* Сетка галереи */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .art-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            aspect-ratio: 1 / 1;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .gallery-grid { grid-template-columns: 1fr; }
+        }
+
+        .art-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255,255,255,0.15);
+            background: #161616;
+        }
+
+        .art-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(0.3);
+            transition: all 0.6s ease;
+            -webkit-touch-callout: none;
+        }
+
+        .art-card:hover img {
+            filter: grayscale(0);
+            transform: scale(1.03);
+        }
+
+        .art-info {
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 100%;
+            padding: 1.5rem;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .art-card:hover .art-info {
+            opacity: 1;
+        }
+
+        /* Модальное окно */
+        #modal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.98);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10002;
+            padding: 40px 20px;
+            backdrop-filter: blur(15px);
+        }
+
+        #modal img {
+            max-width: 100%;
+            max-height: 75vh;
+            object-fit: contain;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+
+        /* Крестик закрытия */
+        .modal-close {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.3s;
+            z-index: 10003;
+        }
+
+        .modal-close:hover {
+            opacity: 0.5;
+        }
+
+        .modal-close::before, .modal-close::after {
+            content: "";
+            position: absolute;
+            width: 25px;
+            height: 1px;
+            background: white;
+        }
+
+        .modal-close::before { transform: rotate(45deg); }
+        .modal-close::after { transform: rotate(-45deg); }
+
+        /* Описание в модальном окне */
+        .modal-caption {
+            margin-top: 20px;
+            text-align: center;
+            animation: fadeIn 0.5s ease forwards;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .modal-title {
+            display: block;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .modal-description {
+            display: block;
+            font-size: 11px;
+            color: #a1a1aa;
+            margin-bottom: 12px;
+            line-height: 1.5;
+            letter-spacing: 0.05em;
+            font-weight: 300;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="noise" oncontextmenu="return false;">
+
+    <div id="loader">
+        <svg class="knife-svg-main" viewBox="0 0 100 100">
+            <rect x="47" y="60" width="6" height="25" rx="1" stroke="white" fill="none" />
+            <line x1="42" y1="60" x2="58" y2="60" stroke="white" stroke-width="1.5"/>
+            <path d="M47 60 L53 60 L53 25 C53 15 50 10 47 15 Z" stroke="white" fill="none" />
+        </svg>
+    </div>
+
+    <nav class="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-between items-center z-50 mix-blend-difference">
+        <a href="index" class="text-[10px] uppercase tracking-[0.3em] hover:opacity-50 transition">← На главную</a>
+        <div class="flex space-x-6 md:space-x-8 font-medium text-[10px] md:text-xs uppercase tracking-widest">
+            <a href="releases" class="hover:opacity-50 transition">Архив</a>
+            <a href="mailto:business.mrkill666@gmail.com" class="hover:opacity-50 transition">Связь</a>
+        </div>
+    </nav>
+
+    <main class="pt-32 px-6 md:px-12 pb-24 max-w-7xl mx-auto">
+        
+        <header class="mb-20 reveal text-center">
+            <span class="text-[10px] uppercase tracking-[0.5em] text-gray-500 block mb-4">Выставка</span>
+            <h1 class="text-4xl md:text-7xl font-black tracking-tighter uppercase leading-none mb-6">
+                ПОСЛЕДСТВИЯ
+            </h1>
+            <div class="text-gray-500 max-w-2xl mx-auto text-xs md:text-sm leading-relaxed uppercase tracking-wider space-y-6">
+                <p>
+                    Искусство не обязано быть красивым. Оно не обязано вам ничего объяснять или рассказывать. Иногда самое главное, что оно может сделать — это просто выжить. Перед вами не картинки, а последствия. Смотрите не на то, что нарисовано. Смотрите на то, что смогло уцелеть.
+                </p>
+                <p class="italic text-gray-400">
+                    Эти холсты топило,<br>
+                    Эти холсты горели...<br>
+                    То, что когда-то было,<br>
+                    Молча они стерпели.
+                </p>
+            </div>
+        </header>
+
+        <div class="gallery-grid" id="galleryContainer">
+            <!-- Элементы генерируются через JS -->
+        </div>
+
+        <footer class="mt-24 md:mt-32 pt-12 border-t border-white/10 flex flex-col items-center text-center gap-8 reveal">
+            <!-- Блок с копирайтом и политикой -->
+            <div class="flex flex-col items-center gap-2">
+                <p class="text-[10px] md:text-sm text-gray-500 uppercase tracking-widest">
+                    © <span id="current-year">2026</span> ВЛАДИСЛАВ НОЖИКОВ
+                </p>        
+                <a href="privacy" class="text-[10px] text-gray-500 uppercase tracking-widest hover:text-white transition border-b border-transparent hover:border-white w-fit mt-2 pb-0.5">
+                    Политика конфиденциальности
+                </a>
+            </div>
+        </footer>
+
+        <script>
+            document.getElementById('current-year').textContent = new Date().getFullYear();
+        </script>
+
+        <!-- Всплывашка-нож (Cookie) -->
+        <div id="cookie-knife" class="fixed bottom-6 left-1/2 z-[9999] flex items-center transition-all duration-1000 transform -translate-x-1/2 translate-y-40 opacity-0 drop-shadow-2xl">
+            <!-- Острие и лезвие -->
+            <div class="relative h-12 md:h-14 bg-[#111111] border border-white/10 border-r-0 flex items-center justify-end pr-4 md:pr-6 pl-14 md:pl-16 w-[220px] sm:w-[260px] md:w-[320px]" 
+                 style="border-bottom-left-radius: 120px 100%; border-top-left-radius: 0;">
+                <div class="relative z-10 flex items-center justify-end w-full">
+                    <p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest leading-tight text-right">
+                        Мы собираем <span class="text-white font-bold">Cookie</span><br>
+                        <a href="privacy" class="underline hover:text-white transition">Политика</a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- "Палочка" (Гарда) -->
+            <div class="h-14 w-1.5 md:h-16 md:w-1.5 bg-neutral-600 rounded-sm relative z-10 pointer-events-none shadow-sm"></div>
+
+            <!-- Рукоять, которая и является кнопкой "Принять" -->
+            <button id="accept-cookie-btn" class="h-12 w-auto md:h-14 bg-[#1a1a1a] rounded-r-md border border-white/10 border-l-0 flex items-center justify-center relative px-4 md:px-6 hover:bg-white hover:text-black hover:border-white transition-colors cursor-pointer group">
+                <span class="text-[8px] md:text-[10px] font-bold uppercase text-white group-hover:text-black transition-colors whitespace-nowrap z-20 relative">
+                    Принять
+                </span>
+            </button>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const cookieKnife = document.getElementById('cookie-knife');
+                const acceptBtn = document.getElementById('accept-cookie-btn');
+
+                if (!localStorage.getItem('cookieAccepted')) {
+                    setTimeout(() => {
+                        cookieKnife.classList.remove('translate-y-40', 'opacity-0');
+                        cookieKnife.classList.add('translate-y-0', 'opacity-100');
+                    }, 2500);
+                }
+
+                acceptBtn.addEventListener('click', () => {
+                    localStorage.setItem('cookieAccepted', 'true');
+                    cookieKnife.classList.remove('translate-y-0', 'opacity-100');
+                    cookieKnife.classList.add('translate-y-40', 'opacity-0');
+                });
+            });
+        </script>
+    </main>
+
+    <!-- Модальное окно -->
+    <div id="modal">
+        <div class="modal-close" id="closeBtn"></div>
+        <img id="modalImg" src="" alt="Full view" oncontextmenu="return false;" ondragstart="return false;">
+        <div class="modal-caption">
+            <span class="modal-title" id="modalTitle"></span>
+            <p class="modal-description" id="modalDescription"></p>
+        </div>
+    </div>
+
+    <script>
+        // Сохраняем названия ваших 17 старых картин + 20 новых.
+        // Нумерация новых продолжена с 49, так как в старой версии сайта было 48 файлов.
+        const titlesMap = {
+            // Изначальные картины
+            40: "Свет за шторой", 38: "Лес", 41: "Весна", 37: "Птица",
+            39: "Бассейн", 45: "Колобок", 34: "Багряно-красная точка", 
+            27: "Автопортрет", 1: "Девять позиций", 33: "Без названия", 
+            48: "Пертурбации", 47: "Линия жизни", 46: "Да будь он проклят", 
+            44: "Над замком", 43: "Поражение", 42: "Улетели на восходе", 
+            31: "Появился", 32: "Упал",
+
+            // 20 новых названий (ID 49 - 68)
+            49: "Осадок", 50: "Угол падения", 51: "Фаза окисления", 52: "Смещение",
+            53: "Пару процентов", 54: "Инвентарный номер", 55: "Инерция",
+            56: "Внешнее воздействие", 57: "Исходное состояние", 58: "Наблюдение второе",
+            59: "Остаточное напряжение", 60: "Периферия", 61: "Третий слой",
+            62: "Температура среды", 63: "Координата", 64: "Плоскость",
+            65: "Рассеивание", 66: "Предел прочности", 67: "Побочный эффект", 68: "Изоляция"
+        };
+
+        // Оставили только пометки о подарках или коллекциях (из старого списка подходила только 47)
+        const descriptionsMap = {
+            47: "Подарок." 
+        };
+
+        // Порядок вывода на экран: сначала ваш список (без Линии жизни), затем новые.
+        const exhibitionSequence = [
+            40, 38, 41, 37, 39, 45, 34, 27, 1, 33, 48, 
+            46, 44, 43, 42, 31, 32, // Линия жизни (47) исключена из рендера по вашей просьбе
+            49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 
+            59, 60, 61, 62, 63, 64, 65, 66, 67, 68
+        ];
+
+        const container = document.getElementById('galleryContainer');
+
+        function createCard(id) {
+            const card = document.createElement('div');
+            card.className = 'art-card reveal';
+            const title = titlesMap[id] || `Работа #${id}`;
+            
+            // Плейсхолдеры будут искать картинки по нужному номеру (49.jpg, 50.jpg и т.д.)
+            card.innerHTML = `
+                <img src="artworks/${id}.jpg" alt="${title}" loading="lazy" oncontextmenu="return false;" ondragstart="return false;">
+                <div class="art-info">
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-white">${title}</span>
+                </div>
+            `;
+            
+            card.onclick = () => openModal(id);
+            return card;
+        }
+
+        // Рендерим сетку
+        exhibitionSequence.forEach(id => {
+            container.appendChild(createCard(id));
+        });
+
+        // Логика модального окна
+        const modal = document.getElementById('modal');
+        const modalImg = document.getElementById('modalImg');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalDescription = document.getElementById('modalDescription');
+        const closeBtn = document.getElementById('closeBtn');
+
+        function openModal(id) {
+            const title = titlesMap[id] || "Без названия";
+            const description = descriptionsMap[id] || "";
+            
+            modalImg.src = `artworks/${id}.jpg`;
+            modalTitle.innerText = `«${title}»`;
+            modalDescription.innerText = description;
+            
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        closeBtn.onclick = (e) => {
+            e.stopPropagation();
+            closeModal();
+        };
+
+        modal.onclick = (e) => {
+            if (e.target === modal) closeModal();
+        };
+
+        // Загрузка
+        window.onload = () => {
+            setTimeout(() => {
+                document.body.classList.add('loaded');
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) entry.target.classList.add('active');
+                    });
+                }, { threshold: 0.1 });
+                document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+            }, 500);
+        };
+    </script>
+</body>
+</html>
